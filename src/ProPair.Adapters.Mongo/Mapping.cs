@@ -1,6 +1,7 @@
 using ProPair.Adapters.Mongo.Documents;
 using ProPair.Domain.Common;
 using ProPair.Domain.Matrices;
+using ProPair.Domain.Pairing;
 using ProPair.Domain.Preparations;
 using ProPair.Domain.Ratings;
 using ProPair.Domain.Teams;
@@ -78,6 +79,38 @@ internal static class Mapping
             d.History.Select(h => new RatingChanged(id, new CellKey(new PlayerId(h.Own), new PlayerId(h.Opponent)),
                 h.Old, h.New, h.Author, h.At))), d.Version);
     }
+
+    public static PairingSessionDoc ToDoc(PairingSession s) => new()
+    {
+        Id = s.Id.Value, Version = s.Version, PreparationId = s.PreparationId.Value,
+        OpponentParticipantId = s.OpponentParticipantId.Value,
+        OwnPlayerIds = s.OwnPlayerIds.Select(i => i.Value).ToList(),
+        OpponentPlayerIds = s.OpponentPlayerIds.Select(i => i.Value).ToList(),
+        Moves = s.Moves.Select(ToDoc).ToList(),
+    };
+
+    private static PairingMoveDoc ToDoc(PairingMove m) => m switch
+    {
+        DefendersMove d => new() { Step = "defenders", Own = [d.Own.Value], Opponent = [d.Opponent.Value] },
+        AttackersMove a => new() { Step = "attackers", Own = [a.OwnA.Value, a.OwnB.Value], Opponent = [a.OpponentA.Value, a.OpponentB.Value] },
+        ChoicesMove c => new() { Step = "choices", Own = [c.OwnAccepts.Value], Opponent = [c.OpponentAccepts.Value] },
+        _ => throw new ArgumentOutOfRangeException(nameof(m)),
+    };
+
+    public static PairingSession ToDomain(PairingSessionDoc d) => WithVersion(new PairingSession(
+        new PairingSessionId(d.Id), new PreparationId(d.PreparationId), new ParticipantId(d.OpponentParticipantId),
+        d.OwnPlayerIds.Select(i => new PlayerId(i)).ToList(),
+        d.OpponentPlayerIds.Select(i => new PlayerId(i)).ToList(),
+        d.Moves.Select(ToDomain)), d.Version);
+
+    private static PairingMove ToDomain(PairingMoveDoc m) => m.Step switch
+    {
+        "defenders" => new DefendersMove(new PlayerId(m.Own[0]), new PlayerId(m.Opponent[0])),
+        "attackers" => new AttackersMove(new PlayerId(m.Own[0]), new PlayerId(m.Own[1]),
+            new PlayerId(m.Opponent[0]), new PlayerId(m.Opponent[1])),
+        "choices" => new ChoicesMove(new PlayerId(m.Own[0]), new PlayerId(m.Opponent[0])),
+        _ => throw new InvalidOperationException($"Unknown pairing step '{m.Step}'."),
+    };
 
     private static T WithVersion<T>(T aggregate, long version) where T : IAggregateRoot
     {

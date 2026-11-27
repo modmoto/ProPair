@@ -1,0 +1,76 @@
+@* Read-only matrix for the live pairing. Shows only remaining players, or all with taken players greyed out. *@
+
+<div class="matrix-wrap">
+    <table class="matrix readonly">
+        <thead>
+        <tr>
+            <th class="corner"></th>
+            @foreach (var opp in Columns)
+            {
+                <th class="@HeaderClass(opp.Id, false)">
+                    <span class="hdr">
+                        <span class="army">@opp.ArmyShort</span>
+                        <span class="player">@opp.Name</span>
+                        <span class="role">@Role(opp.Id, false)</span>
+                    </span>
+                </th>
+            }
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var own in Rows)
+        {
+            <tr>
+                <th class="row @HeaderClass(own.Id, true)">
+                    <span class="hdr">
+                        <span class="army">@own.ArmyShort</span>
+                        <span class="player">@own.Name</span>
+                        <span class="role">@Role(own.Id, true)</span>
+                    </span>
+                </th>
+                @foreach (var opp in Columns)
+                {
+                    var level = LevelAt(own.Id, opp.Id);
+                    var game = IsGame(own.Id, opp.Id);
+                    var taken = !game && (Taken(own.Id, true) || Taken(opp.Id, false));
+                    <td class="@(game ? "game" : taken ? "taken" : "")"
+                        style="@(taken ? "" : $"background:{level?.Color ?? "#fff"}")">
+                        @level?.Label
+                    </td>
+                }
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PairingDto Pairing { get; set; } = default!;
+    [Parameter] public bool ShowAll { get; set; }
+
+    private IEnumerable<PlayerDto> Rows =>
+        ShowAll ? Pairing.Own.Players : Pairing.Own.Players.Where(p => Pairing.RemainingOwn.Contains(p.Id));
+
+    private IEnumerable<PlayerDto> Columns =>
+        ShowAll ? Pairing.Opponent.Players : Pairing.Opponent.Players.Where(p => Pairing.RemainingOpponent.Contains(p.Id));
+
+    private bool Taken(Guid id, bool own) => !(own ? Pairing.RemainingOwn : Pairing.RemainingOpponent).Contains(id);
+
+    private bool IsGame(Guid own, Guid opp) => Pairing.Games.Any(g => g.OwnPlayerId == own && g.OpponentPlayerId == opp);
+
+    private string HeaderClass(Guid id, bool own) => Taken(id, own) ? "taken" : Role(id, own) is "" ? "" : "active";
+
+    /// <summary>D = defender, A = attacker in the current round.</summary>
+    private string Role(Guid id, bool own)
+    {
+        if ((own ? Pairing.OwnDefender : Pairing.OpponentDefender) == id) return "D";
+        if ((own ? Pairing.OwnAttackers : Pairing.OpponentAttackers).Contains(id)) return "A";
+        return "";
+    }
+
+    private RatingLevelDto? LevelAt(Guid own, Guid opp)
+    {
+        var cell = Pairing.Cells.FirstOrDefault(c => c.OwnPlayerId == own && c.OpponentPlayerId == opp);
+        return cell is null ? null : Pairing.Scale.FirstOrDefault(l => l.Key == cell.LevelKey);
+    }
+}

@@ -25,6 +25,26 @@ public sealed class ProPairApi(HttpClient http)
     public async Task SetRatingAsync(string token, Guid opponentId, SetRatingRequest request) =>
         await EnsureAsync(await http.PutAsJsonAsync($"api/p/{token}/matrices/{opponentId}/cells", request));
 
+    private static string PairingUrl(string token, Guid opponentId) => $"api/p/{token}/matrices/{opponentId}/pairing";
+
+    public async Task<PairingDto> GetPairingAsync(string token, Guid opponentId) =>
+        await ReadAsync<PairingDto>(await http.GetAsync(PairingUrl(token, opponentId)));
+
+    public async Task<PairingDto> SetDefendersAsync(string token, Guid opponentId, DefendersRequest request) =>
+        await ReadAsync<PairingDto>(await http.PostAsJsonAsync($"{PairingUrl(token, opponentId)}/defenders", request));
+
+    public async Task<PairingDto> SetAttackersAsync(string token, Guid opponentId, AttackersRequest request) =>
+        await ReadAsync<PairingDto>(await http.PostAsJsonAsync($"{PairingUrl(token, opponentId)}/attackers", request));
+
+    public async Task<PairingDto> SetChoicesAsync(string token, Guid opponentId, ChoicesRequest request) =>
+        await ReadAsync<PairingDto>(await http.PostAsJsonAsync($"{PairingUrl(token, opponentId)}/choices", request));
+
+    public async Task<PairingDto> UndoPairingAsync(string token, Guid opponentId) =>
+        await ReadAsync<PairingDto>(await http.PostAsync($"{PairingUrl(token, opponentId)}/undo", null));
+
+    public async Task<PairingDto> RestartPairingAsync(string token, Guid opponentId) =>
+        await ReadAsync<PairingDto>(await http.PostAsync($"{PairingUrl(token, opponentId)}/restart", null));
+
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response)
     {
         await EnsureAsync(response);

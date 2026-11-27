@@ -1,0 +1,28 @@
+@* Tap to pick what the opponent revealed. Max = how many players to pick. *@
+
+<div class="chips">
+    @foreach (var p in Players)
+    {
+        var on = Selected.Contains(p.Id);
+        <button class="chip @(on ? "on" : "")" disabled="@Disabled" @onclick="() => ToggleAsync(p.Id)">
+            <span class="army">@p.ArmyShort</span> @p.Name
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<PlayerDto> Players { get; set; } = [];
+    [Parameter] public IReadOnlyList<Guid> Selected { get; set; } = [];
+    [Parameter] public int Max { get; set; } = 1;
+    [Parameter] public EventCallback<IReadOnlyList<Guid>> OnChange { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private Task ToggleAsync(Guid id)
+    {
+        List<Guid> next;
+        if (Selected.Contains(id)) next = Selected.Where(x => x != id).ToList();
+        else if (Max == 1) next = [id];
+        else next = Selected.Append(id).TakeLast(Max).ToList();
+        return OnChange.InvokeAsync(next);
+    }
+}

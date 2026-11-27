@@ -1,5 +1,6 @@
 using ProPair.Domain.Common;
 using ProPair.Domain.Matrices;
+using ProPair.Domain.Pairing;
 using ProPair.Domain.Preparations;
 using ProPair.Domain.Teams;
 using ProPair.Domain.Tournaments;
@@ -32,6 +33,12 @@ public interface IMatrixRepository
     Task<Matrix?> FindAsync(PreparationId preparationId, ParticipantId opponentId, CancellationToken ct = default);
     Task<IReadOnlyList<Matrix>> ListAsync(PreparationId preparationId, CancellationToken ct = default);
     Task SaveAsync(Matrix matrix, CancellationToken ct = default);
+}
+
+public interface IPairingSessionRepository
+{
+    Task<PairingSession?> FindAsync(PreparationId preparationId, ParticipantId opponentId, CancellationToken ct = default);
+    Task SaveAsync(PairingSession session, CancellationToken ct = default);
 }
 
 /// <summary>Thrown by repositories when the aggregate was changed by someone else since it was loaded.</summary>

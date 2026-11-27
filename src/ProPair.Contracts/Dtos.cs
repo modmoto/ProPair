@@ -32,3 +32,23 @@ public sealed record MatrixDto(
 public sealed record SetRatingRequest(Guid OwnPlayerId, Guid OpponentPlayerId, string? LevelKey, string Author);
 
 public sealed record ErrorDto(string Message);
+
+public sealed record GameDto(Guid OwnPlayerId, Guid OpponentPlayerId, double Score);
+
+/// <summary>Our option in the current step: Worst = opponent answers optimally, Average = over all answers.</summary>
+public sealed record PairingOptionDto(IReadOnlyList<Guid> Players, double Worst, double Average);
+
+public sealed record PairingDto(
+    string TournamentName, bool CanEdit, ParticipantDto Own, ParticipantDto Opponent,
+    IReadOnlyList<RatingLevelDto> Scale, IReadOnlyList<CellDto> Cells,
+    string Step, int Round, IReadOnlyList<Guid> RemainingOwn, IReadOnlyList<Guid> RemainingOpponent,
+    Guid? OwnDefender, Guid? OpponentDefender, IReadOnlyList<Guid> OwnAttackers, IReadOnlyList<Guid> OpponentAttackers,
+    IReadOnlyList<GameDto> Games, double FixedScore, double ExpectedScore, IReadOnlyList<PairingOptionDto> Options,
+    int UnratedCells, int MoveCount);
+
+public sealed record DefendersRequest(Guid Own, Guid Opponent);
+
+public sealed record AttackersRequest(IReadOnlyList<Guid> Own, IReadOnlyList<Guid> Opponent);
+
+/// <summary>OwnAccepts: their attacker we take. OpponentAccepts: our attacker they take.</summary>
+public sealed record ChoicesRequest(Guid OwnAccepts, Guid OpponentAccepts);

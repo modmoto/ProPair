@@ -93,3 +93,21 @@ public sealed class MatrixDoc : IVersionedDocument
     public List<CellDoc> Cells { get; set; } = [];
     public List<RatingChangeDoc> History { get; set; } = [];
 }
+
+public sealed class PairingMoveDoc
+{
+    public string Step { get; set; } = "";   // "defenders" | "attackers" | "choices"
+    public List<Guid> Own { get; set; } = [];
+    public List<Guid> Opponent { get; set; } = [];
+}
+
+public sealed class PairingSessionDoc : IVersionedDocument
+{
+    [BsonId] public Guid Id { get; set; }
+    public long Version { get; set; }
+    public Guid PreparationId { get; set; }
+    public Guid OpponentParticipantId { get; set; }
+    public List<Guid> OwnPlayerIds { get; set; } = [];
+    public List<Guid> OpponentPlayerIds { get; set; } = [];
+    public List<PairingMoveDoc> Moves { get; set; } = [];
+}

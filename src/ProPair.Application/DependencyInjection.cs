@@ -15,6 +15,10 @@ public static class DependencyInjection
         services.AddScoped<GetPreparation>();
         services.AddScoped<GetMatrix>();
         services.AddScoped<SetRating>();
+        services.AddScoped<GetPairing>();
+        services.AddScoped<PlayPairingMove>();
+        services.AddScoped<UndoPairingMove>();
+        services.AddScoped<RestartPairing>();
         return services;
     }
 }

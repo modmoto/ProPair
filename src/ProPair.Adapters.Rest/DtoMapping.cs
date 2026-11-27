@@ -1,6 +1,7 @@
 using ProPair.Application.UseCases;
 using ProPair.Contracts;
 using ProPair.Domain.GameSystems;
+using ProPair.Domain.Matrices;
 using ProPair.Domain.Preparations;
 using ProPair.Domain.Ratings;
 using ProPair.Domain.Tournaments;
@@ -38,4 +39,23 @@ internal static class DtoMapping
             v.Preparation.RatingScale.ToDto(),
             v.Matrix.Cells.Select(c => new CellDto(c.Key.OwnPlayerId.Value, c.Key.OpponentPlayerId.Value, c.Value))
                 .ToList());
+
+    public static PairingDto ToDto(this PairingView v)
+    {
+        var matrix = v.Matrix.ToDto();
+        var state = v.Session.State;
+        var scale = v.Matrix.Preparation.RatingScale;
+        double Score(Domain.Pairing.Game g) =>
+            v.Matrix.Matrix.RatingAt(new CellKey(g.Own, g.Opponent)) is { } key ? (double)(scale.Find(key)?.Score ?? 0) : 0;
+
+        return new PairingDto(matrix.TournamentName, matrix.CanEdit, matrix.Own, matrix.Opponent, matrix.Scale, matrix.Cells,
+            state.Step.ToString().ToLowerInvariant(), state.Round,
+            state.RemainingOwn.Select(p => p.Value).ToList(), state.RemainingOpponent.Select(p => p.Value).ToList(),
+            state.OwnDefender?.Value, state.OpponentDefender?.Value,
+            state.OwnAttackers.Select(p => p.Value).ToList(), state.OpponentAttackers.Select(p => p.Value).ToList(),
+            state.Games.Select(g => new GameDto(g.Own.Value, g.Opponent.Value, Score(g))).ToList(),
+            v.Analysis.Fixed, v.Analysis.Expected,
+            v.Analysis.Options.Select(o => new PairingOptionDto(o.Players.Select(p => p.Value).ToList(), o.Worst, o.Average)).ToList(),
+            v.UnratedCells, v.Session.Moves.Count);
+    }
 }

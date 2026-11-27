@@ -1,0 +1,31 @@
+@* Our options for the current step with the solver's evaluation, best first. *@
+
+<div class="options">
+    @foreach (var (option, index) in Pairing.Options.Select((o, i) => (o, i)))
+    {
+        var selected = Selected.SequenceEqual(option.Players);
+        <button class="option @(selected ? "selected" : "") @(index == 0 ? "best" : "")" disabled="@Disabled"
+                @onclick="() => OnSelect.InvokeAsync(option.Players)">
+            <span class="who">
+                @foreach (var id in option.Players)
+                {
+                    var p = Player(id);
+                    <span class="pl"><span class="army">@p.ArmyShort</span> @p.Name</span>
+                }
+            </span>
+            <span class="vals">
+                <span class="worst" title="Worst case">@Format.Score(option.Worst)</span>
+                <span class="avg" title="Durchschnitt">⌀ @Format.Score(option.Average)</span>
+            </span>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PairingDto Pairing { get; set; } = default!;
+    [Parameter] public IReadOnlyList<Guid> Selected { get; set; } = [];
+    [Parameter] public EventCallback<IReadOnlyList<Guid>> OnSelect { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private PlayerDto Player(Guid id) => Pairing.Own.Players.Concat(Pairing.Opponent.Players).First(p => p.Id == id);
+}

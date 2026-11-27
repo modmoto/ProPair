@@ -3,6 +3,7 @@ using ProPair.Adapters.Mongo.Documents;
 using ProPair.Application.Ports;
 using ProPair.Domain.Common;
 using ProPair.Domain.Matrices;
+using ProPair.Domain.Pairing;
 using ProPair.Domain.Preparations;
 using ProPair.Domain.Teams;
 using ProPair.Domain.Tournaments;
@@ -86,4 +87,14 @@ internal sealed class MatrixRepository(MongoContext db) : IMatrixRepository
         matrix.SetPersistedVersion(await VersionedSave.SaveAsync(db.Matrices, Mapping.ToDoc(matrix), ct));
         matrix.ClearDomainEvents();
     }
+}
+
+internal sealed class PairingSessionRepository(MongoContext db) : IPairingSessionRepository
+{
+    public async Task<PairingSession?> FindAsync(PreparationId preparationId, ParticipantId opponentId, CancellationToken ct = default) =>
+        await db.PairingSessions.Find(d => d.PreparationId == preparationId.Value && d.OpponentParticipantId == opponentId.Value)
+            .FirstOrDefaultAsync(ct) is { } d ? Mapping.ToDomain(d) : null;
+
+    public async Task SaveAsync(PairingSession session, CancellationToken ct = default) =>
+        session.SetPersistedVersion(await VersionedSave.SaveAsync(db.PairingSessions, Mapping.ToDoc(session), ct));
 }

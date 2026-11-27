@@ -15,7 +15,10 @@
 else
 {
     <a class="link" href="p/@Token">← @_matrix.TournamentName</a>
-    <h1>@_matrix.Own.Name <span class="muted">vs</span> @_matrix.Opponent.Name</h1>
+    <div class="titlebar">
+        <h1>@_matrix.Own.Name <span class="muted">vs</span> @_matrix.Opponent.Name</h1>
+        <a class="toggle" href="p/@Token/vs/@OpponentId/pairing">Pairing →</a>
+    </div>
 
     @if (_matrix.CanEdit && string.IsNullOrWhiteSpace(_author))
     {

@@ -27,12 +27,14 @@ internal sealed class MongoContext
         Tournaments = db.GetCollection<TournamentDoc>("tournaments");
         Preparations = db.GetCollection<PreparationDoc>("preparations");
         Matrices = db.GetCollection<MatrixDoc>("matrices");
+        PairingSessions = db.GetCollection<PairingSessionDoc>("pairingSessions");
     }
 
     public IMongoCollection<TeamDoc> Teams { get; }
     public IMongoCollection<TournamentDoc> Tournaments { get; }
     public IMongoCollection<PreparationDoc> Preparations { get; }
     public IMongoCollection<MatrixDoc> Matrices { get; }
+    public IMongoCollection<PairingSessionDoc> PairingSessions { get; }
 
     public async Task EnsureIndexesAsync()
     {
@@ -46,6 +48,9 @@ internal sealed class MongoContext
         ]);
         await Matrices.Indexes.CreateOneAsync(new CreateIndexModel<MatrixDoc>(
             Builders<MatrixDoc>.IndexKeys.Ascending(d => d.PreparationId).Ascending(d => d.OpponentParticipantId),
+            new() { Unique = true }));
+        await PairingSessions.Indexes.CreateOneAsync(new CreateIndexModel<PairingSessionDoc>(
+            Builders<PairingSessionDoc>.IndexKeys.Ascending(d => d.PreparationId).Ascending(d => d.OpponentParticipantId),
             new() { Unique = true }));
         await Teams.Indexes.CreateOneAsync(new CreateIndexModel<TeamDoc>(
             Builders<TeamDoc>.IndexKeys.Ascending(d => d.Name), new() { Unique = true }));

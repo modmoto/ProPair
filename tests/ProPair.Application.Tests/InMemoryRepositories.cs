@@ -1,14 +1,16 @@
 using ProPair.Application.Ports;
 using ProPair.Domain.Common;
 using ProPair.Domain.Matrices;
+using ProPair.Domain.Pairing;
 using ProPair.Domain.Preparations;
 using ProPair.Domain.Teams;
 using ProPair.Domain.Tournaments;
 
 namespace ProPair.Application.Tests;
 
-internal sealed class InMemoryStore : ITournamentRepository, ITeamRepository, IPreparationRepository, IMatrixRepository
+internal sealed class InMemoryStore : ITournamentRepository, ITeamRepository, IPreparationRepository, IMatrixRepository, IPairingSessionRepository
 {
+    private readonly List<PairingSession> _sessions = [];
     private readonly List<Tournament> _tournaments = [];
     private readonly List<Team> _teams = [];
     private readonly List<Preparation> _preparations = [];
@@ -37,6 +39,10 @@ internal sealed class InMemoryStore : ITournamentRepository, ITeamRepository, IP
     public Task<IReadOnlyList<Matrix>> ListAsync(PreparationId preparationId, CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<Matrix>>(_matrices.Where(m => m.PreparationId == preparationId).ToList());
     public Task SaveAsync(Matrix matrix, CancellationToken ct = default) => Upsert(_matrices, matrix);
+
+    Task<PairingSession?> IPairingSessionRepository.FindAsync(PreparationId preparationId, ParticipantId opponentId, CancellationToken ct) =>
+        Task.FromResult(_sessions.FirstOrDefault(m => m.PreparationId == preparationId && m.OpponentParticipantId == opponentId));
+    public Task SaveAsync(PairingSession session, CancellationToken ct = default) => Upsert(_sessions, session);
 
     private static Task Upsert<T>(List<T> list, T item) where T : class
     {

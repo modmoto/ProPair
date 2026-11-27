@@ -21,7 +21,6 @@ Pairing-Tool für Tabletop-Teamturniere. Start: The 9th Age (T9A).
 - Notizen pro Liste / Matchup ("Achtung auf X").
 - PDF-Export für offline.
 - Live-Sync für Zuschauer (SignalR).
-- Pairing-Assistent (bester Pfad).
 - Weitere Spielsysteme.
 
 ## UI-Grundsätze
@@ -72,35 +71,26 @@ Ablauf als Regel-Objekt modellieren (austauschbar pro Turnier/System). Tisch-/Sz
 
 ## Pairing-Assistent
 
-- Zustand: verbleibende Spieler beider Teams + aktuelle Phase.
-- Jede Phase ist ein simultaner, verdeckter Zug → Spiel mit unvollständiger Information.
-- Ansatz: Spielbaum mit Memoization (8v8: max. 2⁸·2⁸ Teilmengen – machbar).
-- Bewertung eines Zustands: Summe der Scores der fixen Spiele + Wert des Rests.
-- Strategie wählbar:
-  - **Maximin** (worst case, "was passiert, wenn der Gegner optimal legt").
-  - **Gemischte Strategie** (Nash pro Phase via LP) – genauer, später.
-- UI: aktuellen Zustand anklicken → Top-Optionen mit erwartetem Ergebnis.
-- Gegner-Sicht = negierte eigene Matrix. Wir nehmen an, dass die Teamwertung stimmt.
-- Fokus: Captain bedient das Pairing.
+Ablauf auf der Pairing-Seite (pro Gegner, eine Session):
+1. Defender: Empfehlung für unseren Defender, Gegner-Defender antippen, eintragen.
+2. Attacker: Empfehlung für unser Attacker-Paar, 2 Gegner-Attacker antippen, eintragen.
+3. Wahl: Empfehlung, welchen Gegner-Attacker wir nehmen; antippen, welchen unserer Attacker der Gegner nimmt.
+→ Matchups stehen fest, gepaarte Spieler fliegen aus der Matrix. Rückgängig / Neu starten möglich.
 
-## New-Recruit-Import
+Matrix auf der Pairing-Seite:
+- Standard: nur verbleibende Spieler.
+- Umschalter oben rechts: ursprüngliche Matrix. Vergebene Spieler hellgrau, feste Matchups mit Rahmen.
+- D/A markiert Defender/Attacker der laufenden Runde.
 
-Doku: https://www.newrecruit.eu/tutorials/tournament (+ `/tournaments`, `/reports`, `/systems`).
+Solver (`PairingSolver`, Domain Service):
+- Vollständiger Spielbaum, memoisiert über Bitmasken der verbleibenden Spieler. 8v8 ≈ 0,2 s.
+- Simultane Schritte pessimistisch: wir wählen, Gegner antwortet optimal (Maximin).
+- Pro Option: **Worst case** (Gegner optimal) und **⌀** (Durchschnitt über alle Gegner-Antworten).
+- Gegner-Sicht = negierte eigene Matrix. Unbewertete Felder zählen 0 (Hinweis in der UI).
+- Läuft serverseitig; Offline im Client später möglich (Domain ist abhängigkeitsfrei).
+- Später: gemischte Strategien (Nash pro Schritt) statt reinem Maximin.
 
-- Auth: HTTP-Header `NR-Login` + `NR-Password` (NR-Account). Kein API-Key.
-- Zugang muss vom NR-Team freigeschaltet werden ("contact NR if you need to access this API").
-- `POST /api/tournament` `{ id }` → Name, Teams, Spieler, Listen. Versteckte Listen fehlen.
-- `POST /api/tournaments` → Suche nach Zeitraum + `id_game_system`, 50 pro Seite.
-- `POST /api/systems` → IDs der Spielsysteme (T9A-ID einmal ermitteln).
-- NR loggt jeden Request mit User.
-
-Umsetzung:
-- Port `ITournamentSource` in Application, Adapter `ProPair.Adapters.NewRecruit`.
-- Bis Zugang da ist: `FakeTournamentSource` mit 4 Demo-Turnieren (ETC 2026 8er, DTM 5er, Swiss Team Masters 5er, Trio Cup 3er). Armeeverteilung angelehnt an ETC 2026, SE-Listen aus dem öffentlichen ETC-Thread, Rest Demo-Listen, Spieler fiktiv.
-- Zugangsdaten nur serverseitig (User Secrets / Env), nie im Client.
-- Import: Captain gibt Turnier-URL/ID ein → Tournament-Aggregat anlegen bzw. aktualisieren.
-- Rohdaten (Listen) unverändert speichern, Armee über Mapping auf GameSystem-Armeen.
-- Re-Import möglich (Listen ändern sich bis Turnierbeginn).
+`PairingSession` speichert nur die eingegebenen Züge; der Zustand wird über `PairingState` neu abgespielt (Undo = letzten Zug entfernen).
 
 ## Architektur
 
@@ -176,8 +166,8 @@ Taktisches DDD nach Evans/Vernon:
 - Invariante: Rating muss in der Skala der Preparation liegen.
 - Eigenes Aggregat, damit gleichzeitiges Arbeiten an verschiedenen Gegnern nicht kollidiert.
 
-**PairingSession** (später)
-- Id, MatrixId, bisherige Züge (Defender, Attacker, Wahl).
+**PairingSession**
+- Id, PreparationId, OpponentParticipantId, Züge (Defender, Attacker, Wahl).
 - Invariante: Züge folgen dem Pairing-Ablauf.
 
 ### Value Objects
@@ -217,6 +207,7 @@ Taktisches DDD nach Evans/Vernon:
 | 8 | Modellierung | DDD, Aggregate wie oben. |
 | 9 | New Recruit | Import im MVP, zunächst Fake-Quelle. |
 | 10 | UI | Mobile first. |
+| 11 | Pairing | Gegnerwahl wird pro Schritt eingetragen; Rest-Matrix mit Umschalter auf Vollmatrix (vergeben = grau). |
 
 ## Offene Fragen
 
