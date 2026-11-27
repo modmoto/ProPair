@@ -26,7 +26,7 @@ public sealed record PreparationDto(
 public sealed record CellDto(Guid OwnPlayerId, Guid OpponentPlayerId, string LevelKey);
 
 public sealed record MatrixDto(
-    string TournamentName, bool CanEdit, ParticipantDto Own, ParticipantDto Opponent,
+    string TournamentName, bool CanEdit, bool IsDemo, ParticipantDto Own, ParticipantDto Opponent,
     IReadOnlyList<RatingLevelDto> Scale, IReadOnlyList<CellDto> Cells);
 
 public sealed record SetRatingRequest(Guid OwnPlayerId, Guid OpponentPlayerId, string? LevelKey, string Author);

@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<GetPreparation>();
         services.AddScoped<GetMatrix>();
         services.AddScoped<SetRating>();
+        services.AddScoped<FillDemoRatings>();
         services.AddScoped<GetPairing>();
         services.AddScoped<PlayPairingMove>();
         services.AddScoped<UndoPairingMove>();

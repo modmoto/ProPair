@@ -41,6 +41,13 @@ internal static class Endpoints
                 return Results.NoContent();
             });
 
+        api.MapPost("/p/{token}/matrices/{opponentId:guid}/demo-fill",
+            async (string token, Guid opponentId, FillDemoRatings fill, GetMatrix get, CancellationToken ct) =>
+            {
+                await fill.ExecuteAsync(token, new ParticipantId(opponentId), ct);
+                return (await get.ExecuteAsync(token, new ParticipantId(opponentId), ct)).ToDto();
+            });
+
         var pairing = api.MapGroup("/p/{token}/matrices/{opponentId:guid}/pairing");
 
         pairing.MapGet("", async (string token, Guid opponentId, GetPairing uc, CancellationToken ct) =>

@@ -35,7 +35,8 @@ internal static class DtoMapping
     }
 
     public static MatrixDto ToDto(this MatrixView v) =>
-        new(v.Tournament.Name, v.Access == AccessLevel.Edit, v.Own.ToDto(), v.Opponent.ToDto(),
+        new(v.Tournament.Name, v.Access == AccessLevel.Edit,
+            v.Tournament.ExternalId.StartsWith(FillDemoRatings.DemoPrefix), v.Own.ToDto(), v.Opponent.ToDto(),
             v.Preparation.RatingScale.ToDto(),
             v.Matrix.Cells.Select(c => new CellDto(c.Key.OwnPlayerId.Value, c.Key.OpponentPlayerId.Value, c.Value))
                 .ToList());

@@ -17,8 +17,12 @@ else
     <a class="link" href="p/@Token">← @_matrix.TournamentName</a>
     <div class="titlebar">
         <h1>@_matrix.Own.Name <span class="muted">vs</span> @_matrix.Opponent.Name</h1>
-        <a class="toggle" href="p/@Token/vs/@OpponentId/pairing">Pairing →</a>
+        <a class="pill" href="p/@Token/vs/@OpponentId/pairing">Pairing →</a>
     </div>
+    @if (_matrix.IsDemo && _matrix.CanEdit && _cells.Count < _matrix.Own.Players.Count * _matrix.Opponent.Players.Count)
+    {
+        <button class="btn" @onclick="FillDemoAsync">Demo-Werte füllen</button>
+    }
 
     @if (_matrix.CanEdit && string.IsNullOrWhiteSpace(_author))
     {
@@ -155,6 +159,16 @@ else
         {
             _writeQueue.Release();
         }
+    }
+
+    private async Task FillDemoAsync()
+    {
+        try
+        {
+            _matrix = await Api.FillDemoAsync(Token, OpponentId);
+            _cells = _matrix.Cells.ToDictionary(c => (c.OwnPlayerId, c.OpponentPlayerId), c => c.LevelKey);
+        }
+        catch (ApiException e) { _error = e.Message; }
     }
 
     private async Task SaveAuthorAsync()

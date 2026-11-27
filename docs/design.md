@@ -71,16 +71,17 @@ Ablauf als Regel-Objekt modellieren (austauschbar pro Turnier/System). Tisch-/Sz
 
 ## Pairing-Assistent
 
-Ablauf auf der Pairing-Seite (pro Gegner, eine Session):
-1. Defender: Empfehlung für unseren Defender, Gegner-Defender antippen, eintragen.
-2. Attacker: Empfehlung für unser Attacker-Paar, 2 Gegner-Attacker antippen, eintragen.
-3. Wahl: Empfehlung, welchen Gegner-Attacker wir nehmen; antippen, welchen unserer Attacker der Gegner nimmt.
-→ Matchups stehen fest, gepaarte Spieler fliegen aus der Matrix. Rückgängig / Neu starten möglich.
+Bedienung – alles in der Matrix, keine Listen (mobil per Daumen):
+1. **Defender:** links unseren Namen antippen, oben deren → gespeichert. Defender-Zeile und -Spalte hervorgehoben, Rest grau.
+2. **Attacker:** Zellen antippen – in unserer Defender-Zeile deren 2 Attacker, in deren Defender-Spalte unsere 2. Kreuzung der Defender ist gesperrt (schraffiert). „Attacker eintragen“.
+3. **Wahl:** in der Zeile antippen, wen wir nehmen; in der Spalte, wen sie nehmen. „Wahl eintragen“.
+→ Gepaarte Spieler hüpfen raus, die Matrix wird kleiner. Rückgängig (erst lokale Taps, dann letzter Schritt) / Neu starten in der Aktionsleiste unten.
 
-Matrix auf der Pairing-Seite:
+Ansicht:
 - Standard: nur verbleibende Spieler.
-- Umschalter oben rechts: ursprüngliche Matrix. Vergebene Spieler hellgrau, feste Matchups mit Rahmen.
-- D/A markiert Defender/Attacker der laufenden Runde.
+- Flip-Button oben rechts: ursprüngliche Matrix (Flip-Animation). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
+- Empfehlungen sind vorerst ausgeblendet (Solver läuft weiter im Backend), Details unter der Matrix kommen später.
+- Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
 
 Solver (`PairingSolver`, Domain Service):
 - Vollständiger Spielbaum, memoisiert über Bitmasken der verbleibenden Spieler. 8v8 ≈ 0,2 s.
@@ -207,7 +208,7 @@ Taktisches DDD nach Evans/Vernon:
 | 8 | Modellierung | DDD, Aggregate wie oben. |
 | 9 | New Recruit | Import im MVP, zunächst Fake-Quelle. |
 | 10 | UI | Mobile first. |
-| 11 | Pairing | Gegnerwahl wird pro Schritt eingetragen; Rest-Matrix mit Umschalter auf Vollmatrix (vergeben = grau). |
+| 11 | Pairing | Auswahl per Tap in der Matrix (Namen = Defender, Zellen = Attacker/Wahl). Rest-Matrix, Flip auf Vollmatrix (vergeben = grau). Empfehlungen vorerst aus. |
 
 ## Offene Fragen
 

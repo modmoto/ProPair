@@ -25,6 +25,9 @@ public sealed class ProPairApi(HttpClient http)
     public async Task SetRatingAsync(string token, Guid opponentId, SetRatingRequest request) =>
         await EnsureAsync(await http.PutAsJsonAsync($"api/p/{token}/matrices/{opponentId}/cells", request));
 
+    public async Task<MatrixDto> FillDemoAsync(string token, Guid opponentId) =>
+        await ReadAsync<MatrixDto>(await http.PostAsync($"api/p/{token}/matrices/{opponentId}/demo-fill", null));
+
     private static string PairingUrl(string token, Guid opponentId) => $"api/p/{token}/matrices/{opponentId}/pairing";
 
     public async Task<PairingDto> GetPairingAsync(string token, Guid opponentId) =>

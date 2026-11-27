@@ -1,6 +1,14 @@
 @page "/p/{Token}/vs/{OpponentId:guid}/pairing"
 @inject ProPairApi Api
 
+@*
+    Live pairing, everything happens in the matrix:
+    1. Defenders: tap our player (left), then theirs (top) → saved, both lines highlighted, rest greyed.
+    2. Attackers: tap cells in our defender's row (their attackers) and in their defender's column (our attackers).
+    3. Choice: tap which of their attackers we take (row) and which of ours they took (column).
+    Paired players hop out and the matrix shrinks.
+*@
+
 <PageTitle>Pairing – @_p?.Own.Name vs @_p?.Opponent.Name</PageTitle>
 
 @if (_p is null)
@@ -12,94 +20,88 @@ else
     <a class="link" href="p/@Token/vs/@OpponentId">← Matrix</a>
     <div class="titlebar">
         <h1>@_p.Own.Name <span class="muted">vs</span> @_p.Opponent.Name</h1>
-        <button class="toggle @(_showAll ? "on" : "")" @onclick="() => _showAll = !_showAll"
-                title="Ursprüngliche Matrix ein-/ausblenden">
-            @(_showAll ? "Alle" : "Rest")
+        <button class="flip @(ShowAll ? "on" : "")" @onclick="ToggleView" disabled="@Done"
+                title="@(ShowAll ? "Nur verbleibende Spieler" : "Ursprüngliche Matrix")"
+                aria-label="Ursprüngliche Matrix ein-/ausblenden">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 0 1 15.5-6.2L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-15.5 6.2L3 16" />
+                <path d="M3 21v-5h5" />
+            </svg>
         </button>
     </div>
 
-    <div class="scorebar">
-        <span>Fix <strong>@Format.Score(_p.FixedScore)</strong></span>
-        @if (_p.Step != "done")
-        {
-            <span>Erwartet <strong>@Format.Score(_p.ExpectedScore)</strong> <span class="muted">(worst case)</span></span>
-        }
-    </div>
-    @if (_p.UnratedCells > 0)
-    {
-        <p class="hint">@_p.UnratedCells Felder unbewertet – zählen als 0.</p>
-    }
+    <p class="stephint">@Hint</p>
 
-    <PairingGrid Pairing="_p" ShowAll="_showAll" />
+    <div class="matrix-wrap flip-in" @key="ShowAll">
+        <table class="matrix pairing">
+            <thead>
+            <tr>
+                <th class="corner"></th>
+                @foreach (var opp in Columns)
+                {
+                    <th class="@HeaderClass(opp.Id, false)">
+                        <button disabled="@(!CanPickDefender(opp.Id, false))" @onclick="() => PickDefenderAsync(opp.Id, false)">
+                            <span class="army">@opp.ArmyShort</span>
+                            <span class="player">@opp.Name</span>
+                        </button>
+                    </th>
+                }
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var own in Rows)
+            {
+                <tr>
+                    <th class="row @HeaderClass(own.Id, true)">
+                        <button disabled="@(!CanPickDefender(own.Id, true))" @onclick="() => PickDefenderAsync(own.Id, true)">
+                            <span class="army">@own.ArmyShort</span>
+                            <span class="player">@own.Name</span>
+                        </button>
+                    </th>
+                    @foreach (var opp in Columns)
+                    {
+                        var level = LevelAt(own.Id, opp.Id);
+                        var css = CellClass(own.Id, opp.Id);
+                        <td class="@css" style="@(css is "taken" or "dim" or "cross" ? "" : $"background:{level?.Color ?? "#fff"}")"
+                            @onclick="() => TapCell(own.Id, opp.Id)">
+                            @level?.Label
+                        </td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
 
     @if (_error is not null) { <p class="error">@_error</p> }
 
-    <section class="step">
-        @switch (_p.Step)
-        {
-            case "defenders":
-                <h2>Runde @_p.Round · Defender</h2>
-                <h3>Unser Defender</h3>
-                <OptionList Pairing="_p" Selected="_ownPick" OnSelect="ids => _ownPick = ids" Disabled="!_p.CanEdit" />
-                <h3>Gegner-Defender</h3>
-                <PlayerChips Players="Players(_p.Opponent, _p.RemainingOpponent)" Selected="_oppPick" Max="1"
-                             OnChange="ids => _oppPick = ids" Disabled="!_p.CanEdit" />
-                <SubmitButton CanEdit="_p.CanEdit" Busy="_busy" Enabled="_ownPick.Count == 1 && _oppPick.Count == 1"
-                              Label="Defender eintragen" OnClick="SubmitDefendersAsync" />
-                break;
-
-            case "attackers":
-                <h2>Runde @_p.Round · Attacker</h2>
-                <p class="muted">Unser Defender: <strong>@Name(_p.OwnDefender)</strong> · Gegner-Defender: <strong>@Name(_p.OpponentDefender)</strong></p>
-                <h3>Unsere Attacker gegen @Name(_p.OpponentDefender)</h3>
-                <OptionList Pairing="_p" Selected="_ownPick" OnSelect="ids => _ownPick = ids" Disabled="!_p.CanEdit" />
-                <h3>Gegner-Attacker gegen @Name(_p.OwnDefender)</h3>
-                <PlayerChips Players="Players(_p.Opponent, _p.RemainingOpponent.Where(id => id != _p.OpponentDefender))"
-                             Selected="_oppPick" Max="2" OnChange="ids => _oppPick = ids" Disabled="!_p.CanEdit" />
-                <SubmitButton CanEdit="_p.CanEdit" Busy="_busy" Enabled="_ownPick.Count == 2 && _oppPick.Count == 2"
-                              Label="Attacker eintragen" OnClick="SubmitAttackersAsync" />
-                break;
-
-            case "choices":
-                <h2>Runde @_p.Round · Wahl</h2>
-                <h3>Wir nehmen gegen @Name(_p.OwnDefender)</h3>
-                <OptionList Pairing="_p" Selected="_ownPick" OnSelect="ids => _ownPick = ids" Disabled="!_p.CanEdit" />
-                <h3>Gegner nimmt gegen @Name(_p.OpponentDefender)</h3>
-                <PlayerChips Players="Players(_p.Own, _p.OwnAttackers)" Selected="_oppPick" Max="1"
-                             OnChange="ids => _oppPick = ids" Disabled="!_p.CanEdit" />
-                <SubmitButton CanEdit="_p.CanEdit" Busy="_busy" Enabled="_ownPick.Count == 1 && _oppPick.Count == 1"
-                              Label="Wahl eintragen" OnClick="SubmitChoicesAsync" />
-                break;
-
-            default:
-                <h2>Pairing fertig · @Format.Score(_p.FixedScore)</h2>
-                break;
-        }
-    </section>
-
-    @if (_p.Games.Count > 0)
+    @if (_p.CanEdit)
     {
-        <section class="games">
-            <h2>Matchups</h2>
-            @foreach (var g in _p.Games)
+        <div class="actionbar">
+            <button class="icon" disabled="@(_busy || _p.MoveCount == 0 && !HasLocalPick)" @onclick="UndoAsync"
+                    title="Rückgängig" aria-label="Rückgängig">↶</button>
+            @switch (_p.Step)
             {
-                var own = Player(g.OwnPlayerId);
-                var opp = Player(g.OpponentPlayerId);
-                <div class="gamerow">
-                    <span><span class="army">@own.ArmyShort</span> @own.Name</span>
-                    <span class="muted">vs</span>
-                    <span><span class="army">@opp.ArmyShort</span> @opp.Name</span>
-                    <span class="score" style="background:@ColorFor(g)">@Format.Score(g.Score)</span>
-                </div>
+                case "attackers":
+                    <button class="primary" disabled="@(_busy || _ownAttackers.Count != 2 || _oppAttackers.Count != 2)"
+                            @onclick="SubmitAttackersAsync">Attacker eintragen</button>
+                    break;
+                case "choices":
+                    <button class="primary" disabled="@(_busy || _ownAccepts is null || _oppAccepts is null)"
+                            @onclick="SubmitChoicesAsync">Wahl eintragen</button>
+                    break;
+                case "done":
+                    <span class="primary done">Fertig</span>
+                    break;
+                default:
+                    <span class="primary waiting">Defender antippen</span>
+                    break;
             }
-        </section>
-    }
-
-    @if (_p.CanEdit && _p.MoveCount > 0)
-    {
-        <div class="actions">
-            <button class="btn" disabled="@_busy" @onclick="UndoAsync">↶ Rückgängig</button>
-            <button class="btn danger" disabled="@_busy" @onclick="RestartAsync">Neu starten</button>
+            <button class="icon" disabled="@(_busy || _p.MoveCount == 0)" @onclick="RestartAsync"
+                    title="Neu starten" aria-label="Neu starten">⟲</button>
         </div>
     }
 }
@@ -108,52 +110,187 @@ else
     [Parameter] public string Token { get; set; } = "";
     [Parameter] public Guid OpponentId { get; set; }
 
+    private const int HopMillis = 750;
+
     private PairingDto? _p;
-    private IReadOnlyList<Guid> _ownPick = [];
-    private IReadOnlyList<Guid> _oppPick = [];
     private bool _showAll;
     private bool _busy;
     private string? _error;
+    private HashSet<Guid> _leaving = [];
 
-    protected override Task OnParametersSetAsync() => RunAsync(() => Api.GetPairingAsync(Token, OpponentId));
+    // local picks of the current step (not saved until the step is entered)
+    private Guid? _ownDefender;
+    private Guid? _oppDefender;
+    private List<Guid> _ownAttackers = [];
+    private List<Guid> _oppAttackers = [];
+    private Guid? _ownAccepts;   // their attacker we take
+    private Guid? _oppAccepts;   // our attacker they take
 
-    private Task SubmitDefendersAsync() =>
-        RunAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(_ownPick[0], _oppPick[0])));
+    private bool Done => _p!.Step == "done";
+    private bool ShowAll => _showAll || Done;
+    private bool HasLocalPick => _ownDefender is not null || _oppDefender is not null || _ownAttackers.Count > 0
+                                 || _oppAttackers.Count > 0 || _ownAccepts is not null || _oppAccepts is not null;
+
+    private IEnumerable<PlayerDto> Rows => _p!.Own.Players.Where(p => ShowAll || Remaining(p.Id, true) || _leaving.Contains(p.Id));
+    private IEnumerable<PlayerDto> Columns => _p!.Opponent.Players.Where(p => ShowAll || Remaining(p.Id, false) || _leaving.Contains(p.Id));
+
+    private bool Remaining(Guid id, bool own) => (own ? _p!.RemainingOwn : _p!.RemainingOpponent).Contains(id);
+    private Guid? OwnDef => _p!.OwnDefender ?? _ownDefender;
+    private Guid? OppDef => _p!.OpponentDefender ?? _oppDefender;
+
+    private string Hint => _p!.Step switch
+    {
+        "defenders" when !_p.CanEdit => $"Runde {_p.Round} · Defender",
+        "defenders" => $"Runde {_p.Round} · Defender antippen: links unserer, oben deren.",
+        "attackers" => $"Runde {_p.Round} · Zellen antippen: Zeile {Name(OwnDef)} = deren 2 Attacker, Spalte {Name(OppDef)} = unsere 2.",
+        "choices" => $"Runde {_p.Round} · Wahl: in Zeile {Name(OwnDef)} wen wir nehmen, in Spalte {Name(OppDef)} wen sie nehmen.",
+        _ => "Pairing fertig – Matchups sind umrandet.",
+    };
+
+    protected override Task OnParametersSetAsync() => LoadAsync(() => Api.GetPairingAsync(Token, OpponentId));
+
+    // ---------- interaction ----------
+
+    private bool CanPickDefender(Guid id, bool own) =>
+        _p!.CanEdit && !_busy && _p.Step == "defenders" && Remaining(id, own);
+
+    private async Task PickDefenderAsync(Guid id, bool own)
+    {
+        if (!CanPickDefender(id, own)) return;
+        if (own) _ownDefender = _ownDefender == id ? null : id;
+        else _oppDefender = _oppDefender == id ? null : id;
+
+        if (_ownDefender is { } d && _oppDefender is { } e)
+            await LoadAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(d, e)));
+    }
+
+    private void TapCell(Guid own, Guid opp)
+    {
+        if (!_p!.CanEdit || _busy) return;
+        var d = _p.OwnDefender;
+        var e = _p.OpponentDefender;
+        if (own == d && opp == e) return; // the two defenders never meet
+
+        switch (_p.Step)
+        {
+            case "attackers" when own == d && Remaining(opp, false):
+                Toggle(_oppAttackers, opp);
+                break;
+            case "attackers" when opp == e && Remaining(own, true):
+                Toggle(_ownAttackers, own);
+                break;
+            case "choices" when own == d && _p.OpponentAttackers.Contains(opp):
+                _ownAccepts = opp;
+                break;
+            case "choices" when opp == e && _p.OwnAttackers.Contains(own):
+                _oppAccepts = own;
+                break;
+        }
+    }
+
+    private static void Toggle(List<Guid> picks, Guid id)
+    {
+        if (!picks.Remove(id)) picks.Add(id);
+        if (picks.Count > 2) picks.RemoveAt(0);
+    }
+
+    private void ToggleView() => _showAll = !_showAll;
 
     private Task SubmitAttackersAsync() =>
-        RunAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownPick, _oppPick)));
+        LoadAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownAttackers, _oppAttackers)));
 
     private Task SubmitChoicesAsync() =>
-        RunAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(_ownPick[0], _oppPick[0])));
+        LoadAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(_ownAccepts!.Value, _oppAccepts!.Value)));
 
-    private Task UndoAsync() => RunAsync(() => Api.UndoPairingAsync(Token, OpponentId));
+    private async Task UndoAsync()
+    {
+        if (HasLocalPick) { ResetPicks(); return; } // first undo clears unsaved taps
+        await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId));
+    }
 
-    private Task RestartAsync() => RunAsync(() => Api.RestartPairingAsync(Token, OpponentId));
+    private Task RestartAsync() => LoadAsync(() => Api.RestartPairingAsync(Token, OpponentId));
 
-    private async Task RunAsync(Func<Task<PairingDto>> call)
+    private async Task LoadAsync(Func<Task<PairingDto>> call)
     {
         _busy = true;
         _error = null;
         try
         {
-            _p = await call();
-            _ownPick = [];
-            _oppPick = [];
+            var next = await call();
+            if (_p is not null)
+            {
+                // let paired players hop out before the matrix shrinks
+                _leaving = _p.RemainingOwn.Concat(_p.RemainingOpponent)
+                    .Except(next.RemainingOwn.Concat(next.RemainingOpponent)).ToHashSet();
+                if (_leaving.Count > 0 && !ShowAll)
+                {
+                    StateHasChanged();
+                    await Task.Delay(HopMillis);
+                }
+                _leaving = [];
+            }
+            _p = next;
+            ResetPicks();
         }
         catch (ApiException e) { _error = e.Message; }
         finally { _busy = false; }
     }
 
-    private PlayerDto Player(Guid id) =>
-        _p!.Own.Players.Concat(_p.Opponent.Players).First(p => p.Id == id);
+    private void ResetPicks()
+    {
+        _ownDefender = _oppDefender = null;
+        _ownAttackers = [];
+        _oppAttackers = [];
+        _ownAccepts = _oppAccepts = null;
+    }
 
-    private string Name(Guid? id) => id is { } v ? Player(v).Name : "";
+    // ---------- rendering ----------
 
-    private static IReadOnlyList<PlayerDto> Players(ParticipantDto team, IEnumerable<Guid> ids) =>
-        team.Players.Where(p => ids.Contains(p.Id)).ToList();
+    private string HeaderClass(Guid id, bool own)
+    {
+        if (_leaving.Contains(id)) return "leaving";
+        if (!Remaining(id, own)) return "taken";
+        if ((own ? OwnDef : OppDef) == id) return "def";
+        var attackers = own ? (_p!.OwnAttackers.Count > 0 ? _p.OwnAttackers : _ownAttackers)
+                            : (_p!.OpponentAttackers.Count > 0 ? _p.OpponentAttackers : _oppAttackers);
+        return attackers.Contains(id) ? "att" : "";
+    }
 
-    private string ColorFor(GameDto g) =>
-        _p!.Cells.FirstOrDefault(c => c.OwnPlayerId == g.OwnPlayerId && c.OpponentPlayerId == g.OpponentPlayerId) is { } c
-            ? _p.Scale.FirstOrDefault(l => l.Key == c.LevelKey)?.Color ?? "#e8ebf1"
-            : "#e8ebf1";
+    private string CellClass(Guid own, Guid opp)
+    {
+        if (_leaving.Contains(own) || _leaving.Contains(opp)) return "leaving";
+        if (IsGame(own, opp)) return "game";
+        if (!Remaining(own, true) || !Remaining(opp, false)) return "taken";
+
+        var d = OwnDef;
+        var e = OppDef;
+        switch (_p!.Step)
+        {
+            case "defenders":
+                return own == d || opp == e ? "focus" : "";
+            case "attackers":
+                if (own == d && opp == e) return "cross";
+                if (own == d) return _oppAttackers.Contains(opp) ? "pick tap" : "tap";
+                if (opp == e) return _ownAttackers.Contains(own) ? "pick tap" : "tap";
+                return "dim";
+            case "choices":
+                if (own == d && opp == e) return "cross";
+                if (own == d && _p.OpponentAttackers.Contains(opp)) return _ownAccepts == opp ? "pick tap" : "tap";
+                if (opp == e && _p.OwnAttackers.Contains(own)) return _oppAccepts == own ? "pick tap" : "tap";
+                return "dim";
+            default:
+                return "";
+        }
+    }
+
+    private bool IsGame(Guid own, Guid opp) => _p!.Games.Any(g => g.OwnPlayerId == own && g.OpponentPlayerId == opp);
+
+    private RatingLevelDto? LevelAt(Guid own, Guid opp)
+    {
+        var cell = _p!.Cells.FirstOrDefault(c => c.OwnPlayerId == own && c.OpponentPlayerId == opp);
+        return cell is null ? null : _p.Scale.FirstOrDefault(l => l.Key == cell.LevelKey);
+    }
+
+    private string Name(Guid? id) =>
+        id is { } v ? _p!.Own.Players.Concat(_p.Opponent.Players).FirstOrDefault(p => p.Id == v)?.Name ?? "" : "";
 }
