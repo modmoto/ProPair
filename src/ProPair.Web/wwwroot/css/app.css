@@ -355,16 +355,20 @@ button, input, select { font: inherit; }
 /* fixed matchups under the matrix */
 .games { margin-top: 1rem; }
 .games h2 { margin: 0 0 .3rem; }
+/* "Name  UD vs VC  Name" centred, rating on the right; an empty first column mirrors the rating */
+.gamerow::before { content: ""; }
 .gamerow {
-    display: grid; grid-template-columns: 1fr auto 1fr 2.6rem; align-items: center; gap: .4rem;
+    display: grid; grid-template-columns: 2.2rem 1fr auto auto auto 1fr 2.2rem; align-items: center; gap: .3rem;
     padding: .45rem 0; border-bottom: 1px solid var(--line); font-size: .85rem;
 }
-.gamerow .side { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gamerow .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gamerow .name.own { text-align: right; }
 .gamerow .vs { color: var(--muted); font-size: .75rem; }
 .gamerow .rating { display: grid; place-items: center; height: 1.8rem; border-radius: 6px; font-weight: 800; }
 
 @media (min-width: 640px) {
     .games { max-width: 720px; }
+    .gamerow { grid-template-columns: 2.6rem 1fr auto auto auto 1fr 2.6rem; gap: .4rem; }
 }
 
 /* ---- motion: one subtle movement everywhere ----

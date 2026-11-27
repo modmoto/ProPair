@@ -93,9 +93,11 @@ else
                 var opp = Player(g.OpponentPlayerId);
                 var level = LevelAt(g.OwnPlayerId, g.OpponentPlayerId);
                 <div class="gamerow @(_fresh.Contains(g.OwnPlayerId) ? "settle" : "")">
-                    <span class="side"><span class="army">@own.ArmyShort</span> @own.Name</span>
+                    <span class="name own">@own.Name</span>
+                    <span class="army">@own.ArmyShort</span>
                     <span class="vs">vs</span>
-                    <span class="side"><span class="army">@opp.ArmyShort</span> @opp.Name</span>
+                    <span class="army">@opp.ArmyShort</span>
+                    <span class="name opp">@opp.Name</span>
                     <span class="rating" style="background:@(level?.Color ?? "#e8ebf1")">@(level?.Label ?? "–")</span>
                 </div>
             }
