@@ -63,6 +63,7 @@ public sealed class PlayerDoc
     public string Name { get; set; } = "";
     public string ArmyId { get; set; } = "";
     public string ListText { get; set; } = "";
+    public DateTimeOffset? ListChangedAt { get; set; }
 }
 
 public sealed class ParticipantDoc
@@ -79,8 +80,12 @@ public sealed class TournamentDoc : IVersionedDocument
     public string ExternalId { get; set; } = "";
     public string Name { get; set; } = "";
     public string GameSystemId { get; set; } = "";
-    public int TeamSize { get; set; }
+    public int? TeamSize { get; set; }
     public DateOnly? StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
+    /// <summary>Null in documents written before the New Recruit sync: those had visible lists.</summary>
+    public bool? ListsVisible { get; set; }
+    public DateTimeOffset? LastSyncedAt { get; set; }
     public List<ParticipantDoc> Participants { get; set; } = [];
 }
 

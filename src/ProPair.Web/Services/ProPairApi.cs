@@ -9,6 +9,15 @@ public sealed class ProPairApi(HttpClient http)
     public async Task<IReadOnlyList<SourceTournamentDto>> GetSourceTournamentsAsync() =>
         await http.GetFromJsonAsync<List<SourceTournamentDto>>("api/source-tournaments") ?? [];
 
+    public async Task<IReadOnlyList<TournamentSummaryDto>> GetTournamentsAsync() =>
+        await ReadAsync<List<TournamentSummaryDto>>(await http.GetAsync("api/tournaments"));
+
+    public async Task<TournamentDto> GetTournamentAsync(Guid id) =>
+        await ReadAsync<TournamentDto>(await http.GetAsync($"api/tournaments/{id}"));
+
+    public async Task RequestSyncAsync(Guid id) =>
+        await EnsureAsync(await http.PostAsync($"api/tournaments/{id}/sync", null));
+
     public async Task<TournamentDto> ImportAsync(string externalId) =>
         await ReadAsync<TournamentDto>(await http.PostAsJsonAsync("api/tournaments/import", new ImportTournamentRequest(externalId)));
 

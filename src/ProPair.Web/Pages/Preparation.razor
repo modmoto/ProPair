@@ -16,6 +16,8 @@ else
 {
     <h1>@_prep.TournamentName</h1>
     <p class="muted">@_prep.Own.Name · @_prep.TeamSize v @_prep.TeamSize @(_prep.CanEdit ? "" : "· nur lesen")</p>
+    <NewRecruitStatus TournamentId="_prep.TournamentId" ListsVisible="_prep.ListsVisible" IsDemo="_prep.IsDemo"
+                LastSyncedAt="_prep.LastSyncedAt" OnSynced="LoadAsync" />
 
     <section class="share">
         <h2>Teilen</h2>
@@ -30,7 +32,7 @@ else
     <div class="cards">
         @foreach (var o in _prep.Opponents)
         {
-            var total = _prep.TeamSize * _prep.TeamSize;
+            var total = _prep.Own.Players.Count * o.Participant.Players.Count;
             <a class="card" href="p/@Token/vs/@o.Participant.Id">
                 <strong>@o.Participant.Name</strong>
                 <span class="armies">
@@ -39,8 +41,15 @@ else
                         <span class="army" title="@pl.ArmyName">@pl.ArmyShort</span>
                     }
                 </span>
-                <span class="progress"><span style="width:@(100 * o.RatedCells / total)%"></span></span>
-                <span class="muted">@o.RatedCells / @total bewertet</span>
+                @if (total == 0)
+                {
+                    <span class="muted">Noch keine Listen bekannt</span>
+                }
+                else
+                {
+                    <span class="progress"><span style="width:@(100 * o.RatedCells / total)%"></span></span>
+                    <span class="muted">@o.RatedCells / @total bewertet</span>
+                }
             </a>
         }
     </div>
@@ -52,7 +61,9 @@ else
     private PreparationDto? _prep;
     private string? _error;
 
-    protected override async Task OnParametersSetAsync()
+    protected override Task OnParametersSetAsync() => LoadAsync();
+
+    private async Task LoadAsync()
     {
         try { _prep = await Api.GetPreparationAsync(Token); }
         catch (ApiException e) { _error = e.Message; }

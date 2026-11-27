@@ -11,7 +11,14 @@ namespace ProPair.Adapters.Rest;
 internal static class DtoMapping
 {
     public static TournamentDto ToDto(this Tournament t) =>
-        new(t.Id.Value, t.ExternalId, t.Name, t.TeamSize.Value, t.StartDate, t.Participants.Select(ToDto).ToList());
+        new(t.Id.Value, t.ExternalId, t.Name, t.TeamSize?.Value, t.StartDate, t.Participants.Select(ToDto).ToList(),
+            t.EndDate, t.ListsVisible, t.LastSyncedAt, IsDemo(t));
+
+    public static TournamentSummaryDto ToSummaryDto(this Tournament t) =>
+        new(t.Id.Value, t.ExternalId, t.Name, t.TeamSize?.Value, t.StartDate, t.EndDate, t.Participants.Count,
+            t.ListsVisible, t.LastSyncedAt, IsDemo(t));
+
+    private static bool IsDemo(Tournament t) => t.ExternalId.StartsWith(FillDemoRatings.DemoPrefix);
 
     public static ParticipantDto ToDto(this Participant p) =>
         new(p.Id.Value, p.Name, p.Roster.Select(ToDto).ToList());
@@ -19,7 +26,7 @@ internal static class DtoMapping
     public static PlayerDto ToDto(this Player p)
     {
         var army = GameSystem.NinthAge.FindArmy(p.ArmyId);
-        return new(p.Id.Value, p.Name, p.ArmyId, army?.Name ?? p.ArmyId, army?.Short ?? p.ArmyId, p.ListText);
+        return new(p.Id.Value, p.Name, p.ArmyId, army?.Name ?? p.ArmyId, army?.Short ?? p.ArmyId, p.ListText, p.ListChangedAt);
     }
 
     public static IReadOnlyList<RatingLevelDto> ToDto(this RatingScale s) =>
@@ -28,10 +35,11 @@ internal static class DtoMapping
     public static PreparationDto ToDto(this PreparationView v)
     {
         var canEdit = v.Access == AccessLevel.Edit;
-        return new(v.Tournament.Name, v.Tournament.TeamSize.Value, canEdit,
+        var t = v.Tournament;
+        return new(t.Name, t.TeamSize?.Value ?? v.Own.Roster.Count, canEdit,
             canEdit ? v.Preparation.EditToken.Value : null, v.Preparation.ReadToken.Value,
             v.Own.ToDto(), v.Opponents.Select(o => new OpponentDto(o.Participant.ToDto(), o.RatedCells)).ToList(),
-            v.Preparation.RatingScale.ToDto());
+            v.Preparation.RatingScale.ToDto(), t.Id.Value, t.ListsVisible, t.LastSyncedAt, IsDemo(t));
     }
 
     public static MatrixDto ToDto(this MatrixView v) =>

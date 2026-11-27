@@ -13,7 +13,7 @@ public class NoteFlowTests
     [Fact]
     public async Task Notes_and_history_round_trip_and_read_link_is_blocked()
     {
-        var t = await new ImportTournament(new FakeTournamentSource(), _store).ExecuteAsync("demo-trio-2026");
+        var t = (await new ImportTournament(new FakeTournamentSource(), _store, new FixedClock()).ExecuteAsync("demo-trio-2026"))!;
         var own = t.Participants[0];
         var opp = t.Participants[1];
         var prep = await new StartPreparation(_store, _store, _store).ExecuteAsync(t.Id, own.Id);

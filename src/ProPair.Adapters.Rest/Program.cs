@@ -5,10 +5,12 @@ using ProPair.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var mongo = builder.Configuration.GetSection("Mongo").Get<MongoOptions>() ?? new MongoOptions();
 builder.Services
     .AddApplication()
-    .AddNewRecruit()
-    .AddMongo(builder.Configuration.GetSection("Mongo").Get<MongoOptions>() ?? new MongoOptions());
+    .AddDemoTournaments() // real New Recruit data comes from the sync process (ProPair.Adapters.Sync)
+    .AddMongo(mongo)
+    .AddMongoSyncQueue(mongo);
 
 var app = builder.Build();
 

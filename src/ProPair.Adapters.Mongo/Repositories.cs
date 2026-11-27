@@ -54,6 +54,9 @@ internal sealed class TournamentRepository(MongoContext db) : ITournamentReposit
         await db.Tournaments.Find(d => d.ExternalId == externalId).FirstOrDefaultAsync(ct) is { } d
             ? Mapping.ToDomain(d) : null;
 
+    public async Task<IReadOnlyList<Tournament>> ListAsync(CancellationToken ct = default) =>
+        (await db.Tournaments.Find(_ => true).SortBy(d => d.StartDate).ToListAsync(ct)).Select(Mapping.ToDomain).ToList();
+
     public async Task SaveAsync(Tournament tournament, CancellationToken ct = default) =>
         tournament.SetPersistedVersion(await VersionedSave.SaveAsync(db.Tournaments, Mapping.ToDoc(tournament), ct));
 }

@@ -15,24 +15,25 @@ public class PreparationFlowTests
     [Fact]
     public async Task Fake_source_offers_all_demo_tournaments_and_they_import()
     {
-        var sources = await new SearchSourceTournaments(_source).ExecuteAsync();
+        var sources = await new SearchSourceTournaments(_source, new FixedClock()).ExecuteAsync();
         Assert.Equal(4, sources.Count);
 
         foreach (var s in sources)
         {
-            var t = await new ImportTournament(_source, _store).ExecuteAsync(s.ExternalId);
-            Assert.Equal(s.TeamCount, t.Participants.Count);
+            var t = (await new ImportTournament(_source, _store, new FixedClock()).ExecuteAsync(s.ExternalId))!;
+            Assert.Equal(s.Name, t.Name);
+            Assert.All(t.Participants.SelectMany(p => p.Roster), p => Assert.NotEqual("unknown", p.ArmyId));
         }
     }
 
     [Fact]
     public async Task Import_twice_keeps_ids()
     {
-        var import = new ImportTournament(_source, _store);
-        var first = await import.ExecuteAsync("demo-trio-2026");
+        var import = new ImportTournament(_source, _store, new FixedClock());
+        var first = (await import.ExecuteAsync("demo-trio-2026"))!;
         var playerId = first.Participants[0].Roster[0].Id;
 
-        var second = await import.ExecuteAsync("demo-trio-2026");
+        var second = (await import.ExecuteAsync("demo-trio-2026"))!;
 
         Assert.Equal(first.Id, second.Id);
         Assert.Equal(playerId, second.Participants[0].Roster[0].Id);
@@ -41,7 +42,7 @@ public class PreparationFlowTests
     [Fact]
     public async Task Captain_rates_a_cell_and_read_link_cannot()
     {
-        var tournament = await new ImportTournament(_source, _store).ExecuteAsync("demo-etc-2026");
+        var tournament = (await new ImportTournament(_source, _store, new FixedClock()).ExecuteAsync("demo-etc-2026"))!;
         var own = tournament.Participants[0];
         var opp = tournament.Participants[1];
         var prep = await new StartPreparation(_store, _store, _store).ExecuteAsync(tournament.Id, own.Id);
@@ -65,7 +66,7 @@ public class PreparationFlowTests
     [Fact]
     public async Task Starting_preparation_twice_returns_same_links()
     {
-        var tournament = await new ImportTournament(_source, _store).ExecuteAsync("demo-dtm-2026");
+        var tournament = (await new ImportTournament(_source, _store, new FixedClock()).ExecuteAsync("demo-dtm-2026"))!;
         var start = new StartPreparation(_store, _store, _store);
 
         var a = await start.ExecuteAsync(tournament.Id, tournament.Participants[0].Id);

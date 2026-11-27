@@ -556,3 +556,14 @@ button, input, select { font: inherit; }
 .duo-grid .armylist { font-size: .72rem; }
 .duo-grid .listline { padding: .2rem .35rem; margin: 1px -.35rem; }
 @media (min-width: 640px) { .listview, .duo { max-width: 720px; } .duo-grid .armylist { font-size: .8rem; } }
+
+/* tournament list / New Recruit sync */
+.search { width: 100%; min-height: var(--tap); margin: .4rem 0 .7rem; padding: 0 .8rem; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.past { margin-top: 1rem; }
+.past summary { min-height: var(--tap); display: flex; align-items: center; cursor: pointer; color: var(--muted); }
+.badge { display: inline-block; font-size: .72rem; font-weight: 700; border-radius: 4px; padding: .1rem .4rem; }
+.badge.warn { background: #fdecd3; color: #8a4b00; }
+.sync-status { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .7rem; font-size: .85rem; margin: .2rem 0 .4rem; }
+.sync-status .link { min-height: 2.2rem; }
+.list-changed { display: inline-grid; place-content: center; width: 1rem; height: 1rem; border-radius: 50%; background: var(--accent); color: #fff; font-size: .65rem; font-weight: 800; font-style: normal; flex: none; }
+.list-changed-hint { display: flex; align-items: center; gap: .4rem; font-size: .85rem; }

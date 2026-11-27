@@ -1,3 +1,4 @@
+using ProPair.Application;
 using ProPair.Application.UseCases;
 using ProPair.Contracts;
 using ProPair.Domain.Common;
@@ -14,12 +15,25 @@ internal static class Endpoints
     {
         var api = app.MapGroup("/api");
 
+        // demo tournaments (fake source); real ones arrive through the sync process
         api.MapGet("/source-tournaments", async (SearchSourceTournaments uc, CancellationToken ct) =>
-            (await uc.ExecuteAsync(ct))
-            .Select(t => new SourceTournamentDto(t.ExternalId, t.Name, t.StartDate, t.TeamSize, t.TeamCount)));
+            (await uc.ExecuteAsync(ct)).Select(t => new SourceTournamentDto(t.ExternalId, t.Name, t.StartDate)));
 
         api.MapPost("/tournaments/import", async (ImportTournamentRequest req, ImportTournament uc, CancellationToken ct) =>
-            (await uc.ExecuteAsync(req.ExternalId, ct)).ToDto());
+            (await uc.ExecuteAsync(req.ExternalId, ct: ct) ?? throw new NotFoundException("Team tournament")).ToDto());
+
+        api.MapGet("/tournaments", async (ListTournaments uc, CancellationToken ct) =>
+            (await uc.ExecuteAsync(ct)).Select(t => t.ToSummaryDto()));
+
+        api.MapGet("/tournaments/{id:guid}", async (Guid id, GetTournament uc, CancellationToken ct) =>
+            (await uc.ExecuteAsync(new TournamentId(id), ct)).ToDto());
+
+        // "update from New Recruit" – public for now, moves into an admin UI later
+        api.MapPost("/tournaments/{id:guid}/sync", async (Guid id, RequestTournamentSync uc, CancellationToken ct) =>
+        {
+            await uc.ExecuteAsync(new TournamentId(id), ct);
+            return Results.Accepted();
+        });
 
         api.MapPost("/tournaments/{id:guid}/preparations",
             async (Guid id, StartPreparationRequest req, StartPreparation uc, CancellationToken ct) =>

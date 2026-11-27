@@ -16,14 +16,42 @@ dotnet run --project src/ProPair.Adapters.Rest --launch-profile http
 
 App: http://localhost:5054
 
+Sync-Prozess (New Recruit → Mongo, Hangfire):
+
+```bash
+dotnet user-secrets set "NewRecruit:Login" "<login>" --id propair
+```
+
+```bash
+dotnet user-secrets set "NewRecruit:Password" "<passwort>" --id propair
+```
+
+```bash
+dotnet run --project src/ProPair.Adapters.Sync --launch-profile http
+```
+
+Sync: http://localhost:5090 (Dashboard `/hangfire`, nur lokal). Auf Servern: Env-Vars `NewRecruit__Login` / `NewRecruit__Password`.
+
 ```bash
 dotnet test
 ```
 
+## New-Recruit-Sync
+
+- Eigener Prozess `ProPair.Adapters.Sync` mit Hangfire (Jobs in Mongo, Prefix `hangfire`). Die API reiht nur ein.
+- Täglich 04:00 UTC: Teamturniere „The 9th Age 3rd Edition“ (System 736602462) von heute bis +12 Monate.
+- Übersprungen: Einzelturniere, 2er-Teams, geschlossene/vorbei, Ligen (> 4 Tage).
+- Listen verborgen: Badge „Keine Listen sichtbar“, letzter bekannter Stand bleibt.
+- Liste geändert: Spieler bekommt neue Id → Bewertungen/Notizen für ihn starten neu, Info-Icon in der Matrix.
+- Armee: aus dem Listentext (Namen + Übersetzungen FR/DE/ES/IT/PL, sonst typische Einheiten). Leere Listen → „?“.
+- „Von New Recruit aktualisieren“ im Turnier (vorerst öffentlich, später Admin-UI).
+- Manuell: `POST /sync/upcoming`, `POST /sync/tournaments/{nrId}`, `POST /sync/backfill?from=…&to=…` (auch vergangene, nur zum Testen).
+- NR protokolliert jeden Aufruf: Requests nacheinander, 400 ms Pause, ein Worker.
+
 ## Stand (POC)
 
-- New Recruit ist gefakt (`FakeTournamentSource`): 4 Demo-Turniere (8er, 2× 5er, 3er).
-- Ablauf: Turnier importieren → eigenes Team wählen → Gegner → Matrix bewerten.
+- Turniere aus New Recruit (Sync) plus 4 Demo-Turniere (`FakeTournamentSource`).
+- Ablauf: Turnier wählen → eigenes Team wählen → Gegner → Matrix bewerten.
 - Edit-/Read-Link ohne Login. Verlauf wird gespeichert, aber noch nicht angezeigt.
 
 ## Pairing-Empfehlungen: der Algorithmus

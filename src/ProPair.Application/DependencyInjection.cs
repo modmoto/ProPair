@@ -15,6 +15,11 @@ public static class DependencyInjection
         services.AddSingleton<IPairingAdvisorProvider, DefaultPairingAdvisorProvider>();
         services.AddScoped<SearchSourceTournaments>();
         services.AddScoped<ImportTournament>();
+        services.AddScoped<SyncTournaments>();
+        services.AddScoped<TournamentSyncJob>();
+        services.AddScoped<RequestTournamentSync>();
+        services.AddScoped<ListTournaments>();
+        services.AddScoped<GetTournament>();
         services.AddScoped<StartPreparation>();
         services.AddScoped<GetPreparation>();
         services.AddScoped<GetMatrix>();

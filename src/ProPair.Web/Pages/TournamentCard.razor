@@ -1,0 +1,23 @@
+<button class="card" disabled="@Disabled" @onclick="OnClick">
+    <strong>@Tournament.Name</strong>
+    <span class="muted">
+        @Dates · @Tournament.TeamCount Teams@(Tournament.TeamSize is { } n ? $" · {n}v{n}" : "")
+    </span>
+    @if (!Tournament.ListsVisible)
+    {
+        <span><span class="badge warn">Keine Listen sichtbar</span></span>
+    }
+</button>
+
+@code {
+    [Parameter, EditorRequired] public TournamentSummaryDto Tournament { get; set; } = null!;
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private string Dates => (Tournament.StartDate, Tournament.EndDate) switch
+    {
+        ({ } s, { } e) when e > s => $"{s:dd.MM.}–{e:dd.MM.yyyy}",
+        ({ } s, _) => $"{s:dd.MM.yyyy}",
+        _ => "ohne Datum",
+    };
+}

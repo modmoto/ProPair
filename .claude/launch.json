@@ -4,8 +4,26 @@
     {
       "name": "propair",
       "runtimeExecutable": "/usr/local/share/dotnet/dotnet",
-      "runtimeArgs": ["run", "--project", "src/ProPair.Adapters.Rest", "--launch-profile", "http"],
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "src/ProPair.Adapters.Rest",
+        "--launch-profile",
+        "http"
+      ],
       "port": 5054
+    },
+    {
+      "name": "propair-sync",
+      "runtimeExecutable": "/usr/local/share/dotnet/dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "src/ProPair.Adapters.Sync",
+        "--launch-profile",
+        "http"
+      ],
+      "port": 5090
     }
   ]
 }

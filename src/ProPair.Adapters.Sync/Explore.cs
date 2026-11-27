@@ -13,6 +13,26 @@ internal static class Explore
 {
     private const string BaseUrl = "https://www.newrecruit.eu/api/";
 
+    /// <summary>One raw call, e.g. explore-call reports '{"id":"…"}' – for checking what an endpoint returns.</summary>
+    public static async Task CallOnceAsync(IConfiguration config, string outDir, string path, string body)
+    {
+        Directory.CreateDirectory(outDir);
+        using var http = Client(config);
+        var response = await http.PostAsync(path, new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+        var text = await response.Content.ReadAsStringAsync();
+        var file = Path.Combine(outDir, $"{path}-raw.json");
+        await File.WriteAllTextAsync(file, text);
+        Console.WriteLine($"POST {path} → {(int)response.StatusCode}, {text.Length} bytes → {file}");
+    }
+
+    private static HttpClient Client(IConfiguration config)
+    {
+        var http = new HttpClient { BaseAddress = new Uri(BaseUrl), Timeout = TimeSpan.FromSeconds(60) };
+        http.DefaultRequestHeaders.Add("NR-Login", config["NewRecruit:Login"] ?? throw new InvalidOperationException("NewRecruit:Login missing"));
+        http.DefaultRequestHeaders.Add("NR-Password", config["NewRecruit:Password"] ?? throw new InvalidOperationException("NewRecruit:Password missing"));
+        return http;
+    }
+
     public static async Task RunAsync(IConfiguration config, string outDir)
     {
         Directory.CreateDirectory(outDir);

@@ -2,7 +2,8 @@ using ProPair.Domain.Common;
 
 namespace ProPair.Domain.Tournaments;
 
-public sealed record Player(PlayerId Id, string Name, string ArmyId, string ListText);
+/// <param name="ListChangedAt">Set when a sync brought a different list for this player: ratings and notes were reset.</param>
+public sealed record Player(PlayerId Id, string Name, string ArmyId, string ListText, DateTimeOffset? ListChangedAt = null);
 
 /// <summary>A team taking part in a tournament, with its roster.</summary>
 public sealed class Participant(ParticipantId id, string name, IReadOnlyList<Player> roster)
@@ -14,7 +15,9 @@ public sealed class Participant(ParticipantId id, string name, IReadOnlyList<Pla
     internal void ReplaceRoster(IReadOnlyList<Player> roster) => Roster = roster;
 }
 
-/// <summary>A team tournament, usually imported from an external source (New Recruit).</summary>
+/// <summary>
+/// A team tournament, usually synced from New Recruit. Rosters may be empty while the organiser keeps the lists hidden.
+/// </summary>
 public sealed class Tournament : AggregateRoot<TournamentId>
 {
     private readonly List<Participant> _participants;
@@ -22,52 +25,103 @@ public sealed class Tournament : AggregateRoot<TournamentId>
     public string ExternalId { get; }
     public string Name { get; private set; }
     public string GameSystemId { get; }
-    public TeamSize TeamSize { get; }
+
+    /// <summary>Nominal team size (largest roster seen); null while no roster is known.</summary>
+    public TeamSize? TeamSize { get; private set; }
+
     public DateOnly? StartDate { get; private set; }
+    public DateOnly? EndDate { get; private set; }
+
+    /// <summary>False while the organiser hides the lists; the last seen rosters are kept.</summary>
+    public bool ListsVisible { get; private set; }
+
+    public DateTimeOffset? LastSyncedAt { get; private set; }
     public IReadOnlyList<Participant> Participants => _participants;
 
-    public Tournament(TournamentId id, string externalId, string name, string gameSystemId, TeamSize teamSize,
-        DateOnly? startDate, IEnumerable<Participant> participants) : base(id)
+    public Tournament(TournamentId id, string externalId, string name, string gameSystemId, TeamSize? teamSize,
+        DateOnly? startDate, IEnumerable<Participant> participants, DateOnly? endDate = null, bool listsVisible = true,
+        DateTimeOffset? lastSyncedAt = null) : base(id)
     {
         ExternalId = externalId;
         Name = name;
         GameSystemId = gameSystemId;
         TeamSize = teamSize;
         StartDate = startDate;
+        EndDate = endDate;
+        ListsVisible = listsVisible;
+        LastSyncedAt = lastSyncedAt;
         _participants = participants.ToList();
         foreach (var p in _participants) EnsureRosterSize(p.Roster);
+        TeamSize ??= NominalSize();
     }
 
     public Participant GetParticipant(ParticipantId id) =>
         _participants.FirstOrDefault(p => p.Id == id) ?? throw new DomainException("Unknown participant.");
 
-    /// <summary>Re-import: updates name/date and rosters. Participants are matched by name so ids stay stable.</summary>
-    public void Update(string name, DateOnly? startDate, IEnumerable<(string Name, IReadOnlyList<Player> Roster)> participants)
+    /// <summary>
+    /// Sync from the source. Teams are matched by name, players by name within their team.
+    /// <list type="bullet">
+    /// <item>Lists hidden: rosters stay as last seen (lists can be closed and reopened), new teams are added empty.</item>
+    /// <item>Same list as before: the player keeps its id – ratings and notes stay.</item>
+    /// <item>Different list: the player gets a new id, so ratings and notes of the old list no longer apply,
+    ///   and <see cref="Player.ListChangedAt"/> tells the team to rate again.</item>
+    /// </list>
+    /// </summary>
+    public void Update(string name, DateOnly? startDate, DateOnly? endDate, bool listsVisible,
+        IEnumerable<(string Name, IReadOnlyList<Player> Roster)> participants, DateTimeOffset now)
     {
         Name = name;
         StartDate = startDate;
+        EndDate = endDate;
+        ListsVisible = listsVisible;
+        LastSyncedAt = now;
+
         foreach (var (participantName, roster) in participants)
         {
             EnsureRosterSize(roster);
             var existing = _participants.FirstOrDefault(p => p.Name == participantName);
             if (existing is null)
             {
-                _participants.Add(new Participant(ParticipantId.New(), participantName, roster));
+                _participants.Add(new Participant(ParticipantId.New(), participantName, listsVisible ? roster : []));
                 continue;
             }
+            if (!listsVisible) continue; // keep the last seen lists
 
-            // keep player ids stable when name + army match, so matrix cells survive a re-import
-            var merged = roster.Select(p =>
-                existing.Roster.FirstOrDefault(o => o.Name == p.Name && o.ArmyId == p.ArmyId) is { } old
-                    ? p with { Id = old.Id }
-                    : p).ToList();
+            var merged = roster.Select(p => existing.Roster.FirstOrDefault(o => o.Name == p.Name) switch
+            {
+                null => p,
+                var old when ArmyList.Same(old.ListText, p.ListText) => p with { Id = old.Id, ListChangedAt = old.ListChangedAt },
+                _ => p with { Id = PlayerId.New(), ListChangedAt = now },
+            }).ToList();
             existing.ReplaceRoster(merged);
         }
+        TeamSize = NominalSize() ?? TeamSize;
     }
 
-    private void EnsureRosterSize(IReadOnlyList<Player> roster)
+    /// <summary>Old signature for re-imports without visibility info (demo source).</summary>
+    public void Update(string name, DateOnly? startDate, IEnumerable<(string Name, IReadOnlyList<Player> Roster)> participants) =>
+        Update(name, startDate, EndDate, true, participants, DateTimeOffset.UtcNow);
+
+    private TeamSize? NominalSize()
     {
-        if (roster.Count != TeamSize.Value)
-            throw new DomainException($"Roster must have {TeamSize.Value} players, has {roster.Count}.");
+        var largest = _participants.Select(p => p.Roster.Count).DefaultIfEmpty(0).Max();
+        return largest >= Tournaments.TeamSize.Min ? new TeamSize(largest) : null;
     }
+
+    private static void EnsureRosterSize(IReadOnlyList<Player> roster)
+    {
+        if (roster.Count > Tournaments.TeamSize.Max)
+            throw new DomainException($"A roster can have at most {Tournaments.TeamSize.Max} players, has {roster.Count}.");
+    }
+}
+
+/// <summary>Army list text helpers.</summary>
+public static class ArmyList
+{
+    /// <summary>Same list, ignoring whitespace and the "Created with newrecruit.eu vX" footer.</summary>
+    public static bool Same(string a, string b) => Normalize(a) == Normalize(b);
+
+    public static string Normalize(string text) => string.Join('\n', text.Replace("\r", "").Split('\n')
+        .Select(l => l.Trim())
+        .Where(l => l.Length > 0 && !l.StartsWith("Created with", StringComparison.OrdinalIgnoreCase)));
 }

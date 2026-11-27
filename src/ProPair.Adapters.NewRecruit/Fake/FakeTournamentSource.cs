@@ -3,14 +3,14 @@ using ProPair.Application.Ports;
 namespace ProPair.Adapters.NewRecruit.Fake;
 
 /// <summary>
-/// Stand-in for the New Recruit API until access is granted. Teams and players are fictional;
+/// Demo tournaments for trying the app without New Recruit. Teams and players are fictional;
 /// army spread follows ETC 2026.
 /// </summary>
 public sealed class FakeTournamentSource : ITournamentSource
 {
-    public Task<IReadOnlyList<SourceTournamentSummary>> SearchAsync(CancellationToken ct = default) =>
+    public Task<IReadOnlyList<SourceTournamentSummary>> SearchAsync(DateOnly from, DateOnly to, CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<SourceTournamentSummary>>(Tournaments
-            .Select(t => new SourceTournamentSummary(t.ExternalId, t.Name, t.StartDate, t.TeamSize, t.Teams.Count))
+            .Select(t => new SourceTournamentSummary(t.ExternalId, t.Name, t.StartDate, t.EndDate, SourceStatus.Open))
             .ToList());
 
     public Task<SourceTournament?> GetAsync(string externalId, CancellationToken ct = default) =>
@@ -86,11 +86,11 @@ public sealed class FakeTournamentSource : ITournamentSource
                 var army = ArmyByShort[shortName];
                 var n = seed + ti * 7 + pi * 3;
                 var player = $"{FirstNames[n % FirstNames.Length]} {LastInitials[(n * 5 + ti) % LastInitials.Length]}.";
-                return new SourcePlayer(player, army, FakeLists.For(army, ti + pi));
+                return new SourcePlayer(player, [FakeLists.For(army, ti + pi)]);
             }).ToList();
             return new SourceTeam(t.Team, players);
         }).ToList();
 
-        return new SourceTournament(id, name, start, size, built);
+        return new SourceTournament(id, name, start, start.AddDays(2), IsTeamTournament: true, ListsVisible: true, built);
     }
 }

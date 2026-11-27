@@ -48,8 +48,14 @@ public sealed class GetPreparation(
         var (preparation, access) = await Access.ResolveAsync(preparations, token, ct);
         var tournament = await tournaments.GetAsync(preparation.TournamentId, ct)
                          ?? throw new NotFoundException("Tournament");
-        var rated = (await matrices.ListAsync(preparation.Id, ct))
-            .ToDictionary(m => m.OpponentParticipantId, m => m.Cells.Count);
+        // count only cells of current players: a changed list gives the player a new id
+        var ownIds = tournament.GetParticipant(preparation.OwnParticipantId).Roster.Select(p => p.Id).ToHashSet();
+        var rated = (await matrices.ListAsync(preparation.Id, ct)).ToDictionary(m => m.OpponentParticipantId, m =>
+        {
+            var oppIds = tournament.Participants.FirstOrDefault(p => p.Id == m.OpponentParticipantId)?.Roster
+                .Select(p => p.Id).ToHashSet() ?? [];
+            return m.Cells.Keys.Count(c => ownIds.Contains(c.OwnPlayerId) && oppIds.Contains(c.OpponentPlayerId));
+        });
 
         var opponents = tournament.Participants
             .Where(p => p.Id != preparation.OwnParticipantId)

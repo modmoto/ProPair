@@ -11,6 +11,7 @@ public interface ITournamentRepository
 {
     Task<Tournament?> GetAsync(TournamentId id, CancellationToken ct = default);
     Task<Tournament?> FindByExternalIdAsync(string externalId, CancellationToken ct = default);
+    Task<IReadOnlyList<Tournament>> ListAsync(CancellationToken ct = default);
     Task SaveAsync(Tournament tournament, CancellationToken ct = default);
 }
 

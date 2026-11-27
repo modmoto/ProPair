@@ -25,6 +25,10 @@ else
     {
         <button class="btn" @onclick="FillDemoAsync">Demo-Werte füllen</button>
     }
+    @if (_matrix.Own.Players.Concat(_matrix.Opponent.Players).Any(ListReset))
+    {
+        <p class="list-changed-hint muted"><i class="list-changed">i</i> Neue Liste aus New Recruit – Bewertungen und Notizen für diesen Spieler starten neu.</p>
+    }
 
     @if (_matrix.CanEdit && string.IsNullOrWhiteSpace(_author))
     {
@@ -47,6 +51,10 @@ else
                                 title="Liste & Notiz" @onclick="() => Toggle(opp)">
                             <span class="army">@opp.ArmyShort</span>
                             <span class="player">@opp.Name</span>
+                            @if (ListReset(opp))
+                            {
+                                <i class="list-changed" title="Liste am @opp.ListChangedAt?.ToLocalTime().ToString("dd.MM.") geändert">i</i>
+                            }
                         </button>
                     </th>
                 }
@@ -61,6 +69,10 @@ else
                                 title="Liste & Notiz" @onclick="() => Toggle(own)">
                             <span class="army">@own.ArmyShort</span>
                             <span class="player">@own.Name</span>
+                            @if (ListReset(own))
+                            {
+                                <i class="list-changed" title="Liste am @own.ListChangedAt?.ToLocalTime().ToString("dd.MM.") geändert">i</i>
+                            }
                         </button>
                     </th>
                     @foreach (var opp in _matrix.Opponent.Players)
@@ -252,6 +264,9 @@ else
     private void Toggle(PlayerDto player) => _shown = _shown == player ? null : player;
 
     private PlayerDto Player(Guid id) => _matrix!.Own.Players.Concat(_matrix.Opponent.Players).First(p => p.Id == id);
+
+    /// <summary>The list changed in New Recruit and nothing is rated for this player yet.</summary>
+    private bool ListReset(PlayerDto p) => p.ListChangedAt is not null && !_cells.Keys.Any(k => k.Item1 == p.Id || k.Item2 == p.Id);
 
     private RatingLevelDto? LevelAt(Guid own, Guid opp) =>
         _cells.TryGetValue((own, opp), out var key) ? _matrix!.Scale.FirstOrDefault(l => l.Key == key) : null;

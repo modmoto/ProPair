@@ -7,7 +7,10 @@ public sealed class GameSystem(string id, string name, IReadOnlyList<Army> armie
     public string Name { get; } = name;
     public IReadOnlyList<Army> Armies { get; } = armies;
 
-    public Army? FindArmy(string idOrName) =>
+    /// <summary>Army that could not be recognised in a list text.</summary>
+    public static readonly Army UnknownArmy = new(ArmyDetector.Unknown, "Unbekannte Armee", "?");
+
+    public Army? FindArmy(string idOrName) => idOrName == ArmyDetector.Unknown ? UnknownArmy :
         Armies.FirstOrDefault(a =>
             string.Equals(a.Id, idOrName, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(a.Name, idOrName, StringComparison.OrdinalIgnoreCase) ||

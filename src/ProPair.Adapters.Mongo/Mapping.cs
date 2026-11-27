@@ -31,19 +31,22 @@ internal static class Mapping
     public static TournamentDoc ToDoc(Tournament t) => new()
     {
         Id = t.Id.Value, Version = t.Version, ExternalId = t.ExternalId, Name = t.Name,
-        GameSystemId = t.GameSystemId, TeamSize = t.TeamSize.Value, StartDate = t.StartDate,
+        GameSystemId = t.GameSystemId, TeamSize = t.TeamSize?.Value, StartDate = t.StartDate,
+        EndDate = t.EndDate, ListsVisible = t.ListsVisible, LastSyncedAt = t.LastSyncedAt,
         Participants = t.Participants.Select(p => new ParticipantDoc
         {
             Id = p.Id.Value, Name = p.Name,
             Roster = p.Roster.Select(r => new PlayerDoc
-                { Id = r.Id.Value, Name = r.Name, ArmyId = r.ArmyId, ListText = r.ListText }).ToList(),
+                { Id = r.Id.Value, Name = r.Name, ArmyId = r.ArmyId, ListText = r.ListText, ListChangedAt = r.ListChangedAt }).ToList(),
         }).ToList(),
     };
 
     public static Tournament ToDomain(TournamentDoc d) => WithVersion(new Tournament(
-        new TournamentId(d.Id), d.ExternalId, d.Name, d.GameSystemId, new TeamSize(d.TeamSize), d.StartDate,
+        new TournamentId(d.Id), d.ExternalId, d.Name, d.GameSystemId, d.TeamSize is { } size ? new TeamSize(size) : null,
+        d.StartDate,
         d.Participants.Select(p => new Participant(new ParticipantId(p.Id), p.Name,
-            p.Roster.Select(r => new Player(new PlayerId(r.Id), r.Name, r.ArmyId, r.ListText)).ToList()))), d.Version);
+            p.Roster.Select(r => new Player(new PlayerId(r.Id), r.Name, r.ArmyId, r.ListText, r.ListChangedAt)).ToList())),
+        d.EndDate, d.ListsVisible ?? true, d.LastSyncedAt), d.Version);
 
     public static PreparationDoc ToDoc(Preparation p) => new()
     {

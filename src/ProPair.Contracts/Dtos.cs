@@ -1,15 +1,24 @@
 namespace ProPair.Contracts;
 
-public sealed record SourceTournamentDto(string ExternalId, string Name, DateOnly? StartDate, int TeamSize, int TeamCount);
+/// <summary>Demo tournament offered for import.</summary>
+public sealed record SourceTournamentDto(string ExternalId, string Name, DateOnly? StartDate);
+
+/// <summary>Tournament in our database (synced from New Recruit or a demo).</summary>
+public sealed record TournamentSummaryDto(
+    Guid Id, string ExternalId, string Name, int? TeamSize, DateOnly? StartDate, DateOnly? EndDate, int TeamCount,
+    bool ListsVisible, DateTimeOffset? LastSyncedAt, bool IsDemo);
 
 public sealed record ImportTournamentRequest(string ExternalId);
 
-public sealed record PlayerDto(Guid Id, string Name, string ArmyId, string ArmyName, string ArmyShort, string ListText);
+/// <param name="ListChangedAt">Set when New Recruit delivered a different list: ratings and notes for this player started over.</param>
+public sealed record PlayerDto(Guid Id, string Name, string ArmyId, string ArmyName, string ArmyShort, string ListText,
+    DateTimeOffset? ListChangedAt = null);
 
 public sealed record ParticipantDto(Guid Id, string Name, IReadOnlyList<PlayerDto> Players);
 
 public sealed record TournamentDto(
-    Guid Id, string ExternalId, string Name, int TeamSize, DateOnly? StartDate, IReadOnlyList<ParticipantDto> Participants);
+    Guid Id, string ExternalId, string Name, int? TeamSize, DateOnly? StartDate, IReadOnlyList<ParticipantDto> Participants,
+    DateOnly? EndDate = null, bool ListsVisible = true, DateTimeOffset? LastSyncedAt = null, bool IsDemo = false);
 
 public sealed record StartPreparationRequest(Guid ParticipantId);
 
@@ -21,7 +30,8 @@ public sealed record OpponentDto(ParticipantDto Participant, int RatedCells);
 
 public sealed record PreparationDto(
     string TournamentName, int TeamSize, bool CanEdit, string? EditToken, string ReadToken,
-    ParticipantDto Own, IReadOnlyList<OpponentDto> Opponents, IReadOnlyList<RatingLevelDto> Scale);
+    ParticipantDto Own, IReadOnlyList<OpponentDto> Opponents, IReadOnlyList<RatingLevelDto> Scale,
+    Guid TournamentId = default, bool ListsVisible = true, DateTimeOffset? LastSyncedAt = null, bool IsDemo = false);
 
 public sealed record CellDto(Guid OwnPlayerId, Guid OpponentPlayerId, string LevelKey);
 

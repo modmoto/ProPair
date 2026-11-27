@@ -1,0 +1,54 @@
+@* New Recruit state of a tournament + "update now". The sync process does the work; we wait for the new timestamp. *@
+@inject ProPairApi Api
+
+<div class="sync-status">
+    @if (!ListsVisible)
+    {
+        <span class="badge warn" title="Der Veranstalter hat die Listen in New Recruit verborgen. Wir zeigen den letzten bekannten Stand.">Keine Listen sichtbar</span>
+    }
+    @if (!IsDemo)
+    {
+        <span class="muted">@(_waiting ? "Wird aktualisiert…" : LastSyncedAt is { } at ? $"Stand {at.ToLocalTime():dd.MM. HH:mm}" : "Noch nicht synchronisiert")</span>
+        <button class="link" disabled="@_waiting" @onclick="SyncAsync">↻ Von New Recruit aktualisieren</button>
+    }
+    @if (_message is not null)
+    {
+        <span class="muted">@_message</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid TournamentId { get; set; }
+    [Parameter] public bool ListsVisible { get; set; } = true;
+    [Parameter] public bool IsDemo { get; set; }
+    [Parameter] public DateTimeOffset? LastSyncedAt { get; set; }
+    /// <summary>Called once the sync process has written a newer state.</summary>
+    [Parameter] public EventCallback OnSynced { get; set; }
+
+    private bool _waiting;
+    private string? _message;
+
+    private async Task SyncAsync()
+    {
+        _waiting = true;
+        _message = null;
+        try
+        {
+            var before = LastSyncedAt;
+            await Api.RequestSyncAsync(TournamentId);
+            for (var i = 0; i < 30; i++) // up to ~1 minute; New Recruit can be slow
+            {
+                await Task.Delay(2000);
+                var t = await Api.GetTournamentAsync(TournamentId);
+                if (t.LastSyncedAt != before)
+                {
+                    await OnSynced.InvokeAsync();
+                    return;
+                }
+            }
+            _message = "Läuft noch – später neu laden.";
+        }
+        catch (ApiException e) { _message = e.Message; }
+        finally { _waiting = false; }
+    }
+}

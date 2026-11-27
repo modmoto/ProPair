@@ -13,7 +13,7 @@ public class PairingFlowTests
 
     private async Task<(string Edit, string Read, ParticipantId Opp, MatrixView View)> SetUpAsync()
     {
-        var tournament = await new ImportTournament(new FakeTournamentSource(), _store).ExecuteAsync("demo-trio-2026");
+        var tournament = (await new ImportTournament(new FakeTournamentSource(), _store, new FixedClock()).ExecuteAsync("demo-trio-2026"))!;
         var own = tournament.Participants[0];
         var opp = tournament.Participants[1];
         var prep = await new StartPreparation(_store, _store, _store).ExecuteAsync(tournament.Id, own.Id);

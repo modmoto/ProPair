@@ -245,6 +245,9 @@ Taktisches DDD nach Evans/Vernon:
 | 15 | Empfehlungs-Modi | Optimal / Minus vermeiden („-“ 1,5×, „0/-“ 1,25×); Absichern entfernt (Idee, s. offene Fragen); Gewichtung nur für die Entscheidung, alles Angezeigte echte Punkte. Pro Pick: Gesamtwertung + Diese Runde, je wahrscheinlichster Wert mit Wahrscheinlichkeit. Pfad: Ecke im Feld (schwarz / schwarz-hellgrau geteilt / hellgrau je Runde), gleiche Ecke an „Runde N“. |
 | 16 | Offline | Local-first Pairing: Domain-Assembly auch im Browser, Züge lokal + Warteschlange, Sync per kompletter Zugliste, Empfehlungen mit vom Backend vorgerechneten Rundenwerten. PWA: App startet nach erstem Besuch auch ohne Netz. |
 | 14 | Listen-Markierungen | 6 Farben + Zeilen-Notiz, Liste oben, Notizen unten. |
+| 17 | NR-Sync | Eigener Prozess (`Adapters.Sync`, Hangfire, Mongo-Storage), täglich, heute bis +12 Monate. Nur T9A 3rd Edition, nur Teamturniere, keine Ligen, nichts Geschlossenes/Vergangenes. API reiht „Aktualisieren“ nur ein (`ISyncQueue`). |
+| 18 | Listenwechsel | Neue Liste = neue Spieler-Id → Bewertungen/Notizen zurück, `ListChangedAt` → Info-Icon. Verborgene Listen: letzter Stand bleibt, Badge „Keine Listen sichtbar“. |
+| 19 | Teamgröße | 3–8, ergibt sich aus dem größten Kader. Armee aus dem Listentext (NR liefert vor dem Turnier kein JSON). |
 
 ## Offene Fragen
 
@@ -252,6 +255,8 @@ Taktisches DDD nach Evans/Vernon:
 
 - Tisch-/Szenariowahl im Pairing abbilden?
 - Captain-Zugang ohne Login: eigener Admin-Link pro Team, oder Login (z. B. GitHub/Google)?
-- Fallback, falls NR-Zugang fehlt: Turnier manuell anlegen?
-- Format der Listen aus NR (Text/JSON) – prüfen, sobald Zugang da ist.
+- Listenformat bereinigen (Kopfzeilen, Fußzeile, zwei Listen pro Spieler).
+- Regeln aus NR syncen (`id_book` aus Reports?).
+- Admin-UI mit Login für Sync/Dashboard.
+- Kader ungleich groß (Ersatzspieler): Pairing braucht gleiche Größe.
 - Ist ein Tournament global (mehrere Teams nutzen dasselbe) oder gehört es nur unserem Team?

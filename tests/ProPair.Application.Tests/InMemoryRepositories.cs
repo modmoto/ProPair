@@ -20,6 +20,9 @@ internal sealed class InMemoryStore : ITournamentRepository, ITeamRepository, IP
         Task.FromResult(_tournaments.FirstOrDefault(t => t.Id == id));
     public Task<Tournament?> FindByExternalIdAsync(string externalId, CancellationToken ct = default) =>
         Task.FromResult(_tournaments.FirstOrDefault(t => t.ExternalId == externalId));
+    public Task<IReadOnlyList<Tournament>> ListAsync(CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<Tournament>>(_tournaments.ToList());
+
     public Task SaveAsync(Tournament tournament, CancellationToken ct = default) => Upsert(_tournaments, tournament);
 
     public Task<Team?> GetAsync(TeamId id, CancellationToken ct = default) =>
