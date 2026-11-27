@@ -45,7 +45,10 @@ async function onFetch(event) {
         // For all navigation requests, try to serve index.html from cache,
         // unless that request is for an offline resource.
         // If you need some URLs to be server-rendered, edit the following check to exclude those URLs
+        // server-rendered pages (Hangfire dashboard) must reach the server
+        const isServerPage = new URL(event.request.url).pathname.startsWith('/hangfire');
         const shouldServeIndexHtml = event.request.mode === 'navigate'
+            && !isServerPage
             && !manifestUrlList.some(url => url === event.request.url);
 
         const request = shouldServeIndexHtml ? 'index.html' : event.request;
