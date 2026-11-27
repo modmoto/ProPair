@@ -76,14 +76,14 @@ Bedienung – alles in der Matrix, keine Buttons pro Schritt (mobil per Daumen):
 2. **Attacker:** Zellen antippen – in unserer Defender-Zeile deren 2 Attacker, in deren Defender-Spalte unsere 2. Kreuzung der Defender ist gesperrt (schraffiert). Nach dem 4. Tap automatisch eingetragen: die nicht gelegten Felder blenden ab und schrumpfen leicht, übrig bleiben die 4 Attacker.
 3. **Wahl:** in der Zeile antippen, wen wir nehmen; in der Spalte, wen sie nehmen → automatisch eingetragen.
 → Gepaarte Spieler blenden aus, die Matrix wird kleiner.
-- Einzige Aktion unten: **Rückgängig** (erst ungespeicherte Taps, dann letzter Schritt). Kein Redo, kein Neu starten.
+- **Rückgängig** fest in der Titelzeile neben dem Gesamtstand (einzige Stelle, die sich nie verschiebt): erst ungespeicherte Taps, dann letzter Schritt. Kein Redo, kein Neu starten.
 - Schrittwechsel als fließender Übergang der Zellen (gleiche 220-ms-Bewegung); neu aufgebaut wird die Matrix nur beim Flip.
 
 Ansicht:
 - Standard: nur verbleibende Spieler.
 - Oben neben dem Titel: Gesamtstand der festen Matchups (Summe der Scores, grün/rot) und x/8 gepaart.
-- Unter der Matrix: Liste der festen Matchups mit Bewertung; neue Matchups blenden ein.
-- Flip-Button oben rechts: ursprüngliche Matrix. Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
+- Unter der Matrix: feste Matchups als „Name UD [Bewertung] VC Name“ – Bewertung mittig zwischen beiden Seiten; neue Matchups blenden ein.
+- Umschalter in der leeren Ecke oben links der Tabelle (Icon: Aufziehen = ganze Matrix, Zusammenziehen = nur Rest). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
 - Empfehlungen sind vorerst ausgeblendet (Solver läuft weiter im Backend), siehe Konzept unten.
 - Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
 
