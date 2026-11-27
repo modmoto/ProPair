@@ -236,7 +236,8 @@ button, input, select { font: inherit; }
 /* full-matrix toggle in the empty top-left corner of the table */
 .matrix.pairing th.corner { vertical-align: middle; text-align: center; }
 .matrix.pairing th.corner .flip {
-    display: grid; place-items: center; width: 2.6rem; height: 2.6rem; min-height: 0; margin: 0 auto; padding: 0;
+    /* place-content too: the header-button rule's justify-content: flex-end would push the icon to the right */
+    display: grid; place-items: center; place-content: center; width: 2.6rem; height: 2.6rem; min-height: 0; margin: 0 auto; padding: 0;
     border: 1px solid var(--accent); border-radius: 10px; background: #fff; color: var(--accent); cursor: pointer;
 }
 .matrix.pairing th.corner .flip.on { background: var(--accent); color: #fff; }
@@ -522,6 +523,14 @@ button, input, select { font: inherit; }
 
 /* ---- read-only army lists during the pairing ---- */
 .armylist-ro header { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .4rem; }
+.armylist-ro .notes-toggle {
+    margin-left: auto; align-self: center; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; flex: none;
+    border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--muted); cursor: pointer;
+}
+.armylist-ro .notes-toggle.on { color: var(--fg); border-color: #c3c8d0; }
+.armylist-ro .ro-notes { display: flex; flex-direction: column; gap: .35rem; margin-top: .6rem; }
+.armylist-ro .ro-notes .note-text { margin: 0; }
+.armylist-ro .note-text.matchup { background: #eef3fd; }
 .armylist-ro header .muted { font-size: .75rem; }
 .armylist-ro .armylist { margin-top: .4rem; }
 .armylist-ro .note-text { margin: .6rem 0 0; padding: .5rem .6rem; background: #fff7d6; border-radius: 6px; font-size: .8rem; }

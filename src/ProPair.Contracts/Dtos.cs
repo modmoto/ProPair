@@ -93,7 +93,8 @@ public sealed record PairingDto(
     Guid? OwnDefender, Guid? OpponentDefender, IReadOnlyList<Guid> OwnAttackers, IReadOnlyList<Guid> OpponentAttackers,
     IReadOnlyList<GameDto> Games, double FixedScore, PairingAdviceDto? Advice,
     int UnratedCells, int MoveCount, IReadOnlyList<PairingMoveDto> Moves,
-    IReadOnlyList<ListMarkDto>? ListMarks = null, IReadOnlyList<PlayerNoteDto>? PlayerNotes = null);
+    IReadOnlyList<ListMarkDto>? ListMarks = null, IReadOnlyList<PlayerNoteDto>? PlayerNotes = null,
+    IReadOnlyList<CellNoteDto>? CellNotes = null);
 
 public sealed record DefendersRequest(Guid Own, Guid Opponent);
 

@@ -68,7 +68,7 @@ internal static class DtoMapping
             state.Games.Select(g => new GameDto(g.Own.Value, g.Opponent.Value, Score(g))).ToList(),
             v.FixedScore, v.Advice is { } advice ? advice.ToDto(v.Mode!.Value, scale) : null,
             v.UnratedCells, v.Session.Moves.Count, v.Session.Moves.Select(ToDto).ToList(),
-            matrix.ListMarks, matrix.PlayerNotes); // lists during the pairing, also offline
+            matrix.ListMarks, matrix.PlayerNotes, matrix.CellNotes); // lists and notes during the pairing, also offline
     }
 
     public static PairingMoveDto ToDto(this Domain.Pairing.PairingMove move) => move switch

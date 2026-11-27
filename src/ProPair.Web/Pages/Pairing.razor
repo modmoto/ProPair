@@ -95,7 +95,8 @@ else
             {
                 <div class="settle" @key="current.Id">
                     <ArmyList Player="current" Marks="MarksOf(current.Id)" Note="NoteOf(current.Id)"
-                              Taken="@(!Remaining(current.Id, false))" />
+                              MatchupNotes="MatchupNotesOf(current.Id)" Taken="@(!Remaining(current.Id, false))"
+                              ShowNotes="_showNotes" OnToggleNotes="ToggleNotesAsync" />
                 </div>
             }
         </section>
@@ -188,7 +189,8 @@ else
                 @foreach (var id in attackers)
                 {
                     var player = Player(id);
-                    <ArmyList Player="player" Marks="MarksOf(id)" Note="NoteOf(id)" />
+                    <ArmyList Player="player" Marks="MarksOf(id)" Note="NoteOf(id)" MatchupNotes="MatchupNotesOf(id)"
+                              ShowNotes="_showNotes" OnToggleNotes="ToggleNotesAsync" />
                 }
             </div>
         </section>
@@ -342,6 +344,8 @@ else
     private bool _listView;     // lists instead of the matrix
     private int _listIndex;
     private double? _touchX;
+    private bool _showNotes = true;   // notes in the lists, remembered per device
+    private const string NotesKey = "listNotes";
     private bool _busy;
     private string? _error;
     private HashSet<Guid> _leaving = [];
@@ -375,6 +379,7 @@ else
     protected override async Task OnParametersSetAsync()
     {
         _showAdvice = await Prefs.GetAsync(AdviceKey);
+        _showNotes = await Prefs.GetAsync(NotesKey, fallback: true);
         var stored = await Prefs.GetStringAsync(ModeKey);
         _mode = stored is "avoidminus" ? stored : "optimal";
 
@@ -502,6 +507,17 @@ else
 
     private IReadOnlyList<ListMarkDto> MarksOf(Guid id) => (_p!.ListMarks ?? []).Where(m => m.PlayerId == id).ToList();
     private NoteDto? NoteOf(Guid id) => (_p!.PlayerNotes ?? []).FirstOrDefault(n => n.PlayerId == id)?.Note;
+
+    /// <summary>Notes from the matrix on this opponent's matchups, labelled with our player.</summary>
+    private IReadOnlyList<(string Against, NoteDto Note)> MatchupNotesOf(Guid opponentId) =>
+        (_p!.CellNotes ?? []).Where(n => n.OpponentPlayerId == opponentId)
+            .Select(n => (Player(n.OwnPlayerId).Name, n.Note)).ToList();
+
+    private async Task ToggleNotesAsync()
+    {
+        _showNotes = !_showNotes;
+        await Prefs.SetAsync(NotesKey, _showNotes);
+    }
 
     /// <summary>Starts at their defender (or the one being picked), otherwise at the first active opponent.</summary>
     private void ShowLists()
