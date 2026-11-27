@@ -252,7 +252,7 @@ button, input, select { font: inherit; }
 }
 
 .matrix.pairing th button:disabled { cursor: default; color: inherit; }
-.matrix.pairing th.def button { background: var(--accent); color: #fff; }
+.matrix.pairing th.def button { background: var(--accent); color: #fff; cursor: pointer; }
 .matrix.pairing th.def .army { background: rgba(255, 255, 255, .25); color: #fff; }
 .matrix.pairing th.def .player { color: #dfe7fb; }
 .matrix.pairing th.att .army { background: #dfe7fb; color: var(--accent); }
@@ -260,13 +260,13 @@ button, input, select { font: inherit; }
 
 .matrix.pairing td { transition: filter .2s, opacity .2s; }
 .matrix.pairing td.tap { cursor: pointer; }
-.matrix.pairing td.dim { background: #eceef1; border-color: #eceef1; color: #c3c8d0; }
+/* greyed out but the rating colour stays faintly visible */
+.matrix.pairing td.dim, .matrix.pairing td.taken { opacity: .35; filter: saturate(.55); border-color: transparent; }
 .matrix.pairing td.cross {
     background: repeating-linear-gradient(45deg, #e3e6eb 0 4px, #f4f5f7 4px 8px);
     border-color: #e3e6eb; color: transparent; cursor: not-allowed;
 }
 .matrix.pairing td.pick { outline: 3px solid var(--accent); outline-offset: -3px; box-shadow: 0 0 0 2px #fff inset; }
-.matrix td.taken { background: #eceef1; border-color: #eceef1; color: #c3c8d0; }
 .matrix td.game { outline: 3px solid var(--fg); outline-offset: -3px; }
 
 /* paired players hop out */

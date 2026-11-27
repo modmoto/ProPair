@@ -65,7 +65,7 @@ else
                     {
                         var level = LevelAt(own.Id, opp.Id);
                         var css = CellClass(own.Id, opp.Id);
-                        <td class="@css" style="@(css is "taken" or "dim" or "cross" ? "" : $"background:{level?.Color ?? "#fff"}")"
+                        <td class="@css" style="@(css is "cross" ? "" : $"background:{level?.Color ?? "#fff"}")"
                             @onclick="() => TapCell(own.Id, opp.Id)">
                             @level?.Label
                         </td>
@@ -142,7 +142,7 @@ else
     {
         "defenders" when !_p.CanEdit => $"Runde {_p.Round} · Defender",
         "defenders" => $"Runde {_p.Round} · Defender antippen: links unserer, oben deren.",
-        "attackers" => $"Runde {_p.Round} · Zellen antippen: Zeile {Name(OwnDef)} = deren 2 Attacker, Spalte {Name(OppDef)} = unsere 2.",
+        "attackers" => $"Runde {_p.Round} · Zellen antippen: Zeile {Name(OwnDef)} = deren 2 Attacker, Spalte {Name(OppDef)} = unsere 2. Defender antippen = abwählen.",
         "choices" => $"Runde {_p.Round} · Wahl: in Zeile {Name(OwnDef)} wen wir nehmen, in Spalte {Name(OppDef)} wen sie nehmen.",
         _ => "Pairing fertig – Matchups sind umrandet.",
     };
@@ -152,11 +152,24 @@ else
     // ---------- interaction ----------
 
     private bool CanPickDefender(Guid id, bool own) =>
-        _p!.CanEdit && !_busy && _p.Step == "defenders" && Remaining(id, own);
+        _p!.CanEdit && !_busy && Remaining(id, own) &&
+        (_p.Step == "defenders" || _p.Step == "attackers" && (own ? _p.OwnDefender : _p.OpponentDefender) == id);
 
     private async Task PickDefenderAsync(Guid id, bool own)
     {
         if (!CanPickDefender(id, own)) return;
+
+        if (_p!.Step == "attackers")
+        {
+            // defenders are already saved: take them back, keep the other one picked
+            var keepOwn = own ? null : _p.OwnDefender;
+            var keepOpp = own ? _p.OpponentDefender : null;
+            await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId));
+            _ownDefender = keepOwn;
+            _oppDefender = keepOpp;
+            return;
+        }
+
         if (own) _ownDefender = _ownDefender == id ? null : id;
         else _oppDefender = _oppDefender == id ? null : id;
 

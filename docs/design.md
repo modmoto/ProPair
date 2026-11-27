@@ -71,7 +71,7 @@ Ablauf als Regel-Objekt modellieren (austauschbar pro Turnier/System). Tisch-/Sz
 ## Pairing-Assistent
 
 Bedienung – alles in der Matrix, keine Listen (mobil per Daumen):
-1. **Defender:** links unseren Namen antippen, oben deren → gespeichert. Defender-Zeile und -Spalte hervorgehoben, Rest grau.
+1. **Defender:** links unseren Namen antippen, oben deren → gespeichert. Defender-Zeile und -Spalte hervorgehoben, Rest blass (Farben bleiben leicht sichtbar). Defender erneut antippen = abwählen.
 2. **Attacker:** Zellen antippen – in unserer Defender-Zeile deren 2 Attacker, in deren Defender-Spalte unsere 2. Kreuzung der Defender ist gesperrt (schraffiert). „Attacker eintragen“.
 3. **Wahl:** in der Zeile antippen, wen wir nehmen; in der Spalte, wen sie nehmen. „Wahl eintragen“.
 → Gepaarte Spieler hüpfen raus, die Matrix wird kleiner. Rückgängig (erst lokale Taps, dann letzter Schritt) / Neu starten in der Aktionsleiste unten.
