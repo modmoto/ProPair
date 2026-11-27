@@ -10,6 +10,9 @@ public static class Format
     public static string Score(double value) =>
         Math.Round(value, 1).ToString("+0.#;−0.#;0", De);
 
+    /// <summary>Probability as whole percent, e.g. "42 %".</summary>
+    public static string Percent(double p) => $"{Math.Round(p * 100):0} %";
+
     /// <summary>Short local timestamp, e.g. "27.11. 14:32".</summary>
     public static string When(DateTimeOffset at) => at.ToLocalTime().ToString("dd.MM. HH:mm", De);
 }

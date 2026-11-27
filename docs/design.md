@@ -84,7 +84,7 @@ Ansicht:
 - Oben neben dem Titel: Gesamtstand der festen Matchups (Summe der Scores, grün/rot) und x/8 gepaart.
 - Unter der Matrix: feste Matchups als „Name UD [Bewertung] VC Name“ – Bewertung mittig zwischen beiden Seiten; neue Matchups blenden ein.
 - Umschalter in der leeren Ecke oben links der Tabelle (Icon: Aufziehen = ganze Matrix, Zusammenziehen = nur Rest). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
-- Empfehlungen sind vorerst ausgeblendet (Solver läuft weiter im Backend), siehe Konzept unten.
+- Empfehlungen per Augen-Symbol (Standard aus): %-Marken an Namen, ★ = beste Option, grüne Ringe, Top-3 + wahrscheinlichster Pfad.
 - Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
 
 Solver (`PairingSolver`, Domain Service):
@@ -95,7 +95,7 @@ Solver (`PairingSolver`, Domain Service):
 - Läuft serverseitig; Offline im Client später möglich (Domain ist abhängigkeitsfrei).
 - Später: gemischte Strategien (Nash pro Schritt) statt reinem Maximin.
 
-### Empfehlungen (Konzept, noch nicht umgesetzt)
+### Empfehlungen (Stufe 1 + 2 umgesetzt, Details im README)
 
 Berechnung:
 - Spielbaum von hinten aufrollen: am Ende ist jedes Spiel aus der Matrix bekannt, davor wählt jede Seite ihr Bestes. Gegner = gleiche Matrix, negiert.

@@ -3,6 +3,7 @@ using ProPair.Application.UseCases;
 using ProPair.Domain.Common;
 using ProPair.Domain.Matrices;
 using ProPair.Domain.Pairing;
+using ProPair.Domain.Pairing.Advice;
 
 namespace ProPair.Application.Tests;
 
@@ -24,7 +25,7 @@ public class PairingFlowTests
         return (prep.EditToken.Value, prep.ReadToken.Value, opp.Id, await getMatrix.ExecuteAsync(prep.EditToken.Value, opp.Id));
     }
 
-    private GetPairing GetPairing => new(new GetMatrix(_store, _store, _store), _store);
+    private GetPairing GetPairing => new(new GetMatrix(_store, _store, _store), _store, new GameTreeAdvisor(new EquilibriumSolver()));
 
     [Fact]
     public async Task Pairing_runs_to_the_end_with_recommendations()
@@ -34,9 +35,12 @@ public class PairingFlowTests
         var own = view.Own.Roster.Select(p => p.Id).ToList();
         var opp = view.Opponent.Roster.Select(p => p.Id).ToList();
 
-        var start = await GetPairing.ExecuteAsync(edit, oppId);
-        Assert.Equal(2, start.Analysis.Expected);
-        Assert.Equal(3, start.Analysis.Options.Count);
+        var withoutAdvice = await GetPairing.ExecuteAsync(edit, oppId);
+        Assert.Null(withoutAdvice.Advice); // advice only on request
+
+        var start = await GetPairing.ExecuteAsync(edit, oppId, withAdvice: true);
+        Assert.Equal(2, start.Advice!.Expected, 6);
+        Assert.Equal(3, start.Advice.Own.Count);
         Assert.Equal(6, start.UnratedCells);
 
         await play.ExecuteAsync(edit, oppId, new DefendersMove(own[0], opp[0]));
@@ -45,7 +49,7 @@ public class PairingFlowTests
 
         Assert.Equal(PairingStep.Done, done.Session.State.Step);
         Assert.Equal(3, done.Session.State.Games.Count);
-        Assert.Equal(2, done.Analysis.Fixed);
+        Assert.Equal(2, done.FixedScore);
 
         var undone = await new UndoPairingMove(GetPairing, _store).ExecuteAsync(edit, oppId);
         Assert.Equal(PairingStep.Choices, undone.Session.State.Step);

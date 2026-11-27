@@ -66,8 +66,22 @@ internal static class DtoMapping
             state.OwnDefender?.Value, state.OpponentDefender?.Value,
             state.OwnAttackers.Select(p => p.Value).ToList(), state.OpponentAttackers.Select(p => p.Value).ToList(),
             state.Games.Select(g => new GameDto(g.Own.Value, g.Opponent.Value, Score(g))).ToList(),
-            v.Analysis.Fixed, v.Analysis.Expected,
-            v.Analysis.Options.Select(o => new PairingOptionDto(o.Players.Select(p => p.Value).ToList(), o.Worst, o.Average)).ToList(),
+            v.FixedScore, v.Advice?.ToDto(),
             v.UnratedCells, v.Session.Moves.Count);
     }
+
+    private static List<Guid> Ids(IEnumerable<Domain.Common.PlayerId> ids) => ids.Select(i => i.Value).ToList();
+
+    private static MoveOptionDto ToDto(this Domain.Pairing.Advice.MoveOption o) =>
+        new(Ids(o.Players), o.Expected, o.Worst, o.Probability);
+
+    private static PairingAdviceDto ToDto(this Domain.Pairing.Advice.PairingAdvice a) => new(
+        a.Expected,
+        a.Own.Select(ToDto).ToList(),
+        a.Opponent.Select(ToDto).ToList(),
+        a.TopPicks.Select(p => new PredictedPathDto(p.Option.ToDto(),
+            p.Steps.Select(s => new PredictedStepDto(s.Round, s.Step.ToString().ToLowerInvariant(), Ids(s.Own), Ids(s.Opponent),
+                s.OwnProbability, s.OpponentProbability)).ToList(),
+            p.Games.Select(g => new PredictedGameDto(g.Round, g.Own.Value, g.Opponent.Value, g.Score)).ToList(),
+            p.Total)).ToList());
 }

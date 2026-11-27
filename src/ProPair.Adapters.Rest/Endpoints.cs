@@ -81,30 +81,31 @@ internal static class Endpoints
 
         var pairing = api.MapGroup("/p/{token}/matrices/{opponentId:guid}/pairing");
 
-        pairing.MapGet("", async (string token, Guid opponentId, GetPairing uc, CancellationToken ct) =>
-            (await uc.ExecuteAsync(token, new ParticipantId(opponentId), ct)).ToDto());
+        // ?advice=true adds recommendations (only when the UI shows them)
+        pairing.MapGet("", async (string token, Guid opponentId, bool? advice, GetPairing uc, CancellationToken ct) =>
+            (await uc.ExecuteAsync(token, new ParticipantId(opponentId), advice == true, ct)).ToDto());
 
-        pairing.MapPost("/defenders", (string token, Guid opponentId, DefendersRequest req, PlayPairingMove uc, CancellationToken ct) =>
-            Play(uc, token, opponentId, new DefendersMove(new PlayerId(req.Own), new PlayerId(req.Opponent)), ct));
+        pairing.MapPost("/defenders", (string token, Guid opponentId, bool? advice, DefendersRequest req, PlayPairingMove uc, CancellationToken ct) =>
+            Play(uc, token, opponentId, new DefendersMove(new PlayerId(req.Own), new PlayerId(req.Opponent)), advice == true, ct));
 
-        pairing.MapPost("/attackers", (string token, Guid opponentId, AttackersRequest req, PlayPairingMove uc, CancellationToken ct) =>
+        pairing.MapPost("/attackers", (string token, Guid opponentId, bool? advice, AttackersRequest req, PlayPairingMove uc, CancellationToken ct) =>
         {
             if (req.Own.Count != 2 || req.Opponent.Count != 2) throw new DomainException("Two attackers per team are required.");
             return Play(uc, token, opponentId, new AttackersMove(new PlayerId(req.Own[0]), new PlayerId(req.Own[1]),
-                new PlayerId(req.Opponent[0]), new PlayerId(req.Opponent[1])), ct);
+                new PlayerId(req.Opponent[0]), new PlayerId(req.Opponent[1])), advice == true, ct);
         });
 
-        pairing.MapPost("/choices", (string token, Guid opponentId, ChoicesRequest req, PlayPairingMove uc, CancellationToken ct) =>
-            Play(uc, token, opponentId, new ChoicesMove(new PlayerId(req.OwnAccepts), new PlayerId(req.OpponentAccepts)), ct));
+        pairing.MapPost("/choices", (string token, Guid opponentId, bool? advice, ChoicesRequest req, PlayPairingMove uc, CancellationToken ct) =>
+            Play(uc, token, opponentId, new ChoicesMove(new PlayerId(req.OwnAccepts), new PlayerId(req.OpponentAccepts)), advice == true, ct));
 
-        pairing.MapPost("/undo", async (string token, Guid opponentId, UndoPairingMove uc, CancellationToken ct) =>
-            (await uc.ExecuteAsync(token, new ParticipantId(opponentId), ct)).ToDto());
+        pairing.MapPost("/undo", async (string token, Guid opponentId, bool? advice, UndoPairingMove uc, CancellationToken ct) =>
+            (await uc.ExecuteAsync(token, new ParticipantId(opponentId), advice == true, ct)).ToDto());
 
         pairing.MapPost("/restart", async (string token, Guid opponentId, RestartPairing uc, CancellationToken ct) =>
             (await uc.ExecuteAsync(token, new ParticipantId(opponentId), ct)).ToDto());
     }
 
     private static async Task<PairingDto> Play(PlayPairingMove uc, string token, Guid opponentId, PairingMove move,
-        CancellationToken ct) =>
-        (await uc.ExecuteAsync(token, new ParticipantId(opponentId), move, ct)).ToDto();
+        bool withAdvice, CancellationToken ct) =>
+        (await uc.ExecuteAsync(token, new ParticipantId(opponentId), move, withAdvice, ct)).ToDto();
 }

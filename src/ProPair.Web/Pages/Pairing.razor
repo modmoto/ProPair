@@ -1,5 +1,6 @@
 @page "/p/{Token}/vs/{OpponentId:guid}/pairing"
 @inject ProPairApi Api
+@inject Preferences Prefs
 
 @*
     Live pairing, everything happens in the matrix:
@@ -20,6 +21,19 @@ else
     <a class="link" href="p/@Token/vs/@OpponentId">← Matrix</a>
     <div class="titlebar">
         <h1>@_p.Own.Name <span class="muted">vs</span> @_p.Opponent.Name</h1>
+        <button class="eye @(_showAdvice ? "on" : "")" @onclick="ToggleAdviceAsync" disabled="@_busy"
+                title="@(_showAdvice ? "Empfehlungen ausblenden" : "Empfehlungen einblenden")"
+                aria-label="@(_showAdvice ? "Empfehlungen ausblenden" : "Empfehlungen einblenden")" aria-pressed="@_showAdvice">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+                <circle cx="12" cy="12" r="3" />
+                @if (!_showAdvice)
+                {
+                    <path d="M3 3l18 18" />
+                }
+            </svg>
+        </button>
         <span class="total @TotalClass" title="Summe der festen Matchups (@_p.Games.Count/@_p.Own.Players.Count)">
             <strong>@Format.Score(_p.FixedScore)</strong>
             <small>@_p.Games.Count/@_p.Own.Players.Count</small>
@@ -66,6 +80,10 @@ else
                         <button disabled="@(!CanPickDefender(opp.Id, false))" @onclick="() => PickDefenderAsync(opp.Id, false)">
                             <span class="army">@opp.ArmyShort</span>
                             <span class="player">@opp.Name</span>
+                            @if (Tip(opp.Id, own: false) is { } tip)
+                            {
+                                <span class="tip them">@tip</span>
+                            }
                         </button>
                     </th>
                 }
@@ -79,13 +97,19 @@ else
                         <button disabled="@(!CanPickDefender(own.Id, true))" @onclick="() => PickDefenderAsync(own.Id, true)">
                             <span class="army">@own.ArmyShort</span>
                             <span class="player">@own.Name</span>
+                            @if (Tip(own.Id, own: true) is { } tip)
+                            {
+                                <span class="tip @(IsBest(own.Id) ? "best" : "")">@tip</span>
+                            }
                         </button>
                     </th>
                     @foreach (var opp in Columns)
                     {
                         var level = LevelAt(own.Id, opp.Id);
                         var css = CellClass(own.Id, opp.Id);
-                        <td class="@css" style="@(css is "cross" ? "" : $"background:{level?.Color ?? "#fff"}")"
+                        var round = PredictedRound(own.Id, opp.Id);
+                        <td class="@css @AdviceCellClass(own.Id, opp.Id) @(round is null ? "" : "predicted")" data-round="@round"
+                            style="@(css is "cross" ? "" : $"background:{level?.Color ?? "#fff"}")"
                             @onclick="() => TapCell(own.Id, opp.Id)">
                             @level?.Label
                         </td>
@@ -97,6 +121,67 @@ else
     </div>
 
     @if (_error is not null) { <p class="error">@_error</p> }
+
+    @if (_showAdvice && !Done)
+    {
+        <section class="advice settle">
+            @if (_p.Advice is not { } a)
+            {
+                <p class="muted">Rechne…</p>
+            }
+            else
+            {
+                <header>
+                    <h2>Empfehlung</h2>
+                    <span class="muted">fair erwartet <strong>@Format.Score(a.Expected)</strong></span>
+                </header>
+                <div class="picks">
+                    @foreach (var (path, i) in a.TopPicks.Select((p, i) => (p, i)))
+                    {
+                        <button class="pick @(i == _pick ? "on" : "")" @onclick="() => _pick = i">
+                            <span class="rank">@(i + 1)</span>
+                            <span class="who">
+                                @foreach (var id in path.Option.Players)
+                                {
+                                    var pl = Player(id);
+                                    <span class="pl"><span class="army">@pl.ArmyShort</span> @pl.Name</span>
+                                }
+                            </span>
+                            <span class="nums">
+                                <strong>@Format.Score(path.Option.Expected)</strong>
+                                <small>min @Format.Score(path.Option.Worst) · @Format.Percent(path.Option.Probability)</small>
+                            </span>
+                        </button>
+                    }
+                </div>
+                @if (Preview is { } preview)
+                {
+                    <ol class="timeline">
+                        @foreach (var round in preview.Steps.GroupBy(st => st.Round))
+                        {
+                            <li>
+                                <span class="r">R@(round.Key)</span>
+                                <span class="steps">
+                                    @foreach (var st in round)
+                                    {
+                                        @if (st.Step == "choices")
+                                        {
+                                            <span class="st"><em>Wahl</em> wir: @Names(st.Own) · die: @Names(st.Opponent)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="st"><em>@StepLabel(st.Step)</em> @Names(st.Own) ↔ @Names(st.Opponent)</span>
+                                        }
+                                    }
+                                </span>
+                            </li>
+                        }
+                    </ol>
+                    <p class="muted pathtotal">Wahrscheinlicher Endstand: <strong>@Format.Score(preview.Total)</strong> · gestrichelt in der Matrix</p>
+                }
+            }
+        </section>
+    }
 
     @if (_p.Games.Count > 0)
     {
@@ -127,7 +212,11 @@ else
 
     private const int LeaveMillis = 220; // = --motion in app.css
 
+    private const string AdviceKey = "advice";
+
     private PairingDto? _p;
+    private bool _showAdvice;   // recommendations: off by default, remembered per device
+    private int _pick;          // which top pick's path is previewed
     private bool _showAll;
     private bool _busy;
     private string? _error;
@@ -159,7 +248,11 @@ else
     private PlayerDto Player(Guid id) => _p!.Own.Players.Concat(_p.Opponent.Players).First(p => p.Id == id);
 
 
-    protected override Task OnParametersSetAsync() => LoadAsync(() => Api.GetPairingAsync(Token, OpponentId));
+    protected override async Task OnParametersSetAsync()
+    {
+        _showAdvice = await Prefs.GetAsync(AdviceKey);
+        await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, _showAdvice));
+    }
 
     // ---------- interaction ----------
 
@@ -176,7 +269,7 @@ else
             // defenders are already saved: take them back, keep the other one picked
             var keepOwn = own ? null : _p.OwnDefender;
             var keepOpp = own ? _p.OpponentDefender : null;
-            await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId));
+            await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId, _showAdvice));
             _ownDefender = keepOwn;
             _oppDefender = keepOpp;
             return;
@@ -186,7 +279,7 @@ else
         else _oppDefender = _oppDefender == id ? null : id;
 
         if (_ownDefender is { } d && _oppDefender is { } e)
-            await AutoSubmitAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(d, e)));
+            await AutoSubmitAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(d, e), _showAdvice));
     }
 
     private async Task TapCell(Guid own, Guid opp)
@@ -214,9 +307,9 @@ else
 
         // complete step → enter it automatically (wrong tap? Undo)
         if (_p.Step == "attackers" && _ownAttackers.Count == 2 && _oppAttackers.Count == 2)
-            await AutoSubmitAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownAttackers, _oppAttackers)));
+            await AutoSubmitAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownAttackers, _oppAttackers), _showAdvice));
         else if (_p.Step == "choices" && _ownAccepts is { } take && _oppAccepts is { } taken)
-            await AutoSubmitAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(take, taken)));
+            await AutoSubmitAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(take, taken), _showAdvice));
     }
 
     /// <summary>Shows the last tap for a moment, then saves the step.</summary>
@@ -236,10 +329,57 @@ else
 
     private void ToggleView() => _showAll = !_showAll;
 
+    private async Task ToggleAdviceAsync()
+    {
+        _showAdvice = !_showAdvice;
+        await Prefs.SetAsync(AdviceKey, _showAdvice);
+        if (_showAdvice) await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, true));
+    }
+
+    // ---------- recommendations ----------
+
+    private PairingAdviceDto? Advice => _showAdvice ? _p!.Advice : null;
+    private PredictedPathDto? Preview => Advice?.TopPicks.ElementAtOrDefault(_pick);
+
+    /// <summary>How likely a player is used in the current step (sum over options containing him).</summary>
+    private string? Tip(Guid id, bool own)
+    {
+        if (Advice is not { } a || HasLocalPick) return null;
+        var p = (own ? a.Own : a.Opponent).Where(o => o.Players.Contains(id)).Sum(o => o.Probability);
+        if (p < 0.005) return null;
+        return (own && IsBest(id) ? "★ " : "") + Format.Percent(p);
+    }
+
+    private bool IsBest(Guid id) => Advice?.Own.FirstOrDefault()?.Players.Contains(id) == true;
+
+    /// <summary>Attackers/choices: ring the cells of our best option.</summary>
+    private string AdviceCellClass(Guid own, Guid opp)
+    {
+        if (Advice?.Own.FirstOrDefault() is not { } best || HasLocalPick) return "";
+        return _p!.Step switch
+        {
+            "attackers" when opp == _p.OpponentDefender && best.Players.Contains(own) => "rec",
+            "choices" when own == _p.OwnDefender && best.Players.Contains(opp) => "rec",
+            _ => "",
+        };
+    }
+
+    private int? PredictedRound(Guid own, Guid opp) =>
+        Preview?.Games.FirstOrDefault(g => g.OwnPlayerId == own && g.OpponentPlayerId == opp)?.Round;
+
+    private static string StepLabel(string step) => step switch
+    {
+        "defenders" => "D",
+        "attackers" => "A",
+        _ => "Wahl",
+    };
+
+    private string Names(IReadOnlyList<Guid> ids) => string.Join(" + ", ids.Select(id => Player(id).Name));
+
     private async Task UndoAsync()
     {
         if (HasLocalPick) { ResetPicks(); return; } // first undo clears unsaved taps
-        await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId));
+        await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId, _showAdvice));
     }
 
 
@@ -265,6 +405,7 @@ else
             _fresh = _p is null ? [] : next.Games.Select(g => g.OwnPlayerId)
                 .Except(_p.Games.Select(g => g.OwnPlayerId)).ToHashSet();
             _p = next;
+            _pick = 0;
             ResetPicks();
         }
         catch (ApiException e) { _error = e.Message; }

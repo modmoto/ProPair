@@ -53,15 +53,28 @@ public sealed record ErrorDto(string Message);
 
 public sealed record GameDto(Guid OwnPlayerId, Guid OpponentPlayerId, double Score);
 
-/// <summary>Our option in the current step: Worst = opponent answers optimally, Average = over all answers.</summary>
-public sealed record PairingOptionDto(IReadOnlyList<Guid> Players, double Worst, double Average);
+/// <summary>An option in the current step. Expected/Worst are final totals (our view); Probability 0–1.</summary>
+public sealed record MoveOptionDto(IReadOnlyList<Guid> Players, double Expected, double Worst, double Probability);
+
+/// <summary>Step: defenders | attackers | choices.</summary>
+public sealed record PredictedStepDto(int Round, string Step, IReadOnlyList<Guid> Own, IReadOnlyList<Guid> Opponent,
+    double OwnProbability, double OpponentProbability);
+
+public sealed record PredictedGameDto(int Round, Guid OwnPlayerId, Guid OpponentPlayerId, double Score);
+
+public sealed record PredictedPathDto(MoveOptionDto Option, IReadOnlyList<PredictedStepDto> Steps,
+    IReadOnlyList<PredictedGameDto> Games, double Total);
+
+/// <param name="Expected">Final total if both teams play perfectly from here.</param>
+public sealed record PairingAdviceDto(double Expected, IReadOnlyList<MoveOptionDto> Own, IReadOnlyList<MoveOptionDto> Opponent,
+    IReadOnlyList<PredictedPathDto> TopPicks);
 
 public sealed record PairingDto(
     string TournamentName, bool CanEdit, ParticipantDto Own, ParticipantDto Opponent,
     IReadOnlyList<RatingLevelDto> Scale, IReadOnlyList<CellDto> Cells,
     string Step, int Round, IReadOnlyList<Guid> RemainingOwn, IReadOnlyList<Guid> RemainingOpponent,
     Guid? OwnDefender, Guid? OpponentDefender, IReadOnlyList<Guid> OwnAttackers, IReadOnlyList<Guid> OpponentAttackers,
-    IReadOnlyList<GameDto> Games, double FixedScore, double ExpectedScore, IReadOnlyList<PairingOptionDto> Options,
+    IReadOnlyList<GameDto> Games, double FixedScore, PairingAdviceDto? Advice,
     int UnratedCells, int MoveCount);
 
 public sealed record DefendersRequest(Guid Own, Guid Opponent);
