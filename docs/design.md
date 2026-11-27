@@ -238,7 +238,7 @@ Taktisches DDD nach Evans/Vernon:
 | 11 | Pairing | Auswahl per Tap in der Matrix (Namen = Defender, Zellen = Attacker/Wahl). Rest-Matrix, Flip auf Vollmatrix (vergeben = grau). Empfehlungen vorerst aus. |
 | 12 | Notizen/Verlauf | Long-Press/Rechtsklick-Sheet je Zelle, Listen-Notiz per Tap auf Spieler. |
 | 13 | Empfehlungen | Ausblendbar, Standard aus (keine psychologische Beeinflussung). |
-| 15 | Empfehlungs-Modi | Optimal / Minus vermeiden (Minus × 1,5) / Absichern; Gewichtung nur für die Entscheidung, alles Angezeigte echte Punkte. Pro Pick: Endstand + diese Runde, je wahrscheinlichster Wert mit Wahrscheinlichkeit. Pfad: Ecke im Feld (dunkel/mittel/hell je Runde), gleiche Ecke an „Runde N“. |
+| 15 | Empfehlungs-Modi | Optimal / Minus vermeiden („-“ 1,5×, „0/-“ 1,25×) / Absichern; Gewichtung nur für die Entscheidung, alles Angezeigte echte Punkte. Pro Pick: Gesamtwertung + Diese Runde, je wahrscheinlichster Wert mit Wahrscheinlichkeit. Pfad: Ecke im Feld (schwarz / schwarz-hellgrau geteilt / hellgrau je Runde), gleiche Ecke an „Runde N“. |
 | 14 | Listen-Markierungen | 6 Farben + Zeilen-Notiz, Liste oben, Notizen unten. |
 
 ## Offene Fragen

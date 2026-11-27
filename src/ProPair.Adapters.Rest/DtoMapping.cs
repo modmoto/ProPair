@@ -66,7 +66,7 @@ internal static class DtoMapping
             state.OwnDefender?.Value, state.OpponentDefender?.Value,
             state.OwnAttackers.Select(p => p.Value).ToList(), state.OpponentAttackers.Select(p => p.Value).ToList(),
             state.Games.Select(g => new GameDto(g.Own.Value, g.Opponent.Value, Score(g))).ToList(),
-            v.FixedScore, v.Advice is { } advice ? advice.ToDto(v.Mode!.Value) : null,
+            v.FixedScore, v.Advice is { } advice ? advice.ToDto(v.Mode!.Value, scale) : null,
             v.UnratedCells, v.Session.Moves.Count);
     }
 
@@ -75,9 +75,12 @@ internal static class DtoMapping
     private static MoveOptionDto ToDto(this Domain.Pairing.Advice.MoveOption o) =>
         new(Ids(o.Players), o.Expected, o.Worst, o.Probability);
 
-    private static PairingAdviceDto ToDto(this Domain.Pairing.Advice.PairingAdvice a, Domain.Pairing.Advice.AdviceMode mode) => new(
+    private static PairingAdviceDto ToDto(this Domain.Pairing.Advice.PairingAdvice a, Domain.Pairing.Advice.AdviceMode mode,
+        Domain.Ratings.RatingScale scale) => new(
         mode.ToString().ToLowerInvariant(),
-        mode == Domain.Pairing.Advice.AdviceMode.AvoidMinus ? Domain.Pairing.Advice.AdviceModes.MinusWeight : 1,
+        scale.Levels.Where(l => l.Score < 0).OrderBy(l => l.Score)
+            .Select(l => new MinusFactorDto(l.Key, Domain.Pairing.Advice.AdviceModes.MinusFactor((double)l.Score)))
+            .ToList(),
         a.Expected,
         a.Own.Select(ToDto).ToList(),
         a.Opponent.Select(ToDto).ToList(),

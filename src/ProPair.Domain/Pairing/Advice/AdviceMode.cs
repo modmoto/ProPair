@@ -16,12 +16,18 @@ public enum AdviceMode
 /// <summary>Builds the advisor for a mode. All modes share the same game tree; they differ in scoring or step solver.</summary>
 public static class AdviceModes
 {
-    /// <summary>Minus ratings are multiplied by this in <see cref="AdviceMode.AvoidMinus"/>: a "-" (−2) then costs as much as "+" and "0/+" together bring.</summary>
-    public const double MinusWeight = 1.5;
+    /// <summary>
+    /// <see cref="AdviceMode.AvoidMinus"/>: every minus point adds this much weight. With the default scale
+    /// "0/-" (−1) counts 1.25× and "-" (−2) 1.5× – a full minus then costs as much as "+" and "0/+" together bring.
+    /// </summary>
+    public const double ExtraWeightPerMinusPoint = 0.25;
+
+    /// <summary>How much a rating with this score counts in <see cref="AdviceMode.AvoidMinus"/> (1 for zero and plus).</summary>
+    public static double MinusFactor(double score) => score < 0 ? 1 + ExtraWeightPerMinusPoint * -score : 1;
 
     public static IPairingAdvisor Create(AdviceMode mode) => mode switch
     {
-        AdviceMode.AvoidMinus => new GameTreeAdvisor(new EquilibriumSolver(), s => s < 0 ? s * MinusWeight : s),
+        AdviceMode.AvoidMinus => new GameTreeAdvisor(new EquilibriumSolver(), s => s * MinusFactor(s)),
         AdviceMode.Safe => new GameTreeAdvisor(new PessimisticSolver()),
         _ => new GameTreeAdvisor(new EquilibriumSolver()),
     };

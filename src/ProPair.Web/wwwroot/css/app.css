@@ -438,19 +438,22 @@ button, input, select { font: inherit; }
 .matrix.pairing th .tip.best { background: #2e9e44; color: #fff; }
 .matrix.pairing th .tip.them { background: #eceef1; color: var(--muted); }
 .matrix.pairing td.rec { box-shadow: inset 0 0 0 3px #2e9e44; }
-/* predicted path: a corner triangle per round – dark = next round, mid = the one after, light = third.
-   The timeline labels "Runde N" carry the same corner, so the matrix reads like a legend. */
-.path-1 { --corner: #1d2330; }
-.path-2 { --corner: #6b7385; }
-.path-3 { --corner: #a3aab6; }
+/* predicted path: corner triangle per round, split into two isosceles halves (top, right).
+   next round = black · round after = black top / light grey right · third = light grey.
+   The timeline labels "Runde N" carry the same corner, so they work as the legend. */
+.path-1 { --corner-top: #111418; --corner-right: #111418; }
+.path-2 { --corner-top: #111418; --corner-right: #aab1bc; }
+.path-3 { --corner-top: #aab1bc; --corner-right: #aab1bc; }  /* light, but still visible on white cells */
 .matrix.pairing td { overflow: hidden; }
-.matrix.pairing td[class*="path-"]::before, .timeline .r::after {
-    content: ""; position: absolute; top: 0; right: 0; width: 0; height: 0; pointer-events: none;
-    border-style: solid; border-width: 0 15px 15px 0; border-color: transparent var(--corner) transparent transparent;
+.matrix.pairing td[class*="path-"]::before, .matrix.pairing td[class*="path-"]::after,
+.timeline .r::before, .timeline .r::after {
+    content: ""; position: absolute; top: 0; right: 0; width: 18px; height: 18px; pointer-events: none;
 }
+.matrix.pairing td[class*="path-"]::before, .timeline .r::before { background: var(--corner-top); clip-path: polygon(0 0, 100% 0, 50% 50%); }
+.matrix.pairing td[class*="path-"]::after, .timeline .r::after { background: var(--corner-right); clip-path: polygon(100% 0, 100% 100%, 50% 50%); }
 .timeline .r {
     position: relative; overflow: hidden; align-self: flex-start;
-    padding: .15rem 1.3rem .15rem .55rem; border-radius: 6px; background: #eceef1;
+    padding: .2rem 1.6rem .2rem .55rem; border-radius: 6px; background: #f1f3f6; border: 1px solid #dde1e8;
 }
 
 /* mode switch */
@@ -476,7 +479,8 @@ button, input, select { font: inherit; }
 .pick .final strong { font-size: 1.25rem; line-height: 1.1; }
 .pick .final em { font-style: normal; font-size: .75rem; font-weight: 700; color: var(--muted); }
 .pick .round { font-size: .72rem; color: var(--muted); }
-.modehint { margin: .45rem 0 0; font-size: .75rem; color: var(--muted); }
+.modehint { margin: .45rem 0 0; font-size: .75rem; color: var(--muted); line-height: 1.8; }
+.chip-inline { display: inline-block; min-width: 1.6rem; margin: 0 .15rem; padding: 0 .3rem; border-radius: 4px; text-align: center; font-weight: 800; color: var(--fg); line-height: 1.4; }
 .timeline { list-style: none; margin: .7rem 0 0; padding: 0; font-size: .8rem; }
 .timeline li { display: flex; flex-direction: column; gap: .1rem; padding: .45rem 0; border-top: 1px solid var(--line); }
 .timeline .r { font-weight: 800; color: var(--fg); margin-bottom: .15rem; }

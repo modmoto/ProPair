@@ -150,7 +150,22 @@ else
                                 disabled="@_busy" @onclick="() => SetModeAsync(key)">@label</button>
                     }
                 </div>
-                <p class="modehint">@ModeHint</p>
+                <p class="modehint">
+                    @if (_mode == "avoidminus" && a.MinusFactors.Count > 0)
+                    {
+                        <span>Schlechte Matchups vermeiden:</span>
+                        @foreach (var (f, i) in a.MinusFactors.Select((f, i) => (f, i)))
+                        {
+                            var level = _p.Scale.FirstOrDefault(l => l.Key == f.LevelKey);
+                            <span class="chip-inline" style="background:@level?.Color">@level?.Label</span>
+                            <span>zählt @Format.Factor(f.Factor)-fach@(i < a.MinusFactors.Count - 1 ? "," : ".")</span>
+                        }
+                    }
+                    else
+                    {
+                        @ModeHint
+                    }
+                </p>
                 <div class="picks">
                     @foreach (var (path, i) in a.TopPicks.Select((p, i) => (p, i)))
                     {
@@ -165,8 +180,8 @@ else
                             </span>
                             @* always real points – a mode's weighting only changes the order *@
                             <span class="nums">
-                                <span class="final"><small>Ende</small> <strong>@Format.Score(path.Final.Value)</strong> <em>@Format.Percent(path.Final.Probability)</em></span>
-                                <span class="round">Runde @Format.Score(path.ThisRound.Value) · @Format.Percent(path.ThisRound.Probability)</span>
+                                <span class="final"><small>Gesamtwertung</small> <strong>@Format.Score(path.Final.Value)</strong> <em>@Format.Percent(path.Final.Probability)</em></span>
+                                <span class="round">Diese Runde @Format.Score(path.ThisRound.Value) · @Format.Percent(path.ThisRound.Probability)</span>
                             </span>
                         </button>
                     }
@@ -420,7 +435,7 @@ else
 
     private string ModeHint => _mode switch
     {
-        "avoidminus" => "Schlechte Matchups vermeiden geht vor: ein Minus wiegt in der Entscheidung 1,5-fach.",
+        "avoidminus" => "Schlechte Matchups vermeiden: Minus-Matchups zählen in der Entscheidung stärker.",
         "safe" => "Rechnet damit, dass der Gegner unseren Zug durchschaut, und holt das Beste aus dem schlechtesten Fall.",
         _ => "Bester Durchschnitt: Plus und Minus zählen gleich, der Gegner spielt ebenfalls optimal.",
     };

@@ -230,7 +230,7 @@ public class AdviceModeTests
 {
     /// <summary>
     /// Final round of 3, choice step. Taking Q1 gives our defender a "+" (+2) but sends Q2 to the others: a "-" (−2).
-    /// Taking Q2 gives 0 and the rest 0. Optimal sees both as 0; with minus weighted 1.5× (+2 −3 = −1) Q2 wins.
+    /// Taking Q2 gives 0 and the rest 0. Optimal sees both as 0; with "-" weighted 1.5× (+2 −3 = −1) Q2 wins.
     /// </summary>
     [Fact]
     public void Avoid_minus_removes_the_minus_where_optimal_is_indifferent_or_greedy()
@@ -325,4 +325,15 @@ public class OutcomeTests
             Assert.Equal(p.Games.Sum(g => g.Score), p.Total, 6);
         });
     }
+}
+
+public class MinusFactorTests
+{
+    [Theory]
+    [InlineData(-2, 1.5)]
+    [InlineData(-1, 1.25)]
+    [InlineData(0, 1)]
+    [InlineData(2, 1)]
+    public void Minus_counts_graduated(double score, double factor) =>
+        Assert.Equal(factor, AdviceModes.MinusFactor(score), 9);
 }

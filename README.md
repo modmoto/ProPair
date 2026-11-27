@@ -54,11 +54,11 @@ dotnet test
 | Modus | Was zählt | Technisch |
 |-------|-----------|-----------|
 | Optimal | höchster fairer Erwartungswert, Plus und Minus gleich gewichtet | Nash, lineare Bewertung |
-| Minus vermeiden | schlechte Matchups vermeiden geht vor gute holen | Nash, Minus-Bewertungen × 1,5 (`AdviceModes.MinusWeight`) |
+| Minus vermeiden | schlechte Matchups vermeiden geht vor gute holen | Nash, „-“ zählt 1,5-fach, „0/-“ 1,25-fach (`AdviceModes.MinusFactor`) |
 | Absichern | was wir garantiert mindestens bekommen | Maximin (`PessimisticSolver`) |
 
-1,5 ist bewusst moderat: Ein „-“ (−2) kostet dann so viel, wie „+“ und „0/+“ zusammen bringen. Die Gewichtung fließt nur in die Entscheidung ein (`GameTreeAdvisor(solver, weight)`). Alles Angezeigte (Gesamtstand, Matchups, Endstände, Wahrscheinlichkeiten) sind echte Punkte.
+Abgestuft und bewusst moderat: Jeder Minuspunkt bringt 0,25 Aufschlag. Ein „-“ (−2) kostet dann so viel, wie „+“ und „0/+“ zusammen bringen, ein halbes Minus bekommt den halben Aufschlag. Die Gewichtung fließt nur in die Entscheidung ein (`GameTreeAdvisor(solver, weight)`). Alles Angezeigte (Gesamtstand, Matchups, Endstände, Wahrscheinlichkeiten) sind echte Punkte.
 
-**Werte pro Empfehlung:** groß der **Endstand** (wahrscheinlichster Wert + wie wahrscheinlich genau dieser ist), klein **diese Runde** (dasselbe für die aktuelle Runde). Exakt berechnet: Ab der Option folgen beide Seiten ihren Strategien (gemischt, jede Möglichkeit mit ihrer Wahrscheinlichkeit). Alle Verläufe werden durchlaufen und die Wahrscheinlichkeiten je Ergebnis aufsummiert, ohne Simulation.
+**Werte pro Empfehlung:** groß die **Gesamtwertung** (wahrscheinlichster Wert + wie wahrscheinlich genau dieser ist), klein **Diese Runde** (dasselbe für die aktuelle Runde). Exakt berechnet: Ab der Option folgen beide Seiten ihren Strategien (gemischt, jede Möglichkeit mit ihrer Wahrscheinlichkeit). Alle Verläufe werden durchlaufen und die Wahrscheinlichkeiten je Ergebnis aufsummiert, ohne Simulation.
 
-**In der UI:** Das Augen-Symbol schaltet die Empfehlungen ein, standardmäßig sind sie aus. Gerechnet wird nur, wenn sie an sind. Der wahrscheinliche Verlauf erscheint in der Matrix als Ecke oben rechts im Feld: dunkel = nächste Runde, mittel = übernächste, hell = dritte. Die Schildchen „Runde 1/2/3“ in der Zeitleiste tragen dieselbe Ecke.
+**In der UI:** Das Augen-Symbol schaltet die Empfehlungen ein, standardmäßig sind sie aus. Gerechnet wird nur, wenn sie an sind. Der wahrscheinliche Verlauf erscheint in der Matrix als Ecke oben rechts im Feld: schwarz = nächste Runde, schwarz/hellgrau geteilt = übernächste, hellgrau = dritte. Die Schildchen „Runde 1/2/3“ in der Zeitleiste tragen dieselbe Ecke.
