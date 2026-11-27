@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProPair.Application\ProPair.Application.csproj" />
+    <ProjectReference Include="..\ProPair.Adapters.Mongo\ProPair.Adapters.Mongo.csproj" />
+    <ProjectReference Include="..\ProPair.Adapters.NewRecruit\ProPair.Adapters.NewRecruit.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- New Recruit credentials: user secrets with id propair (see README) -->
+    <UserSecretsId>propair</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

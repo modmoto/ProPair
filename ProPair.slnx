@@ -3,6 +3,7 @@
     <Project Path="src/ProPair.Adapters.Mongo/ProPair.Adapters.Mongo.csproj" />
     <Project Path="src/ProPair.Adapters.NewRecruit/ProPair.Adapters.NewRecruit.csproj" />
     <Project Path="src/ProPair.Adapters.Rest/ProPair.Adapters.Rest.csproj" />
+    <Project Path="src/ProPair.Adapters.Sync/ProPair.Adapters.Sync.csproj" />
     <Project Path="src/ProPair.Application/ProPair.Application.csproj" />
     <Project Path="src/ProPair.Contracts/ProPair.Contracts.csproj" />
     <Project Path="src/ProPair.Domain/ProPair.Domain.csproj" />
