@@ -7,11 +7,12 @@
     <meta name="theme-color" content="#1d2330" />
     <title>ProPair</title>
     <base href="/" />
-    <link rel="preload" id="webassembly" />
     <link rel="stylesheet" href="css/app.css" />
+    <link href="manifest.webmanifest" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <!-- If you add any scoped CSS files, uncomment the following to load them
     <link href="ProPair.Web.styles.css" rel="stylesheet" /> -->
-    <script type="importmap"></script>
 </head>
 
 <body>
@@ -29,7 +30,9 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="js/longpress.js"></script>
-    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <!-- plain name: the fingerprint placeholder is not replaced when the API project publishes the app -->
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>navigator.serviceWorker?.register('service-worker.js', { updateViaCache: 'none' });</script>
 </body>
 
 </html>

@@ -75,4 +75,16 @@ Im Turnier ist das Netz oft weg. Das Pairing darf deshalb nie am Netz hängen:
 - **Zuschauer** (Lese-Link) holen sich den Stand alle 15 s.
 - Anzeige unter dem Titel: „Gespeichert“ / „Noch nicht gespeichert – wird gesendet, sobald Netz da ist“ / „Offline“.
 
-Grenze: Die App selbst (Blazor-Dateien) muss einmal geladen sein. Ein Neuladen der Seite ganz ohne Netz braucht noch einen Service Worker (PWA).
+- **PWA:** Ein Service Worker cacht die App-Dateien (nur im veröffentlichten Build; im Entwicklungsmodus cacht er absichtlich nichts). Nach dem ersten Besuch startet die App auch ohne Netz, inklusive Neuladen, und lädt den zuletzt gespeicherten Pairing-Stand vom Gerät. Lässt sich auf dem Handy über „Zum Startbildschirm hinzufügen“ wie eine App installieren. Neue Versionen werden beim nächsten Öffnen geladen, nachdem alle Tabs der App geschlossen waren.
+
+Offline testen:
+
+```bash
+dotnet publish src/ProPair.Adapters.Rest -c Release -o /tmp/propair
+```
+
+```bash
+dotnet /tmp/propair/ProPair.Adapters.Rest.dll --contentRoot /tmp/propair --urls http://localhost:5080
+```
+
+Seite einmal öffnen, Server stoppen, neu laden.
