@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ProPair.Domain.Common;
 using ProPair.Domain.GameSystems;
 
@@ -140,12 +141,28 @@ public sealed class Tournament : AggregateRoot<TournamentId>
 }
 
 /// <summary>Army list text helpers.</summary>
-public static class ArmyList
+public static partial class ArmyList
 {
-    /// <summary>Same list, ignoring whitespace and the "Created with newrecruit.eu vX" footer.</summary>
+    /// <summary>
+    /// Same units: whitespace, everything before the first line starting with points, totals and the
+    /// "Created with newrecruit.eu vX" footer do not count.
+    /// </summary>
     public static bool Same(string a, string b) => Normalize(a) == Normalize(b);
 
-    public static string Normalize(string text) => string.Join('\n', text.Replace("\r", "").Split('\n')
-        .Select(l => l.Trim())
-        .Where(l => l.Length > 0 && !l.StartsWith("Created with", StringComparison.OrdinalIgnoreCase)));
+    public static string Normalize(string text)
+    {
+        var lines = text.Replace("\r", "").Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => l.Length > 0 && !TotalLine().IsMatch(l) &&
+                        !l.StartsWith("Created with", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var firstUnit = lines.FindIndex(l => UnitLine().IsMatch(l));
+        return string.Join('\n', lines.Skip(Math.Max(firstUnit, 0)));
+    }
+
+    [GeneratedRegex(@"^(\d{2,4}\s*[-–—]\s*\S|\d{3,4}\s+\p{L})")]
+    private static partial Regex UnitLine();
+
+    [GeneratedRegex(@"^(total\s*:?\s*)?\d[\d .,]*(pts?|points|p)?\.?$", RegexOptions.IgnoreCase)]
+    private static partial Regex TotalLine();
 }

@@ -1,3 +1,4 @@
+using ProPair.Adapters.NewRecruit.Acl;
 using ProPair.Application.Ports;
 
 namespace ProPair.Adapters.NewRecruit.Fake;
@@ -86,7 +87,7 @@ public sealed class FakeTournamentSource : ITournamentSource
                 var army = ArmyByShort[shortName];
                 var n = seed + ti * 7 + pi * 3;
                 var player = $"{FirstNames[n % FirstNames.Length]} {LastInitials[(n * 5 + ti) % LastInitials.Length]}.";
-                return new SourcePlayer(player, [FakeLists.For(army, ti + pi)]);
+                return ArmyListTranslator.Translate(player, [FakeLists.For(army, ti + pi)]);
             }).ToList();
             return new SourceTeam(t.Team, players);
         }).ToList();

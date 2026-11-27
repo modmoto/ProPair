@@ -77,8 +77,8 @@
 
     private IEnumerable<(string Line, int Index)> Lines => Player.ListText.Split('\n').Select((l, i) => (l, i));
 
-    /// <summary>Army name header and points total are not units.</summary>
-    private static bool IsUnit(string line) => line.Contains(" - ");
+    /// <summary>Lists arrive clean: every line with text can be marked.</summary>
+    private static bool IsUnit(string line) => !string.IsNullOrWhiteSpace(line);
 
     private ListMarkDto? MarkAt(int index) => Marks.FirstOrDefault(m => m.LineIndex == index);
 

@@ -45,7 +45,8 @@ dotnet test
 - Teamgröße 3–8 (häufigste Spielerzahl). Fehlende Spieler/Listen → „Dummy“, überzählige Listen bleiben draußen; die UI zeigt „Kader unvollständig“.
 - Listen verborgen: Badge „Keine Listen sichtbar“, letzter bekannter Stand bleibt.
 - Liste geändert: Spieler bekommt neue Id → Bewertungen/Notizen für ihn starten neu, Info-Icon in der Matrix.
-- Armee: aus dem Listentext (Namen + Übersetzungen FR/DE/ES/IT/PL, sonst typische Einheiten). Leere Listen → „?“.
+- Listen werden beim Sync bereinigt (Anti-Corruption-Layer im New-Recruit-Adapter): Kopfzeilen, Punktesumme, Footer und doppelte Listen fallen weg, Platzhalter ohne Einheiten zählen nicht als Liste.
+- Armee: aus dem Listentext (Namen + Übersetzungen FR/DE/ES/IT/PL, sonst typische Einheiten). Nicht erkannt → „?“.
 - „Von New Recruit aktualisieren“ im Turnier (vorerst öffentlich, später Admin-UI).
 - Manuell: `POST /sync/upcoming`, `POST /sync/tournaments/{nrId}`, `POST /sync/backfill?from=…&to=…` (auch vergangene, nur zum Testen).
 - NR protokolliert jeden Aufruf: Requests nacheinander, 400 ms Pause, ein Worker.

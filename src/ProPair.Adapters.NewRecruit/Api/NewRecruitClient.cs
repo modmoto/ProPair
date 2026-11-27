@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using ProPair.Adapters.NewRecruit.Acl;
 using ProPair.Application.Ports;
 
 namespace ProPair.Adapters.NewRecruit.Api;
@@ -41,8 +42,7 @@ public sealed class NewRecruitClient(HttpClient http, NewRecruitOptions options)
         if (t?.Id is null) return null;
         return new SourceTournament(t.Id, t.Name.Trim(), null, null, IsTeamTournament: t.Type == 1, ListsVisible: t.ShowLists,
             (t.Teams ?? []).Select(team => new SourceTeam(team.Name.Trim(),
-                (team.Players ?? []).Select(p => new SourcePlayer(p.Name.Trim(),
-                    (p.Lists ?? []).Where(l => !string.IsNullOrWhiteSpace(l)).ToList())).ToList())).ToList());
+                (team.Players ?? []).Select(p => ArmyListTranslator.Translate(p.Name.Trim(), p.Lists ?? [])).ToList())).ToList());
     }
 
     private async Task<T?> PostAsync<T>(string path, object body, CancellationToken ct)

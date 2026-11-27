@@ -1,6 +1,9 @@
 namespace ProPair.Application.Ports;
 
-/// <summary>External tournament source (New Recruit). Returns raw data; mapping to the domain happens in the use cases.</summary>
+/// <summary>
+/// External tournament source (New Recruit). The adapter translates its formats (anti-corruption layer);
+/// what to keep is decided in the use cases.
+/// </summary>
 public interface ITournamentSource
 {
     /// <summary>Tournaments of our game system that overlap the period.</summary>
@@ -19,5 +22,5 @@ public sealed record SourceTournament(string ExternalId, string Name, DateOnly? 
 
 public sealed record SourceTeam(string Name, IReadOnlyList<SourcePlayer> Players);
 
-/// <param name="Lists">Raw list texts as the source delivers them (a player can have more than one).</param>
-public sealed record SourcePlayer(string Name, IReadOnlyList<string> Lists);
+/// <param name="ListText">Clean army list, one unit per line; empty if the member has none.</param>
+public sealed record SourcePlayer(string Name, string ArmyId, string ListText);

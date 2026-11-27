@@ -83,9 +83,8 @@ public class SyncTournamentsTests
     {
         _source.Add("t", Today.AddDays(10), Today.AddDays(11), SourceStatus.Open);
         // coaches first, more members than the largest team size
-        _source.AddMembers("t", new SourcePlayer("Coach", []), new SourcePlayer("Judge", [" "]),
-            new SourcePlayer("A3", [OK]), new SourcePlayer("A4", [OK]), new SourcePlayer("A5", [OK]),
-            new SourcePlayer("A6", [OK]), new SourcePlayer("A7", [OK]));
+        _source.AddMembers("t", Member("Coach", ""), Member("Judge", ""),
+            Member("A3", OK), Member("A4", OK), Member("A5", OK), Member("A6", OK), Member("A7", OK));
 
         await Sync().OneAsync("t");
 
@@ -118,6 +117,9 @@ public class SyncTournamentsTests
         public void RequestTournamentSync(string externalId) => Requested.Add(externalId);
     }
 
+    private static SourcePlayer Member(string name, string list) =>
+        new(name, ProPair.Domain.GameSystems.ArmyDetector.Detect(list), list);
+
     /// <summary>Two teams of three; lists can be changed or hidden between syncs.</summary>
     private sealed class ScriptedSource : ITournamentSource
     {
@@ -126,7 +128,7 @@ public class SyncTournamentsTests
         public void Add(string id, DateOnly start, DateOnly end, SourceStatus status, bool team = true)
         {
             var teams = new[] { "A", "B" }.Select(n => new SourceTeam(n,
-                Enumerable.Range(0, 3).Select(i => new SourcePlayer($"{n}{i}", [i == 0 ? EoS : OK])).ToList())).ToList();
+                Enumerable.Range(0, 3).Select(i => Member($"{n}{i}", i == 0 ? EoS : OK)).ToList())).ToList();
             _all[id] = (new SourceTournamentSummary(id, id, start, end, status),
                 new SourceTournament(id, id, null, null, team, ListsVisible: true, teams));
         }
@@ -143,7 +145,7 @@ public class SyncTournamentsTests
         {
             var (summary, data) = _all[id];
             var first = data.Teams[0];
-            var players = first.Players.Select((p, i) => i == player ? p with { Lists = [list] } : p).ToList();
+            var players = first.Players.Select((p, i) => i == player ? Member(p.Name, list) : p).ToList();
             _all[id] = (summary, data with { Teams = [first with { Players = players }, .. data.Teams.Skip(1)] });
         }
 

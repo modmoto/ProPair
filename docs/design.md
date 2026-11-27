@@ -253,6 +253,7 @@ Taktisches DDD nach Evans/Vernon:
 | 19 | Teamgröße | 3–8, häufigste Spielerzahl der Teams ab 3 (Gleichstand: die größere). Armee aus dem Listentext (NR liefert vor dem Turnier kein JSON). |
 | 20 | Nicht-Spieler | Spieler ist, wer eine Liste hat. Coaches, Judges, NPCs werden nicht importiert; Teams ohne Spieler und mit weniger Mitgliedern als die Teamgröße entfallen. |
 | 21 | Unvollständige Kader | Fehlende Spieler/Listen → „Dummy“. Überzählige Listen bleiben draußen (die ersten zählen). Warnung „Kader unvollständig“ in Turnierliste, Teamwahl, Übersicht und Matrix. |
+| 22 | Listenformat | Anti-Corruption-Layer im New-Recruit-Adapter (`ArmyListTranslator`): Kopfzeilen, Punktesumme, Footer und doppelte Listen raus, Platzhalter („kadrowicz“) sind keine Liste, unbekannte Formate verlieren nur Summe und Footer. Armee wird vorher aus dem Rohtext erkannt. Listenvergleich zählt nur die Einheiten. |
 
 ## Offene Fragen
 
@@ -260,7 +261,6 @@ Taktisches DDD nach Evans/Vernon:
 
 - Tisch-/Szenariowahl im Pairing abbilden?
 - Captain-Zugang ohne Login: eigener Admin-Link pro Team, oder Login (z. B. GitHub/Google)?
-- Listenformat bereinigen (Kopfzeilen, Fußzeile, zwei Listen pro Spieler).
 - Regeln aus NR syncen (`id_book` aus Reports?).
 - Admin-UI mit Login für Sync/Dashboard.
 - Bei Reservespielern selbst wählen, wer spielt (derzeit zählen die ersten Listen).

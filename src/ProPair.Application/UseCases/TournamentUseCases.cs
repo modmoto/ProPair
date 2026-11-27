@@ -57,14 +57,9 @@ public sealed class ImportTournament(ITournamentSource source, ITournamentReposi
     }
 
     /// <summary>Separates players from coaches, judges and NPCs: only players have a list.</summary>
-    private static bool HasList(SourcePlayer p) => p.Lists.Any(l => !string.IsNullOrWhiteSpace(l));
+    private static bool HasList(SourcePlayer p) => p.ListText.Length > 0;
 
-    /// <summary>All lists of a player as one text; the army is recognised from it (rough – format cleanup comes later).</summary>
-    private static Player ToPlayer(SourcePlayer p)
-    {
-        var text = string.Join("\n\n", p.Lists.Select(l => l.Trim()));
-        return new Player(PlayerId.New(), p.Name, ArmyDetector.Detect(text), text);
-    }
+    private static Player ToPlayer(SourcePlayer p) => new(PlayerId.New(), p.Name, p.ArmyId, p.ListText);
 }
 
 public sealed record SyncReport(int Found, int Synced, int Skipped, IReadOnlyList<string> Failed);

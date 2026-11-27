@@ -92,7 +92,7 @@ src/
 - `tournament` `{id}` → `{_id, name, showlists, type (1 = Team), teams:[{name, players:[{name, lists:[text]}]}]}`. Keine Ids für Spieler/Teams, keine Daten. `showlists=false` → Teams ohne Spieler.
 - `reports` `{id_tournament}` → strukturierte Listen (`id_book`, `report_list`), erst nach gespielten Spielen.
 - System: nur „The 9th Age 3rd Edition“ = 736602462.
-- Listen sind Text: Kopfzeile „Armee“, „Name - Armee“ o. ä., teils französisch, Fußzeile „Created with newrecruit.eu“.
+- Listen sind Text: Kopfzeile „Armee“, „Name - Armee“ o. ä., teils französisch, Punktesumme, Fußzeile „Created with newrecruit.eu“. Selten andere Export-Formate.
 
 ## Sync-Regeln (umgesetzt)
 
@@ -101,12 +101,12 @@ src/
 - Teamgröße = häufigste Spielerzahl (3–8). Fehlende → „Dummy“, überzählige draußen; UI zeigt „Kader unvollständig“.
 - Liste verborgen → letzter Stand bleibt, Badge „Keine Listen sichtbar“.
 - Liste geändert → neue Spieler-Id (Bewertungen/Notizen weg), `ListChangedAt` → Info-Icon in der Matrix.
-- Armee aus Text: Namen + Übersetzungen, sonst typische Einheiten; leer → „unknown“ („?“).
+- Listen kommen bereinigt an (ACL `Adapters.NewRecruit/Acl/ArmyListTranslator`): nur Einheiten, Platzhalter = keine Liste.
+- Armee aus dem Rohtext: Namen + Übersetzungen, sonst typische Einheiten; leer → „unknown“ („?“).
 - Force-Update im Turnier (öffentlich, später Admin-UI). Backfill `POST /sync/backfill?from&to` nur zum Testen.
 
 ## Offene Punkte
 
-- Listenformat bereinigen (Kopf-/Fußzeilen, zwei Listen pro Spieler).
 - Reservespieler: selbst wählen, wer spielt (derzeit zählen die ersten Listen).
 - Einzel-Sync eines neuen Turniers kennt kein Datum (nur über die Suche).
 - Lokale DB enthält noch den 2v2-„Warpi cup“ (vor dem Filter importiert).
