@@ -33,7 +33,7 @@
 
     <!-- loop back to the next round -->
     <path d="M404 343 C 450 343, 450 115, 410 115" fill="none" stroke="#2e9e44" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
-    <text x="436" y="236" fill="#2e9e44" font-size="12" transform="rotate(90 436 236)" text-anchor="middle">rekursiv, memoisiert</text>
+    <text x="458" y="229" fill="#2e9e44" font-size="12" transform="rotate(90 458 229)" text-anchor="middle">rekursiv, memoisiert</text>
   </g>
 
   <text x="24" y="398" font-weight="700">Jedes Spiel wird gelöst:</text>
@@ -73,10 +73,10 @@
   <text x="500" y="242" font-weight="700">Defender-Schritt, gelöst</text>
   <text x="500" y="259" font-size="12" fill="#6b7385">Zelle = erwarteter Endstand, wenn diese beiden verteidigen</text>
   <g font-size="12" text-anchor="middle" fill="#6b7385">
-    <text x="625" y="282">Xaver</text><text x="685" y="282">Yuri</text><text x="745" y="282">Zoe</text>
-    <text x="625" y="390" fill="#1d2330" font-weight="700">40 %</text>
-    <text x="685" y="390" fill="#1d2330" font-weight="700">60 %</text>
-    <text x="745" y="390">0 %</text>
+    <text x="625" y="272">Xaver</text><text x="685" y="272">Yuri</text><text x="745" y="272">Zoe</text>
+    <text x="625" y="286" fill="#1d2330" font-weight="700">40 %</text>
+    <text x="685" y="286" fill="#1d2330" font-weight="700">60 %</text>
+    <text x="745" y="286">0 %</text>
   </g>
   <g font-size="12" fill="#6b7385">
     <text x="500" y="310">Anna</text><text x="500" y="346">Ben</text><text x="500" y="382">Carl</text>
