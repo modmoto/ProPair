@@ -126,7 +126,10 @@ else
                     @for (var i = 0; i < players.Count; i++)
                     {
                         var index = i;
-                        <button class="dot @(index == _listIndex ? "on" : "")" aria-label="@players[index].Name"
+                        @* my rating against them as colour: shows at a glance what is still missing *@
+                        var rated = _me is null ? null : LevelAt(_me.Id, players[index].Id);
+                        <button class="dot @(index == _listIndex ? "on" : "") @(rated is null ? "" : "rated")"
+                                style="@(rated is null ? null : $"background:{rated.Color}")" aria-label="@players[index].Name"
                                 @onclick="() => _listIndex = index">@players[index].ArmyShort</button>
                     }
                 </span>
@@ -148,7 +151,7 @@ else
                                     disabled="@(!CanEditNow)" @onclick="() => SetAsync(me.Id, opp.Id, l.Key)">@l.Label</button>
                         }
                         <button class="lvl clear" disabled="@(!CanEditNow || mine is null)" title="Bewertung löschen"
-                                aria-label="Bewertung löschen" @onclick="() => SetAsync(me.Id, opp.Id, null)">↺</button>
+                                aria-label="Bewertung löschen" @onclick="() => SetAsync(me.Id, opp.Id, null)"><TrashIcon /></button>
                     </div>
                     <p class="subtle">Deine Bewertung: @me.Name gegen @opp.Name</p>
                 }
@@ -178,7 +181,7 @@ else
                             @onclick="() => QuickSetAsync(quickOwn, quickOpp, l.Key)">@l.Label</button>
                 }
                 <button class="lvl clear" disabled="@(qLevel is null)" title="Bewertung löschen" aria-label="Bewertung löschen"
-                        @onclick="() => QuickSetAsync(quickOwn, quickOpp, null)">↺</button>
+                        @onclick="() => QuickSetAsync(quickOwn, quickOpp, null)"><TrashIcon /></button>
             </div>
             <button class="link subtle" @onclick="() => OpenSheet(quickOwn, quickOpp)">Notiz &amp; Verlauf</button>
         </section>
@@ -203,7 +206,7 @@ else
                             disabled="@(!CanEditNow)" @onclick="() => SetAsync(sheetOwn, sheetOpp, l.Key)">@l.Label</button>
                 }
                 <button class="lvl clear" disabled="@(!CanEditNow || current is null)" title="Bewertung löschen"
-                        aria-label="Bewertung löschen" @onclick="() => SetAsync(sheetOwn, sheetOpp, null)">↺</button>
+                        aria-label="Bewertung löschen" @onclick="() => SetAsync(sheetOwn, sheetOpp, null)"><TrashIcon /></button>
             </div>
 
             <h3>Notiz</h3>

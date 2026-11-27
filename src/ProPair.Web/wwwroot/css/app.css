@@ -606,7 +606,7 @@ button, input, select { font: inherit; }
 .sheet.quick .sheet-levels { margin-top: .9rem; }
 .sheet.quick .link.subtle { margin-top: .7rem; }
 .lvl:disabled { cursor: default; opacity: .45; }
-.lvl.clear { font-size: 1.15rem; }
+.lvl.clear { display: grid; place-items: center; }
 /* opponent lists under the matrix */
 .opplists { margin-top: 1rem; }
 .opphead { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .4rem; }
@@ -615,3 +615,7 @@ button, input, select { font: inherit; }
 .opplists .sheet-levels { margin-top: .6rem; }
 .opplists .subtle { margin-top: .3rem; }
 .listpanel.embedded { margin-top: .2rem; padding: 0; border: none; background: transparent; }
+/* carousel dots carry my rating colour; the shown one gets a dark ring instead of a dark fill */
+.opplists .dot.rated { border-color: transparent; color: var(--fg); }
+.opplists .dot.on { background: #fff; border-color: var(--fg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.opplists .dot.rated.on { box-shadow: inset 0 0 0 1px var(--fg), inset 0 0 0 3px #fff; }
