@@ -254,6 +254,7 @@ Taktisches DDD nach Evans/Vernon:
 | 20 | Nicht-Spieler | Spieler ist, wer eine Liste hat. Coaches, Judges, NPCs werden nicht importiert; Teams ohne Spieler und mit weniger Mitgliedern als die Teamgröße entfallen. |
 | 21 | Unvollständige Kader | Fehlende Spieler/Listen → „Dummy“. Überzählige Listen bleiben draußen (die ersten zählen). Warnung „Kader unvollständig“ in Turnierliste, Teamwahl, Übersicht und Matrix. |
 | 22 | Listenformat | Anti-Corruption-Layer im New-Recruit-Adapter (`ArmyListTranslator`): Kopfzeilen, Punktesumme, Footer und doppelte Listen raus, Platzhalter („kadrowicz“) sind keine Liste, unbekannte Formate verlieren nur Summe und Footer. Armee wird vorher aus dem Rohtext erkannt. Listenvergleich zählt nur die Einheiten. |
+| 23 | Release | Ein Docker-Image für App und Sync (zwei Prozesse, endet einer, startet der Container neu). Sync-URLs nur im Container erreichbar (kein Login). Azure DevOps wie FadingFlame: Build → Docker Hub, Release per SSH + docker-compose hinter Caddy. MongoDB extern, Secrets nur in Azure DevOps. |
 
 ## Offene Fragen
 

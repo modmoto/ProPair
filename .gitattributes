@@ -1,0 +1,2 @@
+# runs in the Linux container: must keep LF, also when checked out on Windows
+*.sh text eol=lf

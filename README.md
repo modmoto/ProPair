@@ -38,6 +38,30 @@ Sync: http://localhost:5090 (Dashboard `/hangfire`, nur lokal). Auf Servern: Env
 dotnet test
 ```
 
+## Release (Azure DevOps)
+
+Ein Docker-Image (`Dockerfile`) für App (Port 80) und Sync-Prozess. Der Sync hört nur im Container (`SYNC_URLS`, Standard `http://127.0.0.1:5090`).
+
+Lokal bauen:
+
+```bash
+docker build -t propair .
+```
+
+Einrichten in Azure DevOps (New pipeline → GitHub → ProPair → „Existing Azure Pipelines YAML file“):
+
+1. `/azure-pipelines.yml`, Name `pro-pair.build`: testet, pusht `modmoto/pro-pair` nach Docker Hub.
+2. `/release-pipeline.yml`: deployt jeden erfolgreichen `main`-Build per SSH (`docker-compose.token.yml`, Netz `caddy`, Container `pro-pair-prod`).
+
+Secret-Variablen der Release-Pipeline: `MONGO_CONNECTION_STRING`, `NEW_RECRUIT_LOGIN`, `NEW_RECRUIT_PASSWORD`.
+Service-Connections: `official-docker-modmoto`, `HetziPrivate`.
+
+Sofort synchronisieren (auf dem Server, sonst erst 04:00 UTC):
+
+```bash
+docker exec pro-pair-prod bash -c 'exec 3<>/dev/tcp/127.0.0.1/5090; printf "POST /sync/upcoming HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nConnection: close\r\n\r\n" >&3; head -1 <&3'
+```
+
 ## New-Recruit-Sync
 
 - Eigener Prozess `ProPair.Adapters.Sync` mit Hangfire (Jobs in Mongo, Prefix `hangfire`). Die API reiht nur ein.

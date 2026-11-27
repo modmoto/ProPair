@@ -1,0 +1,55 @@
+# Release pipeline: deploys the image of a successful "pro-pair.build" run of main.
+# Secret variables, set on this pipeline in Azure DevOps (never in this file):
+#   MONGO_CONNECTION_STRING, NEW_RECRUIT_LOGIN, NEW_RECRUIT_PASSWORD
+trigger: none
+
+pool:
+  vmImage: "ubuntu-latest"
+
+resources:
+  pipelines:
+    - pipeline: pro-pair
+      source: pro-pair.build
+      trigger:
+        branches:
+          include:
+            - main
+
+jobs:
+  - deployment: Deploy
+    displayName: Prod
+    environment: prod
+    variables:
+      CONTAINER_SUFFIX: 'prod'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - download: pro-pair
+              artifact: drop
+
+            - task: CopyFilesOverSSH@0
+              displayName: 'Copy compose file'
+              inputs:
+                sshEndpoint: HetziPrivate
+                sourceFolder: '$(Pipeline.Workspace)/pro-pair/drop'
+                contents: 'docker-compose.yml'
+                targetFolder: '/usr/local/release-compose-files/pro-pair/$(CONTAINER_SUFFIX)'
+
+            - task: SSH@0
+              displayName: 'Run shell inline on remote machine'
+              inputs:
+                sshEndpoint: HetziPrivate
+                runOptions: inline
+                # single quotes keep characters like & or $ in the secrets intact (a ' would break them)
+                inline: |
+                  set -e
+                  cd /usr/local/release-compose-files/pro-pair/$(CONTAINER_SUFFIX)
+                  export TAG='$(resources.pipeline.pro-pair.runID)'
+                  export CONTAINER_SUFFIX='$(CONTAINER_SUFFIX)'
+                  export MONGO_CONNECTION_STRING='$(MONGO_CONNECTION_STRING)'
+                  export NEW_RECRUIT_LOGIN='$(NEW_RECRUIT_LOGIN)'
+                  export NEW_RECRUIT_PASSWORD='$(NEW_RECRUIT_PASSWORD)'
+                  docker-compose -p pro-pair-$(CONTAINER_SUFFIX) pull
+                  docker-compose -p pro-pair-$(CONTAINER_SUFFIX) up -d
+                failOnStdErr: false

@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  pro-pair:
+    image: modmoto/pro-pair:${TAG}
+    container_name: pro-pair-${CONTAINER_SUFFIX}
+    restart: unless-stopped
+    expose:
+      - 80
+    environment:
+      - Mongo__ConnectionString=${MONGO_CONNECTION_STRING}
+      - NewRecruit__Login=${NEW_RECRUIT_LOGIN}
+      - NewRecruit__Password=${NEW_RECRUIT_PASSWORD}
+
+networks:
+  default:
+    name: caddy
+    external: true
