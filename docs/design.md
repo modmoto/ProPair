@@ -24,6 +24,13 @@ Pairing-Tool für Tabletop-Teamturniere. Start: The 9th Age (T9A).
 - Pairing-Assistent (bester Pfad).
 - Weitere Spielsysteme.
 
+## UI-Grundsätze
+
+- **Mobile first.** Basis-CSS ist das Handy (≥ 360px), größere Screens per `min-width`-Media-Queries.
+- 8×8-Matrix passt ohne Scrollen auf ein 360px-Handy; eigene Spieler als fixierte erste Spalte, Gegner als fixierte Kopfzeile.
+- Touch-Ziele ≥ 44px, Eingaben ≥ 16px (kein iOS-Zoom), native Dropdowns.
+- Keine Hover-only-Funktionen: Liste per Tap auf den Spieler, Verlauf per Long-Press.
+
 ## Bewertungsskala
 
 Default: 5 Stufen. Jedes Team hat eine Default-Skala (Stufen, Labels, Farben, Score). Beim Anlegen einer Turnier-Vorbereitung wird sie kopiert und ist für dieses Turnier fix.
@@ -192,7 +199,7 @@ Taktisches DDD nach Evans/Vernon:
 ## Stand POC
 
 - Seiten: Turnierauswahl/Import → Team wählen → Übersicht (Teilen, Gegner, Fortschritt) → Matrix.
-- Matrix: Dropdown pro Zelle, Farben aus der Skala, Liste als Tooltip auf Spielername.
+- Matrix: Dropdown pro Zelle, Farben aus der Skala, Liste per Tap auf den Spieler.
 - Speichern mit optimistischer Versionierung (Mongo), Retry im Use Case, Client schreibt sequenziell.
 - Tests: Domain (Matrix, Tournament, Preparation), Application (Flow mit Fake-Quelle, In-Memory-Repos).
 
@@ -209,6 +216,7 @@ Taktisches DDD nach Evans/Vernon:
 | 7 | Matrizen | Pro Turnier eine Matrix je Gegnerteam. |
 | 8 | Modellierung | DDD, Aggregate wie oben. |
 | 9 | New Recruit | Import im MVP, zunächst Fake-Quelle. |
+| 10 | UI | Mobile first. |
 
 ## Offene Fragen
 

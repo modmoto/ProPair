@@ -30,12 +30,14 @@ else
         <table class="matrix">
             <thead>
             <tr>
-                <th></th>
+                <th class="corner"></th>
                 @foreach (var opp in _matrix.Opponent.Players)
                 {
-                    <th title="@opp.ListText">
-                        <span class="army">@opp.ArmyShort</span>
-                        <span class="player">@opp.Name</span>
+                    <th>
+                        <button class="@(_shown == opp ? "active" : "")" title="Liste anzeigen" @onclick="() => Toggle(opp)">
+                            <span class="army">@opp.ArmyShort</span>
+                            <span class="player">@opp.Name</span>
+                        </button>
                     </th>
                 }
             </tr>
@@ -44,9 +46,11 @@ else
             @foreach (var own in _matrix.Own.Players)
             {
                 <tr>
-                    <th class="row" title="@own.ListText">
-                        <span class="army">@own.ArmyShort</span>
-                        <span class="player">@own.Name</span>
+                    <th class="row">
+                        <button class="@(_shown == own ? "active" : "")" title="Liste anzeigen" @onclick="() => Toggle(own)">
+                            <span class="army">@own.ArmyShort</span>
+                            <span class="player">@own.Name</span>
+                        </button>
                     </th>
                     @foreach (var opp in _matrix.Opponent.Players)
                     {
@@ -75,6 +79,17 @@ else
         </table>
     </div>
 
+    @if (_shown is not null)
+    {
+        <section class="listpanel">
+            <header>
+                <strong>@_shown.Name · @_shown.ArmyName</strong>
+                <button class="btn" @onclick="() => _shown = null">Schließen</button>
+            </header>
+            <pre>@_shown.ListText</pre>
+        </section>
+    }
+
     <div class="legend">
         @foreach (var l in _matrix.Scale)
         {
@@ -92,6 +107,7 @@ else
     private string? _author;
     private string? _authorInput;
     private string? _error;
+    private PlayerDto? _shown;
     private readonly SemaphoreSlim _writeQueue = new(1, 1); // keep edits in order, one request at a time
 
     private bool CanEditNow => _matrix!.CanEdit && !string.IsNullOrWhiteSpace(_author);
@@ -111,6 +127,8 @@ else
         }
         catch (ApiException e) { _error = e.Message; }
     }
+
+    private void Toggle(PlayerDto player) => _shown = _shown == player ? null : player;
 
     private RatingLevelDto? LevelAt(Guid own, Guid opp) =>
         _cells.TryGetValue((own, opp), out var key) ? _matrix!.Scale.FirstOrDefault(l => l.Key == key) : null;
