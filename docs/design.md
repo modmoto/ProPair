@@ -25,16 +25,17 @@ Pairing-Tool für Tabletop-Teamturniere. Start: The 9th Age (T9A).
 
 ## Bewertungsskala
 
-| Wert | Farbe | Score (Default) |
-|------|-------|-----------------|
-| ++   | dunkelgrün | +2 |
-| +    | grün       | +1 |
-| 0/+  | hellgrün   | +0.5 |
-| 0    | gelb       | 0 |
-| 0/-  | orange     | −0.5 |
-| -    | rot        | −1 |
+Default: 5 Stufen. Pro Team anpassbar (Stufen, Labels, Farben, Score).
 
-Skala ist konfigurierbar (Labels, Farben, Score) – siehe offene Fragen.
+| Wert | Farbe | Score |
+|------|-------|-------|
+| +    | grün     | +2 |
+| 0/+  | hellgrün | +1 |
+| 0    | gelb     | 0 |
+| 0/-  | orange   | −1 |
+| -    | rot      | −2 |
+
+Optional ergänzbar, z. B. `++` (dunkelgrün).
 
 ## T9A-Armeen
 
@@ -90,7 +91,7 @@ tests/
   ProPair.Application.Tests
 ```
 
-- Stack: .NET 8, Blazor WebAssembly (hosted), MongoDB.
+- Stack: .NET 11, Blazor WebAssembly (hosted), MongoDB.
 - Abhängigkeitsrichtung: Adapters → Application → Domain.
 - Solver im Domain-Layer → kann auch im Client laufen (offline).
 
@@ -99,14 +100,31 @@ tests/
 - **GameSystem**: Name, Armeen, Bewertungsskala.
 - **Team**: Name, Spieler (Name, Armee, Liste, Notizen).
 - **Matchup**: eigenes Team vs. Gegnerteam, Format (3/5/8), Matrix.
-- **Matrix**: Zelle (eigener Spieler, Gegner) → Bewertung + optionale Notiz.
+- **Matrix**: Zelle (eigener Spieler, Gegner) → aktuelle Bewertung + optionale Notiz.
+- **RatingChange**: Zelle, alter/neuer Wert, Autor, Zeitpunkt. Append-only.
 - **PairingSession**: Matchup + bisher gespielte Züge.
 - **ShareLink**: geheimer Token → Zugriff auf Matchup (lesen/schreiben).
 
+## Zusammenarbeit & Verlauf
+
+- Eine gemeinsame Wertung pro Zelle, letzte Änderung gewinnt.
+- Jede Änderung wird als `RatingChange` gespeichert (wer, wann, alt → neu).
+- Autor: Name wird beim ersten Öffnen des Links abgefragt, im Browser gespeichert.
+- UI: kein History-Icon. Rechtsklick (mobil: Long-Press) auf Zelle → Kontextmenü mit "Verlauf".
+- MVP-Fallback: Verlauf nur speichern, Anzeige später.
+
+## Entscheidungen
+
+| # | Thema | Entscheidung |
+|---|-------|--------------|
+| 1 | Skala | Pro Team anpassbar, Default 5 Stufen (+, 0/+, 0, 0/-, -). |
+| 2 | Mehrere Bearbeiter | Eine Wertung pro Zelle, Verlauf mit Autor. |
+| 3 | Share-Link | Zwei Tokens: Edit und Read-only. |
+| 4 | .NET | .NET 11. |
+
 ## Offene Fragen
 
-Siehe unten – Entscheidungen werden hier eingetragen.
-
-| # | Frage | Entscheidung |
-|---|-------|--------------|
-| 1 | | |
+- Gegner-Sicht im Assistenten: negierte eigene Matrix oder eigene Einschätzung des Gegners?
+- Echtzeit-Sync (SignalR) im MVP oder Reload reicht?
+- Ein Team, viele Matchups (Gegnerteams) – oder Matrix pro Turnier gruppiert?
+- Tisch-/Szenariowahl im Pairing abbilden?
