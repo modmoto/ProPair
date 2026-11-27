@@ -83,7 +83,8 @@ else
                     @for (var i = 0; i < active.Count; i++)
                     {
                         var index = i;
-                        <button class="dot @(index == _listIndex ? "on" : "")" aria-label="@active[index].Name" @onclick="() => _listIndex = index">
+                        <button class="dot @(index == _listIndex ? "on" : "") @(Remaining(active[index].Id, false) ? "" : "taken")"
+                                aria-label="@active[index].Name" @onclick="() => _listIndex = index">
                             @active[index].ArmyShort
                         </button>
                     }
@@ -93,7 +94,8 @@ else
             @if (current is not null)
             {
                 <div class="settle" @key="current.Id">
-                    <ArmyList Player="current" Marks="MarksOf(current.Id)" Note="NoteOf(current.Id)" />
+                    <ArmyList Player="current" Marks="MarksOf(current.Id)" Note="NoteOf(current.Id)"
+                              Taken="@(!Remaining(current.Id, false))" />
                 </div>
             }
         </section>
@@ -114,11 +116,19 @@ else
                              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             @if (ShowAll)
                             {
-                                <path d="M4 14h6v6" /><path d="M20 10h-6V4" /><path d="M14 10l7-7" /><path d="M3 21l7-7" />
+                                @* four arrows pointing in: back to the remaining players *@
+                                <path d="M3 3l6 6" /><path d="M9 4v5H4" />
+                                <path d="M21 3l-6 6" /><path d="M15 4v5h5" />
+                                <path d="M3 21l6-6" /><path d="M9 20v-5H4" />
+                                <path d="M21 21l-6-6" /><path d="M15 20v-5h5" />
                             }
                             else
                             {
-                                <path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" />
+                                @* four arrows pointing out: the whole matrix *@
+                                <path d="M9 9L3 3" /><path d="M3 8V3h5" />
+                                <path d="M15 9l6-6" /><path d="M16 3h5v5" />
+                                <path d="M9 15l-6 6" /><path d="M3 16v5h5" />
+                                <path d="M15 15l6 6" /><path d="M21 16v5h-5" />
                             }
                         </svg>
                     </button>
@@ -478,9 +488,9 @@ else
 
     // ---------- lists during the pairing ----------
 
-    /// <summary>Opponents still in the pairing (all of them once it is done).</summary>
+    /// <summary>Opponents still in the pairing; with the matrix expanded (or the pairing done) all of them.</summary>
     private List<PlayerDto> ActiveOpponents =>
-        _p!.Opponent.Players.Where(p => Done || Remaining(p.Id, false)).ToList();
+        _p!.Opponent.Players.Where(p => ShowAll || Remaining(p.Id, false)).ToList();
 
     /// <summary>Their two attackers: once tapped in the attackers step, and in the choice step.</summary>
     private IReadOnlyList<Guid>? AttackerLists => _p!.Step switch

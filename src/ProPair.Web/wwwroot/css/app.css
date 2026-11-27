@@ -234,9 +234,9 @@ button, input, select { font: inherit; }
 }
 
 /* full-matrix toggle in the empty top-left corner of the table */
-.matrix.pairing th.corner { vertical-align: bottom; }
+.matrix.pairing th.corner { vertical-align: middle; text-align: center; }
 .matrix.pairing th.corner .flip {
-    display: grid; place-items: center; width: 2.6rem; height: 2.6rem; margin: 0 auto .1rem; padding: 0;
+    display: grid; place-items: center; width: 2.6rem; height: 2.6rem; min-height: 0; margin: 0 auto; padding: 0;
     border: 1px solid var(--accent); border-radius: 10px; background: #fff; color: var(--accent); cursor: pointer;
 }
 .matrix.pairing th.corner .flip.on { background: var(--accent); color: #fff; }
@@ -465,20 +465,21 @@ button, input, select { font: inherit; }
 .advice header { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
 .advice h2 { margin: 0; }
 .picks { display: flex; flex-direction: column; gap: .35rem; margin-top: .6rem; }
-.pick {
+/* scoped to the panel: plain ".pick" also matched picked matrix cells (td.pick) and broke the table row */
+.picks .pick {
     display: grid; grid-template-columns: 1.4rem 1fr auto; align-items: center; gap: .5rem; min-height: var(--tap);
     padding: .35rem .6rem; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: inherit;
     text-align: left; cursor: pointer;
 }
-.pick.on { border-color: #2e9e44; background: #f2faf4; }
-.pick .rank { font-weight: 800; color: #2e9e44; }
-.pick .who { display: flex; flex-wrap: wrap; gap: .15rem .5rem; font-size: .85rem; }
-.pick .nums { display: flex; flex-direction: column; align-items: flex-end; gap: .05rem; white-space: nowrap; }
-.pick .final { display: flex; align-items: baseline; gap: .3rem; }
-.pick .final small { font-size: .7rem; color: var(--muted); }
-.pick .final strong { font-size: 1.25rem; line-height: 1.1; }
-.pick .final em { font-style: normal; font-size: .75rem; font-weight: 700; color: var(--muted); }
-.pick .round { font-size: .72rem; color: var(--muted); }
+.picks .pick.on { border-color: #2e9e44; background: #f2faf4; }
+.picks .pick .rank { font-weight: 800; color: #2e9e44; }
+.picks .pick .who { display: flex; flex-wrap: wrap; gap: .15rem .5rem; font-size: .85rem; }
+.picks .pick .nums { display: flex; flex-direction: column; align-items: flex-end; gap: .05rem; white-space: nowrap; }
+.picks .pick .final { display: flex; align-items: baseline; gap: .3rem; }
+.picks .pick .final small { font-size: .7rem; color: var(--muted); }
+.picks .pick .final strong { font-size: 1.25rem; line-height: 1.1; }
+.picks .pick .final em { font-style: normal; font-size: .75rem; font-weight: 700; color: var(--muted); }
+.picks .pick .round { font-size: .72rem; color: var(--muted); }
 .modehint { margin: .45rem 0 0; font-size: .75rem; color: var(--muted); line-height: 1.8; }
 .chip-inline { display: inline-block; min-width: 1.6rem; margin: 0 .15rem; padding: 0 .3rem; border-radius: 4px; text-align: center; font-weight: 800; color: var(--fg); line-height: 1.4; }
 .timeline { list-style: none; margin: .7rem 0 0; padding: 0; font-size: .8rem; }
@@ -536,6 +537,8 @@ button, input, select { font: inherit; }
 .listnav .dots { flex: 1; display: flex; justify-content: center; flex-wrap: wrap; gap: .25rem; }
 .listnav .dot { min-height: 1.9rem; padding: 0 .4rem; border: 1px solid var(--line); border-radius: 6px; background: #fff; font-size: .7rem; font-weight: 700; color: var(--muted); cursor: pointer; }
 .listnav .dot.on { background: var(--fg); border-color: var(--fg); color: #fff; }
+.listnav .dot.taken { background: #eceef1; border-color: #eceef1; color: #b4bac4; }
+.listnav .dot.taken.on { background: #9aa1ad; border-color: #9aa1ad; color: #fff; }
 
 .duo { margin-top: 1rem; }
 .duo h2 { margin: 0 0 .4rem; }

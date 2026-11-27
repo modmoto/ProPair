@@ -84,7 +84,7 @@ Ansicht:
 - Oben neben dem Titel: Gesamtstand der festen Matchups (Summe der Scores, grün/rot) und x/8 gepaart.
 - Unter der Matrix: feste Matchups als „Name UD [Bewertung] VC Name“ – Bewertung mittig zwischen beiden Seiten; neue Matchups blenden ein.
 - **Gegner-Ansicht** (⇄ in der Titelzeile): Bewertungen gespiegelt (+ ↔ -, 0/+ ↔ 0/-), jedes Feld rot umrandet. Nur Anzeige, nicht gespeichert.
-- Umschalter in der leeren Ecke oben links der Tabelle (Icon: Aufziehen = ganze Matrix, Zusammenziehen = nur Rest). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
+- Umschalter in der leeren Ecke oben links der Tabelle (Icon: vier Pfeile nach außen = ganze Matrix, nach innen = nur Rest). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
 - Empfehlungen per Augen-Symbol (Standard aus): %-Marken an Namen, ★ = beste Option, grüne Ringe, Top-3 + wahrscheinlichster Pfad.
 - Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
 
@@ -106,7 +106,7 @@ Berechnung:
 Darstellung (in der Matrix, mobil):
 - Defender: Badge mit erwartetem Endstand an unseren Namen (★ = bestes), dünner Wahrscheinlichkeitsbalken an Gegner-Namen.
 - Attacker/Wahl: erwarteter Endstand klein in den wählbaren Zellen, beste mit grünem Rahmen. ⚠ bei Schlüsselspielern.
-- **Listen im Pairing:** Umschalter „Matrix | Listen“ über der Tabelle. „Listen“ zeigt die Liste eines aktiven Gegners (Start: deren Defender), Wischen links/rechts bzw. Pfeile/Kürzel wechseln. Markierungen und Notizen aus der Matrix-Seite sind sichtbar, auch offline.
+- **Listen im Pairing:** Umschalter „Matrix | Listen“ über der Tabelle. „Listen“ zeigt die Liste eines aktiven Gegners (Start: deren Defender), Wischen links/rechts bzw. Pfeile/Kürzel wechseln. Markierungen und Notizen aus der Matrix-Seite sind sichtbar, auch offline. Bei ausgeklappter Matrix auch schon gepaarte Gegner: Kürzel ausgegraut, „(gepickt)“ hinter der Armee.
 - **Attacker-Schritt:** Sobald deren 2 Attacker angetippt sind (und im Wahl-Schritt) stehen beide Listen nebeneinander unter der Matrix.
 - **Vorrechnen:** einmal beim Betreten des Pairings, nur bei vollständig bewerteter Matrix (beide Modi, auch bei ausgeschaltetem Auge).
 - Pick antippen wählt ihn auch in der Matrix aus (unsere Seite des Schritts); umgekehrt springt die Vorschau auf den passenden Pick.

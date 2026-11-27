@@ -6,7 +6,7 @@
         <header>
             <span class="army">@Player.ArmyShort</span>
             <strong>@Player.Name</strong>
-            <span class="muted">@Player.ArmyName</span>
+            <span class="muted">@Player.ArmyName@(Taken ? " (gepickt)" : "")</span>
         </header>
     }
     <div class="armylist">
@@ -33,4 +33,7 @@
     [Parameter] public IReadOnlyList<ListMarkDto> Marks { get; set; } = [];
     [Parameter] public NoteDto? Note { get; set; }
     [Parameter] public bool ShowHeader { get; set; } = true;
+
+    /// <summary>Already paired: shown with "(gepickt)" behind the army.</summary>
+    [Parameter] public bool Taken { get; set; }
 }
