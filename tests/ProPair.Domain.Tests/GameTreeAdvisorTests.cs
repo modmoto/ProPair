@@ -178,7 +178,9 @@ public class GameTreeAdvisorTests
         Assert.Equal(8, advice.Own.Count);
         Assert.Equal(3, advice.TopPicks.Count);
         Assert.All(advice.TopPicks, p => Assert.Equal(8, p.Games.Count));
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(3), $"took {sw.Elapsed}");
+        // Guards against blow-ups (e.g. lost memoisation → minutes), not against small slowdowns:
+        // ~1 s locally, ~3.5 s on the shared CI agent (Debug, tests in parallel).
+        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(10), $"took {sw.Elapsed}");
     }
 }
 
