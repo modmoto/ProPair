@@ -27,8 +27,15 @@ public sealed record PredictedStep(int Round, PairingStep Step, IReadOnlyList<Pl
 /// <summary>A game that is not fixed yet but expected on the predicted path.</summary>
 public sealed record PredictedGame(int Round, PlayerId Own, PlayerId Opponent, double Score);
 
+/// <summary>A result in real rating points: most likely value, how likely exactly that is, and the average.</summary>
+public sealed record PredictedOutcome(double Value, double Probability, double Mean);
+
 /// <summary>The most likely continuation if we play <see cref="Option"/> now.</summary>
-public sealed record PredictedPath(MoveOption Option, IReadOnlyList<PredictedStep> Steps, IReadOnlyList<PredictedGame> Games, double Total);
+/// <param name="Total">Final total of the most likely path.</param>
+/// <param name="ThisRound">What the current round brings (sum of its games).</param>
+/// <param name="Final">Final total of the whole pairing.</param>
+public sealed record PredictedPath(MoveOption Option, IReadOnlyList<PredictedStep> Steps, IReadOnlyList<PredictedGame> Games,
+    double Total, PredictedOutcome ThisRound, PredictedOutcome Final);
 
 /// <param name="Fixed">Score of games already paired.</param>
 /// <param name="Expected">Value of the pairing from here (final total, our view) if both sides play perfectly.</param>

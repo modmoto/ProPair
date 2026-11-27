@@ -14,15 +14,20 @@ namespace ProPair.Domain.Pairing.Advice;
 ///   8v8 has at most 2⁸·2⁸ such states.</item>
 /// </list>
 /// The opponent is assumed to rate every game as the negation of our rating.
+/// <para>
+/// <paramref name="weight"/> transforms ratings for the <b>decision</b> only (e.g. minus counts 1.5×).
+/// Everything reported – games, path totals, outcome distributions – is in real rating points.
+/// </para>
 /// </summary>
-public sealed class GameTreeAdvisor(IMatrixGameSolver solver) : IPairingAdvisor
+public sealed class GameTreeAdvisor(IMatrixGameSolver solver, Func<double, double>? weight = null) : IPairingAdvisor
 {
     public PairingAdvice Advise(PairingState state, Func<PlayerId, PlayerId, double> score, int topPicks = 3)
     {
         var fixedScore = state.Games.Sum(g => score(g.Own, g.Opponent));
         if (state.Step == PairingStep.Done) return new PairingAdvice(fixedScore, fixedScore, [], [], []);
 
-        var tree = new Tree(state, score, solver);
+        Func<PlayerId, PlayerId, double> decision = weight is null ? score : (o, p) => weight(score(o, p));
+        var tree = new Tree(state, decision, solver);
         var step = tree.StepGame(state);
         var solution = solver.Solve(step.Payoff, step.Own.Count, step.Opponent.Count);
 
@@ -47,7 +52,10 @@ public sealed class GameTreeAdvisor(IMatrixGameSolver solver) : IPairingAdvisor
             var games = final.Games.Skip(state.Games.Count)
                 .Select((g, i) => new PredictedGame(RoundOf(state, final, i), g.Own, g.Opponent, score(g.Own, g.Opponent)))
                 .ToList();
-            return new PredictedPath(own[r], steps, games, final.Games.Sum(g => score(g.Own, g.Opponent)));
+            // what this pick brings: this round and the final total, both as most likely value + probability (real points)
+            var thisRound = tree.Outcome(state, r, score, untilRoundEnds: true, fixedScore: 0);
+            var total = tree.Outcome(state, r, score, untilRoundEnds: false, fixedScore: fixedScore);
+            return new PredictedPath(own[r], steps, games, final.Games.Sum(g => score(g.Own, g.Opponent)), thisRound, total);
         }).ToList();
 
         return new PairingAdvice(fixedScore, solution.Value,
@@ -144,14 +152,73 @@ public sealed class GameTreeAdvisor(IMatrixGameSolver solver) : IPairingAdvisor
             }
         }
 
+        private readonly Dictionary<string, (StepGame Game, MatrixGameSolution Solution)> _solved = [];
+
+        private (StepGame Game, MatrixGameSolution Solution) Solved(PairingState s)
+        {
+            var key = Signature(s);
+            if (_solved.TryGetValue(key, out var hit)) return hit;
+            var game = StepGame(s);
+            return _solved[key] = (game, _solver.Solve(game.Payoff, game.Own.Count, game.Opponent.Count));
+        }
+
+        private string Signature(PairingState s) =>
+            $"{Mask(s.RemainingOwn, _ownIds)}|{Mask(s.RemainingOpponent, _oppIds)}|{s.Step}|" +
+            $"{(s.OwnDefender is { } d ? Own(d) : -1)}|{(s.OpponentDefender is { } e ? Opp(e) : -1)}|" +
+            string.Join(",", s.OwnAttackers.Select(p => Own(p))) + "|" + string.Join(",", s.OpponentAttackers.Select(p => Opp(p)));
+
+        /// <summary>
+        /// Exact distribution of the result if we play <paramref name="ownRow"/> now and afterwards both sides follow
+        /// their strategies (mixed: every option with its probability). Returns the most likely value, its probability
+        /// and the mean – in real points (<paramref name="real"/>), whatever the decision weighting was.
+        /// </summary>
+        public PredictedOutcome Outcome(PairingState start, int ownRow, Func<PlayerId, PlayerId, double> real,
+            bool untilRoundEnds, double fixedScore)
+        {
+            var memo = new Dictionary<string, Dictionary<double, double>>();
+            bool Stop(PairingState s) => s.Step == PairingStep.Done || (untilRoundEnds && s.Round > start.Round);
+
+            Dictionary<double, double> Dist(PairingState s, int? forced)
+            {
+                if (Stop(s)) return new() { [0] = 1 };
+                var key = Signature(s);
+                if (forced is null && memo.TryGetValue(key, out var cached)) return cached;
+
+                var (game, solution) = Solved(s);
+                var result = new Dictionary<double, double>();
+                var rows = forced is { } f ? [(f, 1.0)] : Support(solution.Rows);
+                foreach (var (r, pr) in rows)
+                foreach (var (c, pc) in Support(solution.Cols))
+                {
+                    var child = s.Apply(game.Move(r, c));
+                    var gained = child.Games.Skip(s.Games.Count).Sum(g => real(g.Own, g.Opponent));
+                    foreach (var (value, p) in Dist(child, null))
+                    {
+                        var v = Math.Round(value + gained, 2);
+                        result[v] = result.GetValueOrDefault(v) + pr * pc * p;
+                    }
+                }
+                if (forced is null) memo[key] = result;
+                return result;
+            }
+
+            var dist = Dist(start, ownRow);
+            var mean = dist.Sum(kv => kv.Key * kv.Value) + fixedScore;
+            var mode = dist.OrderByDescending(kv => Math.Round(kv.Value, 6))
+                .ThenBy(kv => Math.Abs(kv.Key + fixedScore - mean)).First();
+            return new PredictedOutcome(mode.Key + fixedScore, mode.Value, mean);
+        }
+
+        private static IEnumerable<(int, double)> Support(double[] mix) =>
+            mix.Select((p, i) => (i, p)).Where(x => x.p > 1e-6);
+
         /// <summary>Follows the most likely moves of both sides to the end. Optionally our first move is fixed.</summary>
         public (IReadOnlyList<PredictedStep> Steps, PairingState Final) MostLikelyPath(PairingState s, int? forcedOwnRow = null)
         {
             var steps = new List<PredictedStep>();
             while (s.Step != PairingStep.Done)
             {
-                var game = StepGame(s);
-                var solution = _solver.Solve(game.Payoff, game.Own.Count, game.Opponent.Count);
+                var (game, solution) = Solved(s);
                 // our move: same ranking as the recommendations (value, then safety, then probability)
                 var r = forcedOwnRow ?? Rank(Enumerable.Range(0, game.Own.Count).Select(i => new MoveOption(game.Own[i],
                     solution.RowValues[i],

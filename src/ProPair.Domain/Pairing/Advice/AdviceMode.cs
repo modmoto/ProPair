@@ -21,8 +21,7 @@ public static class AdviceModes
 
     public static IPairingAdvisor Create(AdviceMode mode) => mode switch
     {
-        AdviceMode.AvoidMinus => new WeightedScoreAdvisor(new GameTreeAdvisor(new EquilibriumSolver()),
-            s => s < 0 ? s * MinusWeight : s),
+        AdviceMode.AvoidMinus => new GameTreeAdvisor(new EquilibriumSolver(), s => s < 0 ? s * MinusWeight : s),
         AdviceMode.Safe => new GameTreeAdvisor(new PessimisticSolver()),
         _ => new GameTreeAdvisor(new EquilibriumSolver()),
     };

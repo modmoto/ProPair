@@ -62,8 +62,11 @@ public sealed record PredictedStepDto(int Round, string Step, IReadOnlyList<Guid
 
 public sealed record PredictedGameDto(int Round, Guid OwnPlayerId, Guid OpponentPlayerId, double Score);
 
+/// <summary>Real points: most likely value, its probability (0–1), and the average.</summary>
+public sealed record OutcomeDto(double Value, double Probability, double Mean);
+
 public sealed record PredictedPathDto(MoveOptionDto Option, IReadOnlyList<PredictedStepDto> Steps,
-    IReadOnlyList<PredictedGameDto> Games, double Total);
+    IReadOnlyList<PredictedGameDto> Games, double Total, OutcomeDto ThisRound, OutcomeDto Final);
 
 /// <param name="Mode">optimal | avoidminus | safe. In avoidminus, Expected/Worst are weighted (minus ×1.5); path games and totals are real points.</param>
 /// <param name="Expected">Final total if both teams play perfectly from here.</param>

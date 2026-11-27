@@ -85,5 +85,7 @@ internal static class DtoMapping
             p.Steps.Select(s => new PredictedStepDto(s.Round, s.Step.ToString().ToLowerInvariant(), Ids(s.Own), Ids(s.Opponent),
                 s.OwnProbability, s.OpponentProbability)).ToList(),
             p.Games.Select(g => new PredictedGameDto(g.Round, g.Own.Value, g.Opponent.Value, g.Score)).ToList(),
-            p.Total)).ToList());
+            p.Total,
+            new OutcomeDto(p.ThisRound.Value, p.ThisRound.Probability, p.ThisRound.Mean),
+            new OutcomeDto(p.Final.Value, p.Final.Probability, p.Final.Mean))).ToList());
 }

@@ -142,7 +142,6 @@ else
             {
                 <header>
                     <h2>Empfehlung</h2>
-                    <span class="muted">@HeadLine(a)</span>
                 </header>
                 <div class="modes" role="radiogroup" aria-label="Modus">
                     @foreach (var (key, label) in Modes)
@@ -151,6 +150,7 @@ else
                                 disabled="@_busy" @onclick="() => SetModeAsync(key)">@label</button>
                     }
                 </div>
+                <p class="modehint">@ModeHint</p>
                 <div class="picks">
                     @foreach (var (path, i) in a.TopPicks.Select((p, i) => (p, i)))
                     {
@@ -163,23 +163,10 @@ else
                                     <span class="pl"><span class="army">@pl.ArmyShort</span> @pl.Name</span>
                                 }
                             </span>
+                            @* always real points – a mode's weighting only changes the order *@
                             <span class="nums">
-                                @switch (a.Mode)
-                                {
-                                    case "avoidminus":
-                                        @* the weighting only decides the order – shown are real points *@
-                                        <strong>@Format.Score(path.Total)</strong>
-                                        <small>Endstand im Verlauf</small>
-                                        break;
-                                    case "safe":
-                                        <strong>@Format.Score(path.Option.Worst)</strong>
-                                        <small>mindestens</small>
-                                        break;
-                                    default:
-                                        <strong>@Format.Score(path.Option.Expected)</strong>
-                                        <small>min @Format.Score(path.Option.Worst) · @Format.Percent(path.Option.Probability)</small>
-                                        break;
-                                }
+                                <span class="final"><small>Ende</small> <strong>@Format.Score(path.Final.Value)</strong> <em>@Format.Percent(path.Final.Probability)</em></span>
+                                <span class="round">Runde @Format.Score(path.ThisRound.Value) · @Format.Percent(path.ThisRound.Probability)</span>
                             </span>
                         </button>
                     }
@@ -190,39 +177,35 @@ else
                         @foreach (var round in preview.Steps.GroupBy(st => st.Round))
                         {
                             <li>
-                                <span class="r"><span class="swatch path-@(round.Key - FirstPathRound + 1)"></span>Runde @round.Key</span>
-                                <div class="rbody">
-                                <span class="steps">
-                                    @foreach (var st in round)
-                                    {
-                                        @if (st.Step == "choices")
-                                        {
-                                            <span class="st"><em>Wahl</em> wir: @Names(st.Own) · die: @Names(st.Opponent)</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="st"><em>@StepLabel(st.Step)</em> @Names(st.Own) ↔ @Names(st.Opponent)</span>
-                                        }
-                                    }
-                                </span>
-                                @foreach (var g in preview.Games.Where(g => g.Round == round.Key))
+                                <span class="r path-@(round.Key - FirstPathRound + 1)">Runde @round.Key</span>
+                                @foreach (var st in round)
                                 {
-                                    var own = Player(g.OwnPlayerId);
-                                    var opp = Player(g.OpponentPlayerId);
-                                    var level = Shown(LevelAt(g.OwnPlayerId, g.OpponentPlayerId));
-                                    <span class="pgame">
+                                    @if (st.Step == "choices")
+                                    {
+                                        <span class="st"><em>Wahl</em> wir: @Names(st.Own) · die: @Names(st.Opponent)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="st"><em>@StepLabel(st.Step)</em> @Names(st.Own) ↔ @Names(st.Opponent)</span>
+                                    }
+                                }
+                                <div class="pgames">
+                                    @foreach (var g in preview.Games.Where(g => g.Round == round.Key))
+                                    {
+                                        var own = Player(g.OwnPlayerId);
+                                        var opp = Player(g.OpponentPlayerId);
+                                        var level = Shown(LevelAt(g.OwnPlayerId, g.OpponentPlayerId));
                                         <span class="name own">@own.Name</span>
                                         <span class="army">@own.ArmyShort</span>
                                         <span class="rating @(_enemyView ? "enemy" : "")" style="background:@(level?.Color ?? "#e8ebf1")">@(level?.Label ?? "–")</span>
                                         <span class="army">@opp.ArmyShort</span>
                                         <span class="name">@opp.Name</span>
-                                    </span>
-                                }
+                                    }
                                 </div>
                             </li>
                         }
                     </ol>
-                    <p class="muted pathtotal">Wahrscheinlicher Endstand: <strong>@Format.Score(preview.Total)</strong></p>
+                    <p class="muted pathtotal">Gezeigter Verlauf endet bei <strong>@Format.Score(preview.Total)</strong></p>
                 }
             }
         </section>
@@ -427,7 +410,7 @@ else
         };
     }
 
-    /// <summary>1 = next round (dotted), 2 = the one after (dash-dot), 3 = third (dashed).</summary>
+    /// <summary>1 = next round (dark corner), 2 = the one after (mid), 3 = third (light) – same corner on the timeline labels.</summary>
     private int? PredictedRound(Guid own, Guid opp) =>
         Preview?.Games.FirstOrDefault(g => g.OwnPlayerId == own && g.OpponentPlayerId == opp)?.Round is { } r
             ? r - FirstPathRound + 1
@@ -435,11 +418,11 @@ else
 
     private int FirstPathRound => Preview?.Steps.FirstOrDefault()?.Round ?? _p!.Round;
 
-    private string HeadLine(PairingAdviceDto a) => a.Mode switch
+    private string ModeHint => _mode switch
     {
-        "avoidminus" => $"Minus zählt {Format.Factor(a.MinusWeight)}×",
-        "safe" => $"sicher mindestens {Format.Score(a.Expected)}",
-        _ => $"fair erwartet {Format.Score(a.Expected)}",
+        "avoidminus" => "Schlechte Matchups vermeiden geht vor: ein Minus wiegt in der Entscheidung 1,5-fach.",
+        "safe" => "Rechnet damit, dass der Gegner unseren Zug durchschaut, und holt das Beste aus dem schlechtesten Fall.",
+        _ => "Bester Durchschnitt: Plus und Minus zählen gleich, der Gegner spielt ebenfalls optimal.",
     };
 
     private static string StepLabel(string step) => step switch

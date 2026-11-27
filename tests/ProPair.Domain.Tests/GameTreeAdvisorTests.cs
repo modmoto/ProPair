@@ -265,3 +265,64 @@ public class AdviceModeTests
         Assert.Equal(0.4, AdviceModes.Create(AdviceMode.Optimal).Advise(PairingState.Start(own, opp), Score).Expected, 6);
     }
 }
+
+public class OutcomeTests
+{
+    private static (List<PlayerId>, List<PlayerId>, Func<PlayerId, PlayerId, double>) Random(int n, int seed)
+    {
+        var rnd = new Random(seed);
+        var own = Enumerable.Range(0, n).Select(_ => PlayerId.New()).ToList();
+        var opp = Enumerable.Range(0, n).Select(_ => PlayerId.New()).ToList();
+        var table = own.SelectMany(o => opp.Select(p => (o, p))).ToDictionary(k => k, _ => (double)rnd.Next(-2, 3));
+        return (own, opp, (o, p) => table[(o, p)]);
+    }
+
+    [Theory]
+    [InlineData(5, 3)]
+    [InlineData(5, 8)]
+    [InlineData(8, 42)]
+    public void Final_mean_of_a_played_option_is_the_game_value(int n, int seed)
+    {
+        var (own, opp, score) = Random(n, seed);
+        var advice = AdviceModes.Create(AdviceMode.Optimal).Advise(PairingState.Start(own, opp), score);
+
+        foreach (var pick in advice.TopPicks.Where(p => p.Option.Probability > 1e-6))
+            Assert.Equal(advice.Expected, pick.Final.Mean, 5);
+        Assert.All(advice.TopPicks, p =>
+        {
+            Assert.InRange(p.Final.Probability, 0, 1 + 1e-9);
+            Assert.InRange(p.ThisRound.Probability, 0, 1 + 1e-9);
+            Assert.Equal(p.Option.Expected, p.Final.Mean, 5); // mean against their strategy = option value
+        });
+    }
+
+    [Fact]
+    public void Readme_example_outcomes()
+    {
+        double[,] m = { { 2, -1, 0 }, { -2, 1, 1 }, { 0, 0, -1 } };
+        var own = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList();
+        var opp = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList();
+        double Score(PlayerId o, PlayerId p) => m[own.IndexOf(o), opp.IndexOf(p)];
+
+        var ben = AdviceModes.Create(AdviceMode.Optimal).Advise(PairingState.Start(own, opp), Score).TopPicks[0];
+
+        Assert.Equal(own[1], ben.Option.Players[0]);
+        Assert.Equal(0.4, ben.Final.Mean, 6);
+        Assert.Equal(ben.Final.Value, ben.ThisRound.Value, 6); // 3v3: the only round is the whole pairing
+    }
+
+    [Fact]
+    public void Weighted_mode_reports_real_points()
+    {
+        var (own, opp, score) = Random(5, 13);
+        var real = AdviceModes.Create(AdviceMode.AvoidMinus).Advise(PairingState.Start(own, opp), score);
+
+        // all reported totals must be reachable sums of real ratings (integers here), never weighted (x.5 / x.0 with 1.5 factors)
+        Assert.All(real.TopPicks, p =>
+        {
+            Assert.Equal(Math.Round(p.Final.Value), p.Final.Value, 6);
+            Assert.Equal(Math.Round(p.ThisRound.Value), p.ThisRound.Value, 6);
+            Assert.Equal(p.Games.Sum(g => g.Score), p.Total, 6);
+        });
+    }
+}
