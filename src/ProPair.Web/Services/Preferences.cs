@@ -23,6 +23,12 @@ public sealed class Preferences(IJSRuntime js)
         catch (JSException) { /* storage unavailable */ }
     }
 
+    public async Task RemoveAsync(string key)
+    {
+        try { await js.InvokeVoidAsync("localStorage.removeItem", $"propair.{key}"); }
+        catch (JSException) { /* storage unavailable */ }
+    }
+
     public async Task SetAsync(string key, bool value)
     {
         try { await js.InvokeVoidAsync("localStorage.setItem", $"propair.{key}", value ? "1" : "0"); }

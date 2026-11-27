@@ -111,3 +111,36 @@ public sealed class RestartPairing(GetPairing getPairing, IPairingSessionReposit
         return getPairing.Analyze(matrix, session, null);
     }
 }
+
+/// <summary>The device sends its whole move list (entered offline or online); replaces the stored one.</summary>
+public sealed class SyncPairingMoves(GetPairing getPairing, IPairingSessionRepository sessions)
+{
+    public async Task<PairingView> ExecuteAsync(string token, ParticipantId opponentId, IReadOnlyList<PairingMove> moves,
+        CancellationToken ct = default)
+    {
+        var (matrix, session) = await getPairing.LoadForEditAsync(token, opponentId, ct);
+        session.ReplaceMoves(moves);
+        await sessions.SaveAsync(session, ct);
+        return getPairing.Analyze(matrix, session, null);
+    }
+}
+
+/// <summary>
+/// Precomputes the expensive part of the advice for a whole pairing so a device can recommend offline.
+/// Keys refer to the roster order returned alongside (session order).
+/// </summary>
+public sealed class GetRoundValues(GetMatrix getMatrix, IPairingAdvisorProvider advisors)
+{
+    public async Task<(RoundValues Values, IReadOnlyList<PlayerId> Own, IReadOnlyList<PlayerId> Opponent)> ExecuteAsync(
+        string token, ParticipantId opponentId, AdviceMode mode, CancellationToken ct = default)
+    {
+        var matrix = await getMatrix.ExecuteAsync(token, opponentId, ct);
+        var own = matrix.Own.Roster.Select(p => p.Id).ToList();
+        var opp = matrix.Opponent.Roster.Select(p => p.Id).ToList();
+        var scale = matrix.Preparation.RatingScale;
+        double Score(PlayerId o, PlayerId p) =>
+            matrix.Matrix.RatingAt(new CellKey(o, p)) is { } key ? (double)(scale.Find(key)?.Score ?? 0) : 0;
+
+        return (advisors.For(mode).Start(own, opp, Score).ExportRoundValues(), own, opp);
+    }
+}

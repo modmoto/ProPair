@@ -28,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped<PlayPairingMove>();
         services.AddScoped<UndoPairingMove>();
         services.AddScoped<RestartPairing>();
+        services.AddScoped<SyncPairingMoves>();
+        services.AddScoped<GetRoundValues>();
         return services;
     }
 }

@@ -60,6 +60,12 @@ public sealed class ProPairApi(HttpClient http)
     public async Task<PairingDto> UndoPairingAsync(string token, Guid opponentId, string? advice) =>
         await ReadAsync<PairingDto>(await http.PostAsync($"{PairingUrl(token, opponentId)}/undo{Advice(advice)}", null));
 
+    public async Task<PairingDto> SyncMovesAsync(string token, Guid opponentId, IReadOnlyList<PairingMoveDto> moves) =>
+        await ReadAsync<PairingDto>(await http.PutAsJsonAsync($"{PairingUrl(token, opponentId)}/moves", new SyncMovesRequest(moves)));
+
+    public async Task<RoundValuesDto> GetRoundValuesAsync(string token, Guid opponentId, string mode) =>
+        await ReadAsync<RoundValuesDto>(await http.GetAsync($"{PairingUrl(token, opponentId)}/values?mode={mode}"));
+
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response)
     {
         await EnsureAsync(response);

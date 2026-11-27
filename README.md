@@ -62,3 +62,17 @@ Abgestuft und bewusst moderat: Jeder Minuspunkt bringt 0,25 Aufschlag. Ein „-�
 **Werte pro Empfehlung:** groß die **Gesamtwertung** (wahrscheinlichster Wert + wie wahrscheinlich genau dieser ist), klein **Diese Runde** (dasselbe für die aktuelle Runde). Exakt berechnet: Ab der Option folgen beide Seiten ihren Strategien (gemischt, jede Möglichkeit mit ihrer Wahrscheinlichkeit). Alle Verläufe werden durchlaufen und die Wahrscheinlichkeiten je Ergebnis aufsummiert, ohne Simulation.
 
 **In der UI:** Das Augen-Symbol schaltet die Empfehlungen ein, standardmäßig sind sie aus. Gerechnet wird nur, wenn sie an sind. Der wahrscheinliche Verlauf erscheint in der Matrix als Ecke oben rechts im Feld: schwarz = nächste Runde, schwarz/hellgrau geteilt = übernächste, hellgrau = dritte. Die Schildchen „Runde 1/2/3“ in der Zeitleiste tragen dieselbe Ecke.
+
+## Offline: local-first Pairing
+
+Im Turnier ist das Netz oft weg. Das Pairing darf deshalb nie am Netz hängen:
+
+- **Logik nur in der Domain:** Pairing-Regeln (`PairingState`) und Empfehlungs-Algorithmus (`IPairingAdvisor`) stehen einmal im Domain-Projekt. Server und Browser laden dieselbe Assembly, die UI ruft sie nur auf.
+- **Klicks sind lokal:** Jeder Schritt wird sofort auf dem Gerät mit den Domain-Regeln ausgeführt (`LocalPairing`). Kein Klick wartet auf das Netz.
+- **Speichern im Hintergrund:** Die Züge liegen in einer Warteschlange im Browser (localStorage) und gehen als komplette Liste an `PUT …/pairing/moves`, sobald Netz da ist (Retry alle 10 s). Ein Captain trägt ein, deshalb gilt: letzte Liste gewinnt. Der Server spielt sie über die Domain-Regeln nach.
+- **Empfehlungen offline:** Der teure Teil (Wert jedes Rundenstarts, bei 8v8 höchstens 5.685 Zahlen) wird beim Öffnen einmal im Backend vorgerechnet (`GET …/pairing/values?mode=`) und im Browser gecacht. Danach rechnet das Gerät pro Schritt nur noch den aktuellen Schritt nach, ohne Netz.
+- **Ohne Netz geöffnet:** Es wird der zuletzt gespeicherte Stand vom Gerät genommen.
+- **Zuschauer** (Lese-Link) holen sich den Stand alle 15 s.
+- Anzeige unter dem Titel: „Gespeichert“ / „Noch nicht gespeichert – wird gesendet, sobald Netz da ist“ / „Offline“.
+
+Grenze: Die App selbst (Blazor-Dateien) muss einmal geladen sein. Ein Neuladen der Seite ganz ohne Netz braucht noch einen Service Worker (PWA).

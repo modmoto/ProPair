@@ -21,13 +21,30 @@ namespace ProPair.Domain.Pairing.Advice;
 /// </summary>
 public sealed class GameTreeAdvisor(IMatrixGameSolver solver, Func<double, double>? weight = null) : IPairingAdvisor
 {
-    public PairingAdvice Advise(PairingState state, Func<PlayerId, PlayerId, double> score, int topPicks = 3)
+    public PairingAdvice Advise(PairingState state, Func<PlayerId, PlayerId, double> score, int topPicks = 3) =>
+        Start(state.RemainingOwn, state.RemainingOpponent, score).Advise(state, topPicks);
+
+    public IPairingAdviceSession Start(IReadOnlyList<PlayerId> own, IReadOnlyList<PlayerId> opponent,
+        Func<PlayerId, PlayerId, double> score, RoundValues? precomputed = null)
+    {
+        Func<PlayerId, PlayerId, double> decision = weight is null ? score : (o, p) => weight(score(o, p));
+        return new Session(new Tree(own, opponent, decision, solver, precomputed), solver, score);
+    }
+
+    private sealed class Session(Tree tree, IMatrixGameSolver solver, Func<PlayerId, PlayerId, double> score)
+        : IPairingAdviceSession
+    {
+        public RoundValues ExportRoundValues() => tree.ExportRoundValues();
+
+        public PairingAdvice Advise(PairingState state, int topPicks = 3) => GameTreeAdvisor.Advise(tree, solver, state, score, topPicks);
+    }
+
+    private static PairingAdvice Advise(Tree tree, IMatrixGameSolver solver, PairingState state,
+        Func<PlayerId, PlayerId, double> score, int topPicks)
     {
         var fixedScore = state.Games.Sum(g => score(g.Own, g.Opponent));
         if (state.Step == PairingStep.Done) return new PairingAdvice(fixedScore, fixedScore, [], [], []);
 
-        Func<PlayerId, PlayerId, double> decision = weight is null ? score : (o, p) => weight(score(o, p));
-        var tree = new Tree(state, decision, solver);
         var step = tree.StepGame(state);
         var solution = solver.Solve(step.Payoff, step.Own.Count, step.Opponent.Count);
 
@@ -87,7 +104,7 @@ public sealed class GameTreeAdvisor(IMatrixGameSolver solver, Func<double, doubl
     private sealed class Tree
     {
         private readonly IMatrixGameSolver _solver;
-        private readonly IReadOnlyList<PlayerId> _ownIds;   // remaining at the root, index = bit
+        private readonly IReadOnlyList<PlayerId> _ownIds;   // full roster of the session, index = bit
         private readonly IReadOnlyList<PlayerId> _oppIds;
         private readonly int _n;
         private readonly double[,] _score;
@@ -101,11 +118,13 @@ public sealed class GameTreeAdvisor(IMatrixGameSolver solver, Func<double, doubl
         private static readonly int[][] BitsOf = BuildBits();
         private static readonly (int, int)[][] PairsOf = BuildPairs();
 
-        public Tree(PairingState root, Func<PlayerId, PlayerId, double> score, IMatrixGameSolver solver)
+        public Tree(IReadOnlyList<PlayerId> own, IReadOnlyList<PlayerId> opponent, Func<PlayerId, PlayerId, double> score,
+            IMatrixGameSolver solver, RoundValues? precomputed)
         {
+            if (own.Count != opponent.Count || own.Count > 8) throw new DomainException("Advice supports equal rosters of up to 8.");
             _solver = solver;
-            _ownIds = root.RemainingOwn;
-            _oppIds = root.RemainingOpponent;
+            _ownIds = own;
+            _oppIds = opponent;
             _n = _ownIds.Count;
             _score = new double[_n, _n];
             for (var i = 0; i < _n; i++)
@@ -114,6 +133,9 @@ public sealed class GameTreeAdvisor(IMatrixGameSolver solver, Func<double, doubl
             _scoreOf = score;
             _memo = new double[1 << (2 * _n)];
             Array.Fill(_memo, double.NaN);
+            if (precomputed is not null)
+                foreach (var (key, value) in precomputed.Values)
+                    if (key >= 0 && key < _memo.Length) _memo[key] = value;
             for (var k = 1; k <= _n; k++)
             {
                 _defBuf[k] = new double[k, k];
@@ -124,6 +146,17 @@ public sealed class GameTreeAdvisor(IMatrixGameSolver solver, Func<double, doubl
         }
 
         private readonly Func<PlayerId, PlayerId, double> _scoreOf;
+
+        /// <summary>Solves the whole tree from the full rosters and returns every round-start value.</summary>
+        public RoundValues ExportRoundValues()
+        {
+            var full = (1 << _n) - 1;
+            Round(full, full);
+            var values = new Dictionary<int, double>();
+            for (var key = 0; key < _memo.Length; key++)
+                if (!double.IsNaN(_memo[key])) values[key] = _memo[key];
+            return new RoundValues(values);
+        }
 
         // ---------- public entry points (domain objects, used for the current step and predicted paths) ----------
 

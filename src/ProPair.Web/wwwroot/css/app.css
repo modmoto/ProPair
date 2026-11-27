@@ -510,3 +510,11 @@ button, input, select { font: inherit; }
 .pgames .name.own { text-align: right; }
 .pgames .army { justify-self: center; }
 .pgames .rating { display: grid; place-items: center; height: 1.5rem; border-radius: 5px; font-weight: 800; }
+
+/* ---- sync state of the local-first pairing ---- */
+.sync { margin: .35rem 0 0; font-size: .72rem; color: var(--muted); }
+.sync.saved::before { content: "✓ "; color: #2e9e44; font-weight: 800; }
+.sync.pending { color: #8a6d00; }
+.sync.pending::before { content: "● "; }
+.sync.offline { color: #9b231c; }
+.sync.offline::before { content: "○ "; }

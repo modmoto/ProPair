@@ -67,7 +67,28 @@ internal static class DtoMapping
             state.OwnAttackers.Select(p => p.Value).ToList(), state.OpponentAttackers.Select(p => p.Value).ToList(),
             state.Games.Select(g => new GameDto(g.Own.Value, g.Opponent.Value, Score(g))).ToList(),
             v.FixedScore, v.Advice is { } advice ? advice.ToDto(v.Mode!.Value, scale) : null,
-            v.UnratedCells, v.Session.Moves.Count);
+            v.UnratedCells, v.Session.Moves.Count, v.Session.Moves.Select(ToDto).ToList());
+    }
+
+    public static PairingMoveDto ToDto(this Domain.Pairing.PairingMove move) => move switch
+    {
+        Domain.Pairing.DefendersMove d => new("defenders", [d.Own.Value], [d.Opponent.Value]),
+        Domain.Pairing.AttackersMove a => new("attackers", [a.OwnA.Value, a.OwnB.Value], [a.OpponentA.Value, a.OpponentB.Value]),
+        Domain.Pairing.ChoicesMove c => new("choices", [c.OwnAccepts.Value], [c.OpponentAccepts.Value]),
+        _ => throw new ArgumentOutOfRangeException(nameof(move)),
+    };
+
+    public static Domain.Pairing.PairingMove ToDomain(this PairingMoveDto m)
+    {
+        static Domain.Common.PlayerId P(Guid g) => new(g);
+        return m.Step switch
+        {
+            "defenders" when m.Own.Count == 1 && m.Opponent.Count == 1 => new Domain.Pairing.DefendersMove(P(m.Own[0]), P(m.Opponent[0])),
+            "attackers" when m.Own.Count == 2 && m.Opponent.Count == 2 =>
+                new Domain.Pairing.AttackersMove(P(m.Own[0]), P(m.Own[1]), P(m.Opponent[0]), P(m.Opponent[1])),
+            "choices" when m.Own.Count == 1 && m.Opponent.Count == 1 => new Domain.Pairing.ChoicesMove(P(m.Own[0]), P(m.Opponent[0])),
+            _ => throw new Domain.Common.DomainException($"Invalid move '{m.Step}'."),
+        };
     }
 
     private static List<Guid> Ids(IEnumerable<Domain.Common.PlayerId> ids) => ids.Select(i => i.Value).ToList();

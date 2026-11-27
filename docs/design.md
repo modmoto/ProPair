@@ -135,7 +135,7 @@ tests/
 
 - Stack: .NET 11, Blazor WebAssembly (hosted), MongoDB.
 - Abhängigkeitsrichtung: Adapters → Application → Domain.
-- Solver im Domain-Layer → kann auch im Client laufen (offline).
+- Domain-Layer läuft auch im Browser (gleiche Assembly): Pairing-Regeln und Empfehlungen funktionieren offline. Die UI enthält keine eigene Logik.
 
 ## Domänenmodell (DDD)
 
@@ -239,6 +239,7 @@ Taktisches DDD nach Evans/Vernon:
 | 12 | Notizen/Verlauf | Long-Press/Rechtsklick-Sheet je Zelle, Listen-Notiz per Tap auf Spieler. |
 | 13 | Empfehlungen | Ausblendbar, Standard aus (keine psychologische Beeinflussung). |
 | 15 | Empfehlungs-Modi | Optimal / Minus vermeiden („-“ 1,5×, „0/-“ 1,25×) / Absichern; Gewichtung nur für die Entscheidung, alles Angezeigte echte Punkte. Pro Pick: Gesamtwertung + Diese Runde, je wahrscheinlichster Wert mit Wahrscheinlichkeit. Pfad: Ecke im Feld (schwarz / schwarz-hellgrau geteilt / hellgrau je Runde), gleiche Ecke an „Runde N“. |
+| 16 | Offline | Local-first Pairing: Domain-Assembly auch im Browser, Züge lokal + Warteschlange, Sync per kompletter Zugliste, Empfehlungen mit vom Backend vorgerechneten Rundenwerten. |
 | 14 | Listen-Markierungen | 6 Farben + Zeilen-Notiz, Liste oben, Notizen unten. |
 
 ## Offene Fragen

@@ -102,6 +102,20 @@ internal static class Endpoints
         pairing.MapPost("/undo", async (string token, Guid opponentId, string? advice, UndoPairingMove uc, CancellationToken ct) =>
             (await uc.ExecuteAsync(token, new ParticipantId(opponentId), Mode(advice), ct)).ToDto());
 
+        // local-first clients: send the whole move list whenever the network is there
+        pairing.MapPut("/moves", async (string token, Guid opponentId, SyncMovesRequest req, SyncPairingMoves uc, CancellationToken ct) =>
+            (await uc.ExecuteAsync(token, new ParticipantId(opponentId), req.Moves.Select(m => m.ToDomain()).ToList(), ct)).ToDto());
+
+        // precomputed round values so the device can recommend offline (?mode=optimal|avoidminus|safe)
+        pairing.MapGet("/values", async (string token, Guid opponentId, string? mode, GetRoundValues uc, CancellationToken ct) =>
+        {
+            var adviceMode = Mode(mode ?? "optimal") ?? AdviceMode.Optimal;
+            var (values, own, opp) = await uc.ExecuteAsync(token, new ParticipantId(opponentId), adviceMode, ct);
+            var ordered = values.Values.OrderBy(kv => kv.Key).ToList();
+            return new RoundValuesDto(adviceMode.ToString().ToLowerInvariant(), own.Select(p => p.Value).ToList(),
+                opp.Select(p => p.Value).ToList(), ordered.Select(kv => kv.Key).ToList(), ordered.Select(kv => kv.Value).ToList());
+        });
+
         pairing.MapPost("/restart", async (string token, Guid opponentId, RestartPairing uc, CancellationToken ct) =>
             (await uc.ExecuteAsync(token, new ParticipantId(opponentId), ct)).ToDto());
     }

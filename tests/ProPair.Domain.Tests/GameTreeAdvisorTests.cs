@@ -337,3 +337,76 @@ public class MinusFactorTests
     public void Minus_counts_graduated(double score, double factor) =>
         Assert.Equal(factor, AdviceModes.MinusFactor(score), 9);
 }
+
+public class AdviceSessionTests
+{
+    private static (List<PlayerId>, List<PlayerId>, Func<PlayerId, PlayerId, double>) Random(int n, int seed)
+    {
+        var rnd = new Random(seed);
+        var own = Enumerable.Range(0, n).Select(_ => PlayerId.New()).ToList();
+        var opp = Enumerable.Range(0, n).Select(_ => PlayerId.New()).ToList();
+        var table = own.SelectMany(o => opp.Select(p => (o, p))).ToDictionary(k => k, _ => (double)rnd.Next(-2, 3));
+        return (own, opp, (o, p) => table[(o, p)]);
+    }
+
+    private static void SameAdvice(PairingAdvice a, PairingAdvice b)
+    {
+        Assert.Equal(a.Expected, b.Expected, 9);
+        Assert.Equal(a.Own.Select(o => o.Players), b.Own.Select(o => o.Players));
+        Assert.Equal(a.Own.Select(o => Math.Round(o.Probability, 9)), b.Own.Select(o => Math.Round(o.Probability, 9)));
+        Assert.Equal(a.TopPicks.Select(p => (p.Final.Value, Math.Round(p.Final.Probability, 9))),
+            b.TopPicks.Select(p => (p.Final.Value, Math.Round(p.Final.Probability, 9))));
+    }
+
+    [Theory]
+    [InlineData(AdviceMode.Optimal)]
+    [InlineData(AdviceMode.AvoidMinus)]
+    [InlineData(AdviceMode.Safe)]
+    public void Precomputed_round_values_give_identical_advice(AdviceMode mode)
+    {
+        var (own, opp, score) = Random(8, 5);
+        var advisor = AdviceModes.Create(mode);
+        var values = advisor.Start(own, opp, score).ExportRoundValues();
+        var state = PairingState.Start(own, opp);
+
+        SameAdvice(advisor.Start(own, opp, score).Advise(state), advisor.Start(own, opp, score, values).Advise(state));
+    }
+
+    [Fact]
+    public void Session_over_full_roster_matches_one_off_advice_mid_pairing()
+    {
+        var (own, opp, score) = Random(5, 9);
+        var advisor = AdviceModes.Create(AdviceMode.Optimal);
+        var state = PairingState.Start(own, opp)
+            .Apply(new DefendersMove(own[0], opp[0]))
+            .Apply(new AttackersMove(own[1], own[2], opp[1], opp[2]))
+            .Apply(new ChoicesMove(opp[1], own[1]));      // round 2 starts with 3 players
+
+        var session = advisor.Start(own, opp, score, advisor.Start(own, opp, score).ExportRoundValues());
+
+        SameAdvice(advisor.Advise(state, score), session.Advise(state));
+    }
+
+    [Fact]
+    public void Exported_values_are_compact()
+    {
+        var (own, opp, score) = Random(8, 3);
+        var values = AdviceModes.Create(AdviceMode.Optimal).Start(own, opp, score).ExportRoundValues();
+
+        Assert.InRange(values.Values.Count, 1, 1 + 784 + 4900); // round starts with 8, 6 and 4 players
+    }
+
+    [Fact]
+    public void Session_replaces_moves_after_replay()
+    {
+        var own = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList();
+        var opp = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList();
+        var session = PairingSession.Start(PreparationId.New(), ParticipantId.New(), own, opp);
+
+        session.ReplaceMoves([new DefendersMove(own[0], opp[0]), new AttackersMove(own[1], own[2], opp[1], opp[2])]);
+        Assert.Equal(PairingStep.Choices, session.State.Step);
+
+        Assert.Throws<DomainException>(() => session.ReplaceMoves([new ChoicesMove(opp[0], own[0])]));
+        Assert.Equal(2, session.Moves.Count); // invalid list leaves the session untouched
+    }
+}

@@ -76,13 +76,23 @@ public sealed record MinusFactorDto(string LevelKey, double Factor);
 public sealed record PairingAdviceDto(string Mode, IReadOnlyList<MinusFactorDto> MinusFactors, double Expected, IReadOnlyList<MoveOptionDto> Own, IReadOnlyList<MoveOptionDto> Opponent,
     IReadOnlyList<PredictedPathDto> TopPicks);
 
+/// <summary>Step: defenders | attackers | choices. Own/Opponent: defender (1), attackers (2) or the accepted one (1).</summary>
+public sealed record PairingMoveDto(string Step, IReadOnlyList<Guid> Own, IReadOnlyList<Guid> Opponent);
+
+/// <summary>Full move list from a device; replaces the stored one (one captain, last write wins).</summary>
+public sealed record SyncMovesRequest(IReadOnlyList<PairingMoveDto> Moves);
+
+/// <summary>Precomputed round-start values for offline advice. Keys/Values are parallel arrays.</summary>
+public sealed record RoundValuesDto(string Mode, IReadOnlyList<Guid> OwnOrder, IReadOnlyList<Guid> OpponentOrder,
+    IReadOnlyList<int> Keys, IReadOnlyList<double> Values);
+
 public sealed record PairingDto(
     string TournamentName, bool CanEdit, ParticipantDto Own, ParticipantDto Opponent,
     IReadOnlyList<RatingLevelDto> Scale, IReadOnlyList<CellDto> Cells,
     string Step, int Round, IReadOnlyList<Guid> RemainingOwn, IReadOnlyList<Guid> RemainingOpponent,
     Guid? OwnDefender, Guid? OpponentDefender, IReadOnlyList<Guid> OwnAttackers, IReadOnlyList<Guid> OpponentAttackers,
     IReadOnlyList<GameDto> Games, double FixedScore, PairingAdviceDto? Advice,
-    int UnratedCells, int MoveCount);
+    int UnratedCells, int MoveCount, IReadOnlyList<PairingMoveDto> Moves);
 
 public sealed record DefendersRequest(Guid Own, Guid Opponent);
 

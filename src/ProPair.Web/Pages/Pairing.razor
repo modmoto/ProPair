@@ -1,4 +1,5 @@
 @page "/p/{Token}/vs/{OpponentId:guid}/pairing"
+@implements IDisposable
 @inject ProPairApi Api
 @inject Preferences Prefs
 
@@ -59,6 +60,11 @@ else
             </button>
         }
     </div>
+
+    @if (_local is not null && _p.CanEdit)
+    {
+        <p class="sync @_local.Status.ToString().ToLowerInvariant()">@SyncText</p>
+    }
 
     @* rebuilt (settle-in) only on flip; step changes transition cell by cell so you see what drops out *@
     <div class="matrix-wrap settle" @key="ShowAll">
@@ -134,9 +140,9 @@ else
     @if (_showAdvice && !Done)
     {
         <section class="advice settle">
-            @if (_p.Advice is not { } a)
+            @if (Advice is not { } a)
             {
-                <p class="muted">Rechne…</p>
+                <p class="muted">@(_adviceLoading ? "Rechne…" : "Empfehlungen kommen, sobald einmal Netz da war.")</p>
             }
             else
             {
@@ -262,11 +268,15 @@ else
         [("optimal", "Optimal"), ("avoidminus", "Minus vermeiden"), ("safe", "Absichern")];
 
     private PairingDto? _p;
+    private LocalPairing? _local;
+    private PairingAdviceDto? _advice;
+    private bool _adviceLoading;
+    private int _adviceRun;
+    private Timer? _poll;
     private bool _showAdvice;   // recommendations: off by default, remembered per device
     private int _pick;          // which top pick's path is previewed
     private string _mode = "optimal";
 
-    private string? AdviceArg => _showAdvice ? _mode : null;
     private bool _showAll;
     private bool _enemyView;    // show the matrix as the opponent sees it (ratings mirrored)
     private bool _busy;
@@ -304,8 +314,41 @@ else
         _showAdvice = await Prefs.GetAsync(AdviceKey);
         var stored = await Prefs.GetStringAsync(ModeKey);
         _mode = stored is "avoidminus" or "safe" ? stored : "optimal";
-        await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, AdviceArg));
+
+        _local = new LocalPairing(Api, Prefs, Token, OpponentId);
+        _local.Changed += OnLocalChanged;
+        try
+        {
+            await _local.LoadAsync();
+            _p = _local.View;
+        }
+        catch (ApiException e) { _error = e.Message; return; }
+
+        if (!_p.CanEdit) // viewers follow the captain now and then
+            _poll = new Timer(_ => _ = InvokeAsync(async () => await _local.RefreshAsync()), null, 15_000, 15_000);
+        _ = RecomputeAdviceAsync();
     }
+
+    private void OnLocalChanged() => _ = InvokeAsync(() =>
+    {
+        var moved = _p is not null && !_p.Moves.SequenceEqual(_local!.View.Moves);
+        _p = _local!.View;
+        if (moved) { ResetPicks(); _ = RecomputeAdviceAsync(); }
+        StateHasChanged();
+    });
+
+    public void Dispose()
+    {
+        _poll?.Dispose();
+        if (_local is not null) _local.Changed -= OnLocalChanged;
+    }
+
+    private string SyncText => _local!.Status switch
+    {
+        SyncStatus.Pending => "Noch nicht gespeichert – wird gesendet, sobald Netz da ist.",
+        SyncStatus.Offline => "Offline – du arbeitest mit dem Stand auf diesem Gerät.",
+        _ => "Gespeichert",
+    };
 
     // ---------- interaction ----------
 
@@ -322,7 +365,7 @@ else
             // defenders are already saved: take them back, keep the other one picked
             var keepOwn = own ? null : _p.OwnDefender;
             var keepOpp = own ? _p.OpponentDefender : null;
-            await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId, AdviceArg));
+            await ChangeAsync(() => _local!.UndoAsync());
             _ownDefender = keepOwn;
             _oppDefender = keepOpp;
             return;
@@ -332,7 +375,7 @@ else
         else _oppDefender = _oppDefender == id ? null : id;
 
         if (_ownDefender is { } d && _oppDefender is { } e)
-            await AutoSubmitAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(d, e), AdviceArg));
+            await AutoSubmitAsync(new PairingMoveDto("defenders", [d], [e]));
     }
 
     private async Task TapCell(Guid own, Guid opp)
@@ -360,18 +403,18 @@ else
 
         // complete step → enter it automatically (wrong tap? Undo)
         if (_p.Step == "attackers" && _ownAttackers.Count == 2 && _oppAttackers.Count == 2)
-            await AutoSubmitAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownAttackers, _oppAttackers), AdviceArg));
+            await AutoSubmitAsync(new PairingMoveDto("attackers", _ownAttackers.ToList(), _oppAttackers.ToList()));
         else if (_p.Step == "choices" && _ownAccepts is { } take && _oppAccepts is { } taken)
-            await AutoSubmitAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(take, taken), AdviceArg));
+            await AutoSubmitAsync(new PairingMoveDto("choices", [take], [taken]));
     }
 
-    /// <summary>Shows the last tap for a moment, then saves the step.</summary>
-    private async Task AutoSubmitAsync(Func<Task<PairingDto>> call)
+    /// <summary>Shows the last tap for a moment, then enters the step – locally, no network needed.</summary>
+    private async Task AutoSubmitAsync(PairingMoveDto move)
     {
         _busy = true;
         StateHasChanged();
         await Task.Delay(LeaveMillis);
-        await LoadAsync(call);
+        await ChangeAsync(() => _local!.ApplyAsync(move));
     }
 
     private static void Toggle(List<Guid> picks, Guid id)
@@ -386,7 +429,7 @@ else
     {
         _showAdvice = !_showAdvice;
         await Prefs.SetAsync(AdviceKey, _showAdvice);
-        if (_showAdvice) await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, _mode));
+        await RecomputeAdviceAsync();
     }
 
     private async Task SetModeAsync(string mode)
@@ -394,12 +437,28 @@ else
         if (_mode == mode) return;
         _mode = mode;
         await Prefs.SetStringAsync(ModeKey, mode);
-        await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, _mode));
+        await RecomputeAdviceAsync();
+    }
+
+    /// <summary>Recommendations are computed on the device (shared domain advisor) – no network after the first load.</summary>
+    private async Task RecomputeAdviceAsync()
+    {
+        if (!_showAdvice || _local is null) return;
+        var run = ++_adviceRun;
+        _adviceLoading = true;
+        _advice = null;
+        StateHasChanged();
+        var advice = await _local.AdviseAsync(_mode);
+        if (run != _adviceRun) return; // a newer state came in meanwhile
+        _advice = advice;
+        _adviceLoading = false;
+        _pick = 0;
+        StateHasChanged();
     }
 
     // ---------- recommendations ----------
 
-    private PairingAdviceDto? Advice => _showAdvice ? _p!.Advice : null;
+    private PairingAdviceDto? Advice => _showAdvice ? _advice : null;
     private PredictedPathDto? Preview => Advice?.TopPicks.ElementAtOrDefault(_pick);
 
     /// <summary>How likely a player is used in the current step (sum over options containing him).</summary>
@@ -452,36 +511,35 @@ else
     private async Task UndoAsync()
     {
         if (HasLocalPick) { ResetPicks(); return; } // first undo clears unsaved taps
-        await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId, AdviceArg));
+        await ChangeAsync(() => _local!.UndoAsync());
     }
 
 
-    private async Task LoadAsync(Func<Task<PairingDto>> call)
+    /// <summary>Applies a local change and animates players that leave the matrix.</summary>
+    private async Task ChangeAsync(Func<Task> change)
     {
         _busy = true;
         _error = null;
         try
         {
-            var next = await call();
-            if (_p is not null)
+            var before = _p!;
+            await change();
+            var next = _local!.View;
+            // let paired players fade out before the matrix shrinks
+            _leaving = before.RemainingOwn.Concat(before.RemainingOpponent)
+                .Except(next.RemainingOwn.Concat(next.RemainingOpponent)).ToHashSet();
+            if (_leaving.Count > 0 && !ShowAll)
             {
-                // let paired players fade out before the matrix shrinks
-                _leaving = _p.RemainingOwn.Concat(_p.RemainingOpponent)
-                    .Except(next.RemainingOwn.Concat(next.RemainingOpponent)).ToHashSet();
-                if (_leaving.Count > 0 && !ShowAll)
-                {
-                    StateHasChanged();
-                    await Task.Delay(LeaveMillis);
-                }
-                _leaving = [];
+                StateHasChanged();
+                await Task.Delay(LeaveMillis);
             }
-            _fresh = _p is null ? [] : next.Games.Select(g => g.OwnPlayerId)
-                .Except(_p.Games.Select(g => g.OwnPlayerId)).ToHashSet();
+            _leaving = [];
+            _fresh = next.Games.Select(g => g.OwnPlayerId).Except(before.Games.Select(g => g.OwnPlayerId)).ToHashSet();
             _p = next;
-            _pick = 0;
             ResetPicks();
+            _ = RecomputeAdviceAsync();
         }
-        catch (ApiException e) { _error = e.Message; }
+        catch (DomainException e) { _error = e.Message; }
         finally { _busy = false; }
     }
 

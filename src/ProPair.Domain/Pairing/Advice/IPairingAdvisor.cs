@@ -8,10 +8,29 @@ namespace ProPair.Domain.Pairing.Advice;
 /// </summary>
 public interface IPairingAdvisor
 {
+    /// <summary>One-off advice for a state (builds a fresh session over the remaining players).</summary>
     /// <param name="score">Our rating of a game (own player vs opponent player); the opponent is assumed to see the negation.</param>
     /// <param name="topPicks">How many of our best options get a predicted path.</param>
     PairingAdvice Advise(PairingState state, Func<PlayerId, PlayerId, double> score, int topPicks = 3);
+
+    /// <summary>
+    /// Advice session over the full rosters of one pairing: caches work between steps and can import/export the
+    /// expensive part (<see cref="RoundValues"/>) – so a server can precompute it and a client can advise offline.
+    /// </summary>
+    IPairingAdviceSession Start(IReadOnlyList<PlayerId> own, IReadOnlyList<PlayerId> opponent,
+        Func<PlayerId, PlayerId, double> score, RoundValues? precomputed = null);
 }
+
+public interface IPairingAdviceSession
+{
+    PairingAdvice Advise(PairingState state, int topPicks = 3);
+
+    /// <summary>Value of every reachable round start, keyed by (own mask | opponent mask &lt;&lt; roster size).</summary>
+    RoundValues ExportRoundValues();
+}
+
+/// <summary>Precomputed values of round starts. Only valid for the same rosters (order), ratings and mode.</summary>
+public sealed record RoundValues(IReadOnlyDictionary<int, double> Values);
 
 /// <summary>One option in the current step, for us or for the opponent.</summary>
 /// <param name="Players">Defender (1), attacker pair (2) or accepted attacker (1).</param>

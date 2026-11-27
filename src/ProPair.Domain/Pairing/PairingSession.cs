@@ -51,6 +51,17 @@ public sealed class PairingSession : AggregateRoot<PairingSessionId>
         State = Replay(OwnPlayerIds, OpponentPlayerIds, _moves);
     }
 
+    /// <summary>
+    /// Takes over the moves entered on a device (possibly offline). The whole list is replayed through the rules,
+    /// so an invalid list is rejected as a whole. One captain enters the pairing – last write wins.
+    /// </summary>
+    public void ReplaceMoves(IReadOnlyList<PairingMove> moves)
+    {
+        State = Replay(OwnPlayerIds, OpponentPlayerIds, moves);
+        _moves.Clear();
+        _moves.AddRange(moves);
+    }
+
     /// <summary>Starts over, e.g. after a roster change.</summary>
     public void Restart(IReadOnlyList<PlayerId> own, IReadOnlyList<PlayerId> opponent)
     {
