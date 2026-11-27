@@ -89,6 +89,7 @@ Doku: https://www.newrecruit.eu/tutorials/tournament (+ `/tournaments`, `/report
 
 Umsetzung:
 - Port `ITournamentSource` in Application, Adapter `ProPair.Adapters.NewRecruit`.
+- Bis Zugang da ist: `FakeTournamentSource` mit 4 Demo-Turnieren (ETC 2026 8er, DTM 5er, Swiss Team Masters 5er, Trio Cup 3er). Armeeverteilung angelehnt an ETC 2026, SE-Listen aus dem öffentlichen ETC-Thread, Rest Demo-Listen, Spieler fiktiv.
 - Zugangsdaten nur serverseitig (User Secrets / Env), nie im Client.
 - Import: Captain gibt Turnier-URL/ID ein → Tournament-Aggregat anlegen bzw. aktualisieren.
 - Rohdaten (Listen) unverändert speichern, Armee über Mapping auf GameSystem-Armeen.
@@ -188,6 +189,13 @@ Taktisches DDD nach Evans/Vernon:
 - UI: kein History-Icon. Rechtsklick (mobil: Long-Press) auf Zelle → Kontextmenü mit "Verlauf".
 - MVP-Fallback: Verlauf nur speichern, Anzeige später.
 
+## Stand POC
+
+- Seiten: Turnierauswahl/Import → Team wählen → Übersicht (Teilen, Gegner, Fortschritt) → Matrix.
+- Matrix: Dropdown pro Zelle, Farben aus der Skala, Liste als Tooltip auf Spielername.
+- Speichern mit optimistischer Versionierung (Mongo), Retry im Use Case, Client schreibt sequenziell.
+- Tests: Domain (Matrix, Tournament, Preparation), Application (Flow mit Fake-Quelle, In-Memory-Repos).
+
 ## Entscheidungen
 
 | # | Thema | Entscheidung |
@@ -200,7 +208,7 @@ Taktisches DDD nach Evans/Vernon:
 | 6 | Live-Sync | Nicht im MVP. SignalR später als Nice-to-have. |
 | 7 | Matrizen | Pro Turnier eine Matrix je Gegnerteam. |
 | 8 | Modellierung | DDD, Aggregate wie oben. |
-| 9 | New Recruit | Import im MVP. |
+| 9 | New Recruit | Import im MVP, zunächst Fake-Quelle. |
 
 ## Offene Fragen
 

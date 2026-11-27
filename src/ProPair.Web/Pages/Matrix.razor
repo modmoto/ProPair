@@ -1,0 +1,145 @@
+@page "/p/{Token}/vs/{OpponentId:guid}"
+@inject ProPairApi Api
+@inject AuthorStore Authors
+
+<PageTitle>ProPair – @_matrix?.Own.Name vs @_matrix?.Opponent.Name</PageTitle>
+
+@if (_error is not null)
+{
+    <p class="error">@_error</p>
+}
+@if (_matrix is null)
+{
+    <p>Lade…</p>
+}
+else
+{
+    <a class="link" href="p/@Token">← @_matrix.TournamentName</a>
+    <h1>@_matrix.Own.Name <span class="muted">vs</span> @_matrix.Opponent.Name</h1>
+
+    @if (_matrix.CanEdit && string.IsNullOrWhiteSpace(_author))
+    {
+        <form class="author" @onsubmit="SaveAuthorAsync">
+            <label>Dein Name (für den Verlauf)</label>
+            <input @bind="_authorInput" placeholder="z. B. Simon" />
+            <button type="submit" disabled="@string.IsNullOrWhiteSpace(_authorInput)">OK</button>
+        </form>
+    }
+
+    <div class="matrix-wrap">
+        <table class="matrix">
+            <thead>
+            <tr>
+                <th></th>
+                @foreach (var opp in _matrix.Opponent.Players)
+                {
+                    <th title="@opp.ListText">
+                        <span class="army">@opp.ArmyShort</span>
+                        <span class="player">@opp.Name</span>
+                    </th>
+                }
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var own in _matrix.Own.Players)
+            {
+                <tr>
+                    <th class="row" title="@own.ListText">
+                        <span class="army">@own.ArmyShort</span>
+                        <span class="player">@own.Name</span>
+                    </th>
+                    @foreach (var opp in _matrix.Opponent.Players)
+                    {
+                        var level = LevelAt(own.Id, opp.Id);
+                        <td style="background:@(level?.Color ?? "transparent")">
+                            @if (CanEditNow)
+                            {
+                                <select value="@(level?.Key ?? "")"
+                                        @onchange="e => SetAsync(own.Id, opp.Id, e.Value as string)">
+                                    <option value=""></option>
+                                    @foreach (var l in _matrix.Scale)
+                                    {
+                                        <option value="@l.Key">@l.Label</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <span>@level?.Label</span>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="legend">
+        @foreach (var l in _matrix.Scale)
+        {
+            <span style="background:@l.Color">@l.Label</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Token { get; set; } = "";
+    [Parameter] public Guid OpponentId { get; set; }
+
+    private MatrixDto? _matrix;
+    private Dictionary<(Guid, Guid), string> _cells = [];
+    private string? _author;
+    private string? _authorInput;
+    private string? _error;
+    private readonly SemaphoreSlim _writeQueue = new(1, 1); // keep edits in order, one request at a time
+
+    private bool CanEditNow => _matrix!.CanEdit && !string.IsNullOrWhiteSpace(_author);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _author = await Authors.GetAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _matrix = await Api.GetMatrixAsync(Token, OpponentId);
+            _cells = _matrix.Cells.ToDictionary(c => (c.OwnPlayerId, c.OpponentPlayerId), c => c.LevelKey);
+        }
+        catch (ApiException e) { _error = e.Message; }
+    }
+
+    private RatingLevelDto? LevelAt(Guid own, Guid opp) =>
+        _cells.TryGetValue((own, opp), out var key) ? _matrix!.Scale.FirstOrDefault(l => l.Key == key) : null;
+
+    private async Task SetAsync(Guid own, Guid opp, string? key)
+    {
+        key = string.IsNullOrEmpty(key) ? null : key;
+        if (key is null) _cells.Remove((own, opp)); else _cells[(own, opp)] = key;
+        _error = null;
+        await _writeQueue.WaitAsync();
+        try
+        {
+            await Api.SetRatingAsync(Token, OpponentId, new SetRatingRequest(own, opp, key, _author!));
+        }
+        catch (ApiException e)
+        {
+            _error = e.Message;
+            await LoadAsync();
+        }
+        finally
+        {
+            _writeQueue.Release();
+        }
+    }
+
+    private async Task SaveAuthorAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_authorInput)) return;
+        await Authors.SetAsync(_authorInput);
+        _author = _authorInput.Trim();
+    }
+}

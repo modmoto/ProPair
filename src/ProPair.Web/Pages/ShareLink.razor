@@ -1,0 +1,24 @@
+@inject IJSRuntime Js
+
+<div class="sharelink">
+    <span class="label">@Label</span>
+    <input readonly value="@Url" />
+    <button @onclick="CopyAsync">@(_copied ? "Kopiert" : "Kopieren")</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Url { get; set; } = "";
+
+    private bool _copied;
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("navigator.clipboard.writeText", Url);
+            _copied = true;
+        }
+        catch (JSException) { /* clipboard blocked: link stays selectable in the field */ }
+    }
+}

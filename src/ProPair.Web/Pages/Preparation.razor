@@ -1,0 +1,62 @@
+@page "/p/{Token}"
+@inject ProPairApi Api
+@inject NavigationManager Nav
+
+<PageTitle>ProPair – @_prep?.TournamentName</PageTitle>
+
+@if (_error is not null)
+{
+    <p class="error">@_error</p>
+}
+else if (_prep is null)
+{
+    <p>Lade…</p>
+}
+else
+{
+    <h1>@_prep.TournamentName</h1>
+    <p class="muted">@_prep.Own.Name · @_prep.TeamSize v @_prep.TeamSize @(_prep.CanEdit ? "" : "· nur lesen")</p>
+
+    <section class="share">
+        <h2>Teilen</h2>
+        @if (_prep.EditToken is not null)
+        {
+            <ShareLink Label="Bearbeiten" Url="@LinkFor(_prep.EditToken)" />
+        }
+        <ShareLink Label="Nur lesen" Url="@LinkFor(_prep.ReadToken)" />
+    </section>
+
+    <h2>Gegner</h2>
+    <div class="cards">
+        @foreach (var o in _prep.Opponents)
+        {
+            var total = _prep.TeamSize * _prep.TeamSize;
+            <a class="card" href="p/@Token/vs/@o.Participant.Id">
+                <strong>@o.Participant.Name</strong>
+                <span class="armies">
+                    @foreach (var pl in o.Participant.Players)
+                    {
+                        <span class="army" title="@pl.ArmyName">@pl.ArmyShort</span>
+                    }
+                </span>
+                <span class="progress"><span style="width:@(100 * o.RatedCells / total)%"></span></span>
+                <span class="muted">@o.RatedCells / @total bewertet</span>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Token { get; set; } = "";
+
+    private PreparationDto? _prep;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try { _prep = await Api.GetPreparationAsync(Token); }
+        catch (ApiException e) { _error = e.Message; }
+    }
+
+    private string LinkFor(string token) => Nav.ToAbsoluteUri($"p/{token}").ToString();
+}

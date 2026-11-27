@@ -1,0 +1,79 @@
+@page "/"
+@inject ProPairApi Api
+@inject NavigationManager Nav
+
+<PageTitle>ProPair – Turnier wählen</PageTitle>
+
+@if (_tournament is null)
+{
+    <h1>Turnier importieren</h1>
+    <p class="muted">Turniere aus New Recruit (aktuell Demo-Daten).</p>
+
+    @if (_sources is null)
+    {
+        <p>Lade…</p>
+    }
+    else
+    {
+        <div class="cards">
+            @foreach (var t in _sources)
+            {
+                <button class="card" disabled="@_busy" @onclick="() => ImportAsync(t.ExternalId)">
+                    <strong>@t.Name</strong>
+                    <span class="muted">@t.StartDate?.ToString("dd.MM.yyyy") · @t.TeamSize v @t.TeamSize · @t.TeamCount Teams</span>
+                </button>
+            }
+        </div>
+    }
+}
+else
+{
+    <h1>@_tournament.Name</h1>
+    <p>Welches ist dein Team?</p>
+    <div class="cards">
+        @foreach (var p in _tournament.Participants)
+        {
+            <button class="card" disabled="@_busy" @onclick="() => StartAsync(p.Id)">
+                <strong>@p.Name</strong>
+                <span class="armies">
+                    @foreach (var pl in p.Players)
+                    {
+                        <span class="army" title="@pl.ArmyName">@pl.ArmyShort</span>
+                    }
+                </span>
+            </button>
+        }
+    </div>
+    <button class="link" @onclick="() => _tournament = null">← anderes Turnier</button>
+}
+
+@if (_error is not null)
+{
+    <p class="error">@_error</p>
+}
+
+@code {
+    private IReadOnlyList<SourceTournamentDto>? _sources;
+    private TournamentDto? _tournament;
+    private bool _busy;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => _sources = await Api.GetSourceTournamentsAsync();
+
+    private Task ImportAsync(string externalId) => RunAsync(async () => _tournament = await Api.ImportAsync(externalId));
+
+    private Task StartAsync(Guid participantId) => RunAsync(async () =>
+    {
+        var created = await Api.StartPreparationAsync(_tournament!.Id, participantId);
+        Nav.NavigateTo($"p/{created.EditToken}");
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _error = null;
+        try { await action(); }
+        catch (ApiException e) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}
