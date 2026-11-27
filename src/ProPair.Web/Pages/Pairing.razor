@@ -37,8 +37,6 @@ else
         </button>
     </div>
 
-    <p class="stephint">@Hint</p>
-
     @* re-keyed on flip and on every saved step, so the matrix settles in the same way each time *@
     <div class="matrix-wrap settle" @key="@($"{ShowAll}-{_p.MoveCount}")">
         <table class="matrix pairing">
@@ -183,14 +181,6 @@ else
 
     private PlayerDto Player(Guid id) => _p!.Own.Players.Concat(_p.Opponent.Players).First(p => p.Id == id);
 
-    private string Hint => _p!.Step switch
-    {
-        "defenders" when !_p.CanEdit => $"Runde {_p.Round} · Defender",
-        "defenders" => $"Runde {_p.Round} · Defender antippen: links unserer, oben deren.",
-        "attackers" => $"Runde {_p.Round} · Zellen antippen: Zeile {Name(OwnDef)} = deren 2 Attacker, Spalte {Name(OppDef)} = unsere 2. Defender antippen = abwählen.",
-        "choices" => $"Runde {_p.Round} · Wahl: in Zeile {Name(OwnDef)} wen wir nehmen, in Spalte {Name(OppDef)} wen sie nehmen.",
-        _ => "Pairing fertig – Matchups sind umrandet.",
-    };
 
     protected override Task OnParametersSetAsync() => LoadAsync(() => Api.GetPairingAsync(Token, OpponentId));
 
@@ -354,7 +344,4 @@ else
         var cell = _p!.Cells.FirstOrDefault(c => c.OwnPlayerId == own && c.OpponentPlayerId == opp);
         return cell is null ? null : _p.Scale.FirstOrDefault(l => l.Key == cell.LevelKey);
     }
-
-    private string Name(Guid? id) =>
-        id is { } v ? _p!.Own.Players.Concat(_p.Opponent.Players).FirstOrDefault(p => p.Id == v)?.Name ?? "" : "";
 }

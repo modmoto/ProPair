@@ -226,7 +226,7 @@ button, input, select { font: inherit; }
 }
 
 /* ---- live pairing (mobile first) ---- */
-.titlebar { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.titlebar { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .6rem; }
 .pill {
     flex: none; display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 .9rem;
     border: 1px solid var(--accent); border-radius: 999px; background: #fff; color: var(--accent);
@@ -242,7 +242,6 @@ button, input, select { font: inherit; }
 .flip.on svg { transform: rotate(180deg); }
 .flip:disabled { opacity: .4; cursor: default; }
 
-.stephint { min-height: 2.6em; margin: .3rem 0 0; font-size: .85rem; color: var(--muted); }
 
 
 .matrix.pairing th button:disabled { cursor: default; color: inherit; }
