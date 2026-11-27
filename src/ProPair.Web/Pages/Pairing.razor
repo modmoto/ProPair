@@ -34,6 +34,15 @@ else
                 }
             </svg>
         </button>
+        <button class="enemy-toggle @(_enemyView ? "on" : "")" @onclick="() => _enemyView = !_enemyView"
+                title="@(_enemyView ? "Zurück zu unserer Sicht" : "Gegner-Sicht: Bewertungen umgedreht")"
+                aria-label="Gegner-Sicht" aria-pressed="@_enemyView">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 7h14" /><path d="M14 3l4 4-4 4" />
+                <path d="M20 17H6" /><path d="M10 13l-4 4 4 4" />
+            </svg>
+        </button>
         <span class="total @TotalClass" title="Summe der festen Matchups (@_p.Games.Count/@_p.Own.Players.Count)">
             <strong>@Format.Score(_p.FixedScore)</strong>
             <small>@_p.Games.Count/@_p.Own.Players.Count</small>
@@ -53,7 +62,7 @@ else
 
     @* rebuilt (settle-in) only on flip; step changes transition cell by cell so you see what drops out *@
     <div class="matrix-wrap settle" @key="ShowAll">
-        <table class="matrix pairing">
+        <table class="matrix pairing @(_enemyView ? "enemy-view" : "")">
             <thead>
             <tr>
                 <th class="corner">
@@ -105,10 +114,10 @@ else
                     </th>
                     @foreach (var opp in Columns)
                     {
-                        var level = LevelAt(own.Id, opp.Id);
+                        var level = Shown(LevelAt(own.Id, opp.Id));
                         var css = CellClass(own.Id, opp.Id);
                         var round = PredictedRound(own.Id, opp.Id);
-                        <td class="@css @AdviceCellClass(own.Id, opp.Id) @(round is null ? "" : "predicted")" data-round="@round"
+                        <td class="@css @AdviceCellClass(own.Id, opp.Id) @(round is null ? "" : "predicted") @(_enemyView ? "enemy" : "")" data-round="@round"
                             style="@(css is "cross" ? "" : $"background:{level?.Color ?? "#fff"}")"
                             @onclick="() => TapCell(own.Id, opp.Id)">
                             @level?.Label
@@ -160,7 +169,8 @@ else
                         @foreach (var round in preview.Steps.GroupBy(st => st.Round))
                         {
                             <li>
-                                <span class="r">R@(round.Key)</span>
+                                <span class="r">Runde @round.Key</span>
+                                <div class="rbody">
                                 <span class="steps">
                                     @foreach (var st in round)
                                     {
@@ -174,6 +184,20 @@ else
                                         }
                                     }
                                 </span>
+                                @foreach (var g in preview.Games.Where(g => g.Round == round.Key))
+                                {
+                                    var own = Player(g.OwnPlayerId);
+                                    var opp = Player(g.OpponentPlayerId);
+                                    var level = Shown(LevelAt(g.OwnPlayerId, g.OpponentPlayerId));
+                                    <span class="pgame">
+                                        <span class="name own">@own.Name</span>
+                                        <span class="army">@own.ArmyShort</span>
+                                        <span class="rating @(_enemyView ? "enemy" : "")" style="background:@(level?.Color ?? "#e8ebf1")">@(level?.Label ?? "–")</span>
+                                        <span class="army">@opp.ArmyShort</span>
+                                        <span class="name">@opp.Name</span>
+                                    </span>
+                                }
+                                </div>
                             </li>
                         }
                     </ol>
@@ -191,11 +215,11 @@ else
             {
                 var own = Player(g.OwnPlayerId);
                 var opp = Player(g.OpponentPlayerId);
-                var level = LevelAt(g.OwnPlayerId, g.OpponentPlayerId);
+                var level = Shown(LevelAt(g.OwnPlayerId, g.OpponentPlayerId));
                 <div class="gamerow @(_fresh.Contains(g.OwnPlayerId) ? "settle" : "")">
                     <span class="name own">@own.Name</span>
                     <span class="army">@own.ArmyShort</span>
-                    <span class="rating" style="background:@(level?.Color ?? "#e8ebf1")">@(level?.Label ?? "–")</span>
+                    <span class="rating @(_enemyView ? "enemy" : "")" style="background:@(level?.Color ?? "#e8ebf1")">@(level?.Label ?? "–")</span>
                     <span class="army">@opp.ArmyShort</span>
                     <span class="name opp">@opp.Name</span>
                 </div>
@@ -218,6 +242,7 @@ else
     private bool _showAdvice;   // recommendations: off by default, remembered per device
     private int _pick;          // which top pick's path is previewed
     private bool _showAll;
+    private bool _enemyView;    // show the matrix as the opponent sees it (ratings mirrored)
     private bool _busy;
     private string? _error;
     private HashSet<Guid> _leaving = [];
@@ -460,6 +485,13 @@ else
     }
 
     private bool IsGame(Guid own, Guid opp) => _p!.Games.Any(g => g.OwnPlayerId == own && g.OpponentPlayerId == opp);
+
+    /// <summary>In the opponent's view a rating becomes its mirror on the scale (+ ↔ -, 0/+ ↔ 0/-).</summary>
+    private RatingLevelDto? Shown(RatingLevelDto? level)
+    {
+        if (!_enemyView || level is null) return level;
+        return _p!.Scale.OrderBy(l => Math.Abs(l.Score + level.Score)).First();
+    }
 
     private RatingLevelDto? LevelAt(Guid own, Guid opp)
     {

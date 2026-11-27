@@ -83,6 +83,7 @@ Ansicht:
 - Standard: nur verbleibende Spieler.
 - Oben neben dem Titel: Gesamtstand der festen Matchups (Summe der Scores, grün/rot) und x/8 gepaart.
 - Unter der Matrix: feste Matchups als „Name UD [Bewertung] VC Name“ – Bewertung mittig zwischen beiden Seiten; neue Matchups blenden ein.
+- **Gegner-Ansicht** (⇄ in der Titelzeile): Bewertungen gespiegelt (+ ↔ -, 0/+ ↔ 0/-), jedes Feld rot umrandet. Nur Anzeige, nicht gespeichert.
 - Umschalter in der leeren Ecke oben links der Tabelle (Icon: Aufziehen = ganze Matrix, Zusammenziehen = nur Rest). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
 - Empfehlungen per Augen-Symbol (Standard aus): %-Marken an Namen, ★ = beste Option, grüne Ringe, Top-3 + wahrscheinlichster Pfad.
 - Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
@@ -105,7 +106,7 @@ Berechnung:
 Darstellung (in der Matrix, mobil):
 - Defender: Badge mit erwartetem Endstand an unseren Namen (★ = bestes), dünner Wahrscheinlichkeitsbalken an Gegner-Namen.
 - Attacker/Wahl: erwarteter Endstand klein in den wählbaren Zellen, beste mit grünem Rahmen. ⚠ bei Schlüsselspielern.
-- Option antippen → **Pfad-Vorschau**: wahrscheinliche Matchups gestrichelt in der Matrix (nach Runde nummeriert) + Zeitleiste; Runden per Wischen durchgehen; Endstand mit Spanne (Worst/Best).
+- Option antippen → **Pfad-Vorschau**: wahrscheinliche Matchups gestrichelt in der Matrix (nach Runde nummeriert) + Zeitleiste pro Runde mit Zügen und den daraus entstehenden Matchups samt Bewertung; Runden per Wischen durchgehen; Endstand mit Spanne (Worst/Best).
 - „Was wäre wenn“: Gegner-Namen gedrückt halten = „angenommen, die legen den“ → neu rechnen.
 - **Ausblendbar:** Schalter „Empfehlungen“ (Augen-Icon) neben dem Flip-Button. Standard **aus**, pro Gerät gemerkt – damit man sich nicht unbewusst von Zahlen leiten lässt. Aus = keine Zahlen, keine Rahmen, keine Warnungen.
 
