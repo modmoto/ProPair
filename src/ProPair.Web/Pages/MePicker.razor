@@ -1,0 +1,55 @@
+@* "Who am I" within the own team (no login yet): a trigger that opens a flyout with the team's players. *@
+
+<button class="me-trigger @(Selected is null ? "unset" : "")" aria-haspopup="dialog" @onclick="() => _open = true">
+    @if (Selected is null)
+    {
+        <span class="me-text">
+            <strong>Wer bist du?</strong>
+            <span class="muted">Auswählen, um zu bewerten</span>
+        </span>
+    }
+    else
+    {
+        <span class="me-text">
+            <span class="muted">Ich bin</span>
+            <span><span class="army">@Selected.ArmyShort</span> <strong>@Selected.Name</strong></span>
+        </span>
+    }
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+</button>
+
+@if (_open)
+{
+    <div class="sheet-backdrop" @onclick="() => _open = false"></div>
+    <section class="sheet me-flyout" role="dialog" aria-label="Wer bist du?">
+        <header>
+            <strong>Wer bist du?</strong>
+            <button class="x" aria-label="Schließen" @onclick="() => _open = false">✕</button>
+        </header>
+        <div class="me-options">
+            @foreach (var p in Players)
+            {
+                <button class="me-option @(p.Id == Selected?.Id ? "on" : "")" @onclick="() => PickAsync(p)">
+                    <span class="army">@p.ArmyShort</span>
+                    <strong>@p.Name</strong>
+                    <span class="muted">@p.ArmyName</span>
+                </button>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<PlayerDto> Players { get; set; } = [];
+    [Parameter] public PlayerDto? Selected { get; set; }
+    [Parameter] public EventCallback<PlayerDto> OnSelect { get; set; }
+
+    private bool _open;
+
+    private async Task PickAsync(PlayerDto p)
+    {
+        _open = false;
+        await OnSelect.InvokeAsync(p);
+    }
+}

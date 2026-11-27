@@ -1,5 +1,5 @@
 // Long-press (touch) and right-click (mouse) on matrix cells → opens the cell sheet in Blazor.
-// Cells carry data-own / data-opp. A long press must not also open the cell's native <select>.
+// Cells carry data-own / data-opp. A long press must not also open the cell's rating flyout.
 window.proPair = window.proPair || {};
 
 window.proPair.longPress = (root, dotnet) => {
@@ -41,11 +41,8 @@ window.proPair.longPress = (root, dotnet) => {
 
     root.addEventListener('touchend', e => {
         cancel();
-        if (Date.now() - firedAt < 800) e.preventDefault(); // swallow the click → select stays closed
+        if (Date.now() - firedAt < 800) e.preventDefault(); // swallow the click → rating flyout stays closed
     }, { passive: false });
 
     root.addEventListener('touchcancel', cancel);
 };
-
-// Brings a freshly opened panel into view (it opens below the matrix, often off-screen on phones).
-window.proPair.reveal = el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

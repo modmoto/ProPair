@@ -255,6 +255,8 @@ Taktisches DDD nach Evans/Vernon:
 | 21 | Unvollständige Kader | Fehlende Spieler/Listen → „Dummy“. Überzählige Listen bleiben draußen (die ersten zählen). Warnung „Kader unvollständig“ in Turnierliste, Teamwahl, Übersicht und Matrix. |
 | 22 | Listenformat | Anti-Corruption-Layer im New-Recruit-Adapter (`ArmyListTranslator`): Kopfzeilen, Punktesumme, Footer und doppelte Listen raus, Platzhalter („kadrowicz“) sind keine Liste, unbekannte Formate verlieren nur Summe und Footer. Armee wird vorher aus dem Rohtext erkannt. Listenvergleich zählt nur die Einheiten. |
 | 23 | Release | Ein Docker-Image für App und Sync (zwei Prozesse, endet einer, startet der Container neu). Sync-URLs nur im Container erreichbar (kein Login). Azure DevOps wie FadingFlame: Build → Docker Hub, Release per SSH + docker-compose hinter Caddy. MongoDB extern, Secrets nur in Azure DevOps. |
+| 24 | Wer bin ich (ohne Login) | Im Bearbeiten-Link wählt man per Flyout, welcher Spieler des eigenen Teams man ist (pro Team im Browser gespeichert, jederzeit wechselbar). Ohne Auswahl keine Gegner-Matrix. Der Spielername ist der Autor aller Änderungen; das freie Namensfeld entfällt. Später ersetzt durch Login. |
+| 25 | Matrix-Ansicht | Eigene Zeile hervorgehoben. Zelle antippen → Flyout mit Bewertungen statt nativem Select. Unter der Matrix ein Karussell (wischen/Pfeile) durch die Gegnerlisten: Kopf mit Armee und Name, darunter die eigene Bewertung (+ Löschen), dann Liste mit Markierungen und Notizen. Teamkollegen öffnen ihre Liste mit Schließen-Button, danach wieder das Karussell. Kein automatisches Scrollen. |
 
 ## Offene Fragen
 

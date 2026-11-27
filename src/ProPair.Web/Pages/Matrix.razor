@@ -1,7 +1,7 @@
 @page "/p/{Token}/vs/{OpponentId:guid}"
 @implements IDisposable
 @inject ProPairApi Api
-@inject AuthorStore Authors
+@inject WhoAmI Me
 @inject IJSRuntime Js
 
 <PageTitle>ProPair – @_matrix?.Own.Name vs @_matrix?.Opponent.Name</PageTitle>
@@ -23,6 +23,10 @@ else
     </div>
     <RosterWarning Team="_matrix.Own" ShowName="true" />
     <RosterWarning Team="_matrix.Opponent" ShowName="true" />
+    @if (_matrix.CanEdit)
+    {
+        <MePicker Players="_matrix.Own.Players" Selected="_me" OnSelect="SelectMeAsync" />
+    }
     @if (_matrix.IsDemo && _matrix.CanEdit && _cells.Count < _matrix.Own.Players.Count * _matrix.Opponent.Players.Count)
     {
         <button class="btn" @onclick="FillDemoAsync">Demo-Werte füllen</button>
@@ -30,15 +34,6 @@ else
     @if (_matrix.Own.Players.Concat(_matrix.Opponent.Players).Any(ListReset))
     {
         <p class="list-changed-hint muted"><i class="list-changed">i</i> Neue Liste aus New Recruit – Bewertungen und Notizen für diesen Spieler starten neu.</p>
-    }
-
-    @if (_matrix.CanEdit && string.IsNullOrWhiteSpace(_author))
-    {
-        <form class="author" @onsubmit="SaveAuthorAsync">
-            <label>Dein Name (für den Verlauf)</label>
-            <input @bind="_authorInput" placeholder="z. B. Simon" />
-            <button type="submit" disabled="@string.IsNullOrWhiteSpace(_authorInput)">OK</button>
-        </form>
     }
 
     <div class="matrix-wrap settle" @ref="_grid">
@@ -49,8 +44,8 @@ else
                 @foreach (var opp in _matrix.Opponent.Players)
                 {
                     <th>
-                        <button class="@(_shown == opp ? "active" : "") @(HasPlayerNote(opp.Id) ? "has-note" : "")"
-                                title="Liste & Notiz" @onclick="() => Toggle(opp)">
+                        <button class="@(_shown is null && CurrentOpp == opp ? "active" : "") @(HasPlayerNote(opp.Id) ? "has-note" : "")"
+                                title="Liste & Notiz" @onclick="() => ShowOpponent(opp)">
                             <span class="army">@opp.ArmyShort</span>
                             <span class="player">@opp.Name</span>
                             @if (ListReset(opp))
@@ -65,10 +60,11 @@ else
             <tbody>
             @foreach (var own in _matrix.Own.Players)
             {
-                <tr>
+                var isMe = own.Id == _me?.Id;
+                <tr class="@(isMe ? "me" : "")">
                     <th class="row">
                         <button class="@(_shown == own ? "active" : "") @(HasPlayerNote(own.Id) ? "has-note" : "")"
-                                title="Liste & Notiz" @onclick="() => Toggle(own)">
+                                title="Liste & Notiz" @onclick="() => ShowOwn(own)">
                             <span class="army">@own.ArmyShort</span>
                             <span class="player">@own.Name</span>
                             @if (ListReset(own))
@@ -80,17 +76,14 @@ else
                     @foreach (var opp in _matrix.Opponent.Players)
                     {
                         var level = LevelAt(own.Id, opp.Id);
+                        var open = _sheet == (own.Id, opp.Id) || _quick == (own.Id, opp.Id);
+                        var current = isMe && _shown is null && CurrentOpp == opp;
                         <td style="background:@(level?.Color ?? "transparent")" data-own="@own.Id" data-opp="@opp.Id"
-                            class="@(_cellNotes.ContainsKey((own.Id, opp.Id)) ? "has-note" : "") @(_sheet == (own.Id, opp.Id) ? "sheet-open" : "")">
+                            class="@(_cellNotes.ContainsKey((own.Id, opp.Id)) ? "has-note" : "") @(open ? "sheet-open" : "") @(current ? "current" : "")">
                             @if (CanEditNow)
                             {
-                                <select value="@(level?.Key ?? "")" @onchange="e => SetAsync(own.Id, opp.Id, e.Value as string)">
-                                    <option value=""></option>
-                                    @foreach (var l in _matrix.Scale)
-                                    {
-                                        <option value="@l.Key">@l.Label</option>
-                                    }
-                                </select>
+                                <button class="cellbtn" aria-label="@own.Name gegen @opp.Name bewerten"
+                                        @onclick="() => _quick = (own.Id, opp.Id)">@level?.Label</button>
                             }
                             else
                             {
@@ -114,13 +107,81 @@ else
 
     @if (_shown is not null)
     {
+        @* a teammate's list replaces the carousel until it is closed *@
         var shown = _shown;
-        <div @ref="_panel">
-        <ListPanel Player="shown" Marks="MarksFor(shown.Id)" Note="PlayerNote(shown.Id)"
+        <ListPanel @key="shown.Id" Player="shown" Marks="MarksFor(shown.Id)" Note="PlayerNote(shown.Id)"
                    CanEdit="_matrix.CanEdit" HasAuthor="HasAuthor" OnClose="() => _shown = null"
                    OnSaveNote="text => SavePlayerNoteAsync(shown.Id, text)"
                    OnMark="m => SaveListMarkAsync(shown.Id, m)" />
-        </div>
+    }
+    else if (CurrentOpp is { } opp)
+    {
+        var players = _matrix.Opponent.Players;
+        var mine = _me is null ? null : LevelAt(_me.Id, opp.Id);
+        @* swipe left/right (or the arrows) through the opponent lists *@
+        <section class="listview opplists" @ontouchstart="TouchStart" @ontouchend="TouchEnd">
+            <div class="listnav">
+                <button class="btn" aria-label="Vorherige Liste" disabled="@(players.Count < 2)" @onclick="() => MoveList(-1)">‹</button>
+                <span class="dots">
+                    @for (var i = 0; i < players.Count; i++)
+                    {
+                        var index = i;
+                        <button class="dot @(index == _listIndex ? "on" : "")" aria-label="@players[index].Name"
+                                @onclick="() => _listIndex = index">@players[index].ArmyShort</button>
+                    }
+                </span>
+                <button class="btn" aria-label="Nächste Liste" disabled="@(players.Count < 2)" @onclick="() => MoveList(1)">›</button>
+            </div>
+            <div class="settle" @key="opp.Id">
+                <header class="opphead">
+                    <span class="army">@opp.ArmyShort</span>
+                    <strong>@opp.Name</strong>
+                    <span class="muted">@opp.ArmyName</span>
+                </header>
+                @if (_me is not null)
+                {
+                    var me = _me;
+                    <div class="sheet-levels">
+                        @foreach (var l in _matrix.Scale)
+                        {
+                            <button class="lvl @(mine?.Key == l.Key ? "on" : "")" style="background:@l.Color"
+                                    disabled="@(!CanEditNow)" @onclick="() => SetAsync(me.Id, opp.Id, l.Key)">@l.Label</button>
+                        }
+                        <button class="lvl clear" disabled="@(!CanEditNow || mine is null)" title="Bewertung löschen"
+                                aria-label="Bewertung löschen" @onclick="() => SetAsync(me.Id, opp.Id, null)">↺</button>
+                    </div>
+                    <p class="subtle">Deine Bewertung: @me.Name gegen @opp.Name</p>
+                }
+                <ListPanel Player="opp" Marks="MarksFor(opp.Id)" Note="PlayerNote(opp.Id)"
+                           CanEdit="_matrix.CanEdit" HasAuthor="HasAuthor"
+                           OnSaveNote="text => SavePlayerNoteAsync(opp.Id, text)"
+                           OnMark="m => SaveListMarkAsync(opp.Id, m)" />
+            </div>
+        </section>
+    }
+
+    @if (_quick is var (quickOwn, quickOpp))
+    {
+        var qOwn = Player(quickOwn);
+        var qOpp = Player(quickOpp);
+        var qLevel = LevelAt(quickOwn, quickOpp);
+        <div class="sheet-backdrop" @onclick="() => _quick = null"></div>
+        <section class="sheet quick" role="dialog" aria-label="Bewerten">
+            <header>
+                <strong><span class="army">@qOwn.ArmyShort</span> @qOwn.Name <span class="muted">vs</span> <span class="army">@qOpp.ArmyShort</span> @qOpp.Name</strong>
+                <button class="x" aria-label="Schließen" @onclick="() => _quick = null">✕</button>
+            </header>
+            <div class="sheet-levels">
+                @foreach (var l in _matrix.Scale)
+                {
+                    <button class="lvl @(qLevel?.Key == l.Key ? "on" : "")" style="background:@l.Color"
+                            @onclick="() => QuickSetAsync(quickOwn, quickOpp, l.Key)">@l.Label</button>
+                }
+                <button class="lvl clear" disabled="@(qLevel is null)" title="Bewertung löschen" aria-label="Bewertung löschen"
+                        @onclick="() => QuickSetAsync(quickOwn, quickOpp, null)">↺</button>
+            </div>
+            <button class="link subtle" @onclick="() => OpenSheet(quickOwn, quickOpp)">Notiz &amp; Verlauf</button>
+        </section>
     }
 
     @if (_sheet is var (sheetOwn, sheetOpp))
@@ -132,7 +193,7 @@ else
         <section class="sheet" role="dialog" aria-label="Matchup">
             <header>
                 <strong><span class="army">@own.ArmyShort</span> @own.Name <span class="muted">vs</span> <span class="army">@opp.ArmyShort</span> @opp.Name</strong>
-                <button class="btn" @onclick="CloseSheet">Schließen</button>
+                <button class="x" aria-label="Schließen" @onclick="CloseSheet">✕</button>
             </header>
 
             <div class="sheet-levels">
@@ -141,8 +202,8 @@ else
                     <button class="lvl @(current?.Key == l.Key ? "on" : "")" style="background:@l.Color"
                             disabled="@(!CanEditNow)" @onclick="() => SetAsync(sheetOwn, sheetOpp, l.Key)">@l.Label</button>
                 }
-                <button class="lvl clear @(current is null ? "on" : "")" disabled="@(!CanEditNow)"
-                        @onclick="() => SetAsync(sheetOwn, sheetOpp, null)" title="Bewertung entfernen">∅</button>
+                <button class="lvl clear" disabled="@(!CanEditNow || current is null)" title="Bewertung löschen"
+                        aria-label="Bewertung löschen" @onclick="() => SetAsync(sheetOwn, sheetOpp, null)">↺</button>
             </div>
 
             <h3>Notiz</h3>
@@ -183,39 +244,37 @@ else
     private Dictionary<(Guid, Guid), string> _cells = [];
     private Dictionary<(Guid, Guid), NoteDto> _cellNotes = [];
     private Dictionary<Guid, NoteDto> _playerNotes = [];
-    private string? _author;
-    private string? _authorInput;
+    private PlayerDto? _me;
     private string? _error;
-    private PlayerDto? _shown;
-    private (Guid Own, Guid Opp)? _sheet;
+    private PlayerDto? _shown;               // a teammate's list, opened from the row header
+    private int _listIndex;                  // opponent list shown in the carousel
+    private double? _touchX;
+    private (Guid Own, Guid Opp)? _quick;    // rating flyout of a tapped cell
+    private (Guid Own, Guid Opp)? _sheet;    // notes & history of a long-pressed cell
     private IReadOnlyList<RatingChangeDto>? _history;
     private readonly SemaphoreSlim _writeQueue = new(1, 1); // keep edits in order, one request at a time
 
     private ElementReference _grid;
-    private ElementReference _panel;
-    private Guid? _revealed;
     private DotNetObjectReference<Matrix>? _self;
     private bool _longPressReady;
 
-    private bool HasAuthor => !string.IsNullOrWhiteSpace(_author);
+    /// <summary>The chosen player of the own team is the author of every change.</summary>
+    private string? Author => _me?.Name;
+    private bool HasAuthor => _me is not null;
     private bool CanEditNow => _matrix!.CanEdit && HasAuthor;
+
+    private PlayerDto? CurrentOpp => _matrix!.Opponent.Players.ElementAtOrDefault(_listIndex);
 
     protected override async Task OnParametersSetAsync()
     {
-        _author = await Authors.GetAsync();
         await LoadAsync();
+        if (_matrix is null) return;
+        var meId = await Me.GetAsync(_matrix.Own.Id);
+        _me = _matrix.Own.Players.FirstOrDefault(p => p.Id == meId);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_shown is not null && _revealed != _shown.Id)
-        {
-            _revealed = _shown.Id;
-            try { await Js.InvokeVoidAsync("proPair.reveal", _panel); }
-            catch (JSException) { /* scrolling is a nicety */ }
-        }
-        else if (_shown is null) _revealed = null;
-
         if (_matrix is null || _longPressReady) return;
         _longPressReady = true;
         _self = DotNetObjectReference.Create(this);
@@ -226,17 +285,61 @@ else
     [JSInvokable]
     public async Task OnCellLongPress(string own, string opp)
     {
-        _sheet = (Guid.Parse(own), Guid.Parse(opp));
-        _history = null;
-        _shown = null;
+        OpenSheet(Guid.Parse(own), Guid.Parse(opp));
         StateHasChanged();
         await Task.CompletedTask;
+    }
+
+    private void OpenSheet(Guid own, Guid opp)
+    {
+        _quick = null;
+        _sheet = (own, opp);
+        _history = null;
     }
 
     private void CloseSheet()
     {
         _sheet = null;
         _history = null;
+    }
+
+    private async Task QuickSetAsync(Guid own, Guid opp, string? key)
+    {
+        _quick = null;
+        await SetAsync(own, opp, key);
+    }
+
+    private void ShowOwn(PlayerDto player) => _shown = _shown == player ? null : player;
+
+    /// <summary>An opponent's header shows their list in the carousel (and closes a teammate's list).</summary>
+    private void ShowOpponent(PlayerDto player)
+    {
+        _shown = null;
+        _listIndex = Math.Max(_matrix!.Opponent.Players.ToList().IndexOf(player), 0);
+    }
+
+    private void MoveList(int delta)
+    {
+        var count = _matrix!.Opponent.Players.Count;
+        if (count == 0) return;
+        _listIndex = ((_listIndex + delta) % count + count) % count;
+    }
+
+    private void TouchStart(TouchEventArgs e) => _touchX = e.ChangedTouches.FirstOrDefault()?.ClientX;
+
+    private void TouchEnd(TouchEventArgs e)
+    {
+        if (_touchX is not { } start || e.ChangedTouches.FirstOrDefault() is not { } end) return;
+        var dx = end.ClientX - start;
+        _touchX = null;
+        if (Math.Abs(dx) < 50) return; // a tap or a scroll, not a swipe
+        MoveList(dx < 0 ? 1 : -1);
+    }
+
+    private async Task SelectMeAsync(PlayerDto player)
+    {
+        _me = player;
+        await Me.SetAsync(_matrix!.Own.Id, player.Id);
     }
 
     private async Task LoadHistoryAsync()
@@ -263,8 +366,6 @@ else
         _playerNotes = m.PlayerNotes.ToDictionary(n => n.PlayerId, n => n.Note);
     }
 
-    private void Toggle(PlayerDto player) => _shown = _shown == player ? null : player;
-
     private PlayerDto Player(Guid id) => _matrix!.Own.Players.Concat(_matrix.Opponent.Players).First(p => p.Id == id);
 
     /// <summary>The list changed in New Recruit and nothing is rated for this player yet.</summary>
@@ -285,26 +386,26 @@ else
         if (!CanEditNow) return;
         key = string.IsNullOrEmpty(key) ? null : key;
         if (key is null) _cells.Remove((own, opp)); else _cells[(own, opp)] = key;
-        await WriteAsync(() => Api.SetRatingAsync(Token, OpponentId, new SetRatingRequest(own, opp, key, _author!)));
+        await WriteAsync(() => Api.SetRatingAsync(Token, OpponentId, new SetRatingRequest(own, opp, key, Author!)));
         if (_history is not null) await LoadHistoryAsync();
     }
 
     private async Task SaveCellNoteAsync(Guid own, Guid opp, string text)
     {
-        await WriteAsync(() => Api.SetCellNoteAsync(Token, OpponentId, own, opp, new SetNoteRequest(text, _author!)));
+        await WriteAsync(() => Api.SetCellNoteAsync(Token, OpponentId, own, opp, new SetNoteRequest(text, Author!)));
         await LoadAsync();
     }
 
     private async Task SavePlayerNoteAsync(Guid playerId, string text)
     {
-        await WriteAsync(() => Api.SetPlayerNoteAsync(Token, playerId, new SetNoteRequest(text, _author!)));
+        await WriteAsync(() => Api.SetPlayerNoteAsync(Token, playerId, new SetNoteRequest(text, Author!)));
         await LoadAsync();
     }
 
     private async Task SaveListMarkAsync(Guid playerId, (int LineIndex, string LineText, string? Color, string? Note) m)
     {
         await WriteAsync(() => Api.SetListMarkAsync(Token, playerId, m.LineIndex,
-            new SetListMarkRequest(m.LineText, m.Color, m.Note, _author!)));
+            new SetListMarkRequest(m.LineText, m.Color, m.Note, Author!)));
         await LoadAsync();
     }
 
@@ -329,13 +430,6 @@ else
             Apply(_matrix);
         }
         catch (ApiException e) { _error = e.Message; }
-    }
-
-    private async Task SaveAuthorAsync()
-    {
-        if (string.IsNullOrWhiteSpace(_authorInput)) return;
-        await Authors.SetAsync(_authorInput);
-        _author = _authorInput.Trim();
     }
 
     public void Dispose() => _self?.Dispose();

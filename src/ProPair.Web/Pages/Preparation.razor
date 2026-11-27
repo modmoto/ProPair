@@ -1,6 +1,7 @@
 @page "/p/{Token}"
 @inject ProPairApi Api
 @inject NavigationManager Nav
+@inject WhoAmI Me
 
 <PageTitle>ProPair – @_prep?.TournamentName</PageTitle>
 
@@ -19,6 +20,10 @@ else
     <NewRecruitStatus TournamentId="_prep.TournamentId" ListsVisible="_prep.ListsVisible" IsDemo="_prep.IsDemo"
                 LastSyncedAt="_prep.LastSyncedAt" OnSynced="LoadAsync" />
     <RosterWarning Team="_prep.Own" ShowName="true" />
+    @if (_prep.CanEdit)
+    {
+        <MePicker Players="_prep.Own.Players" Selected="_me" OnSelect="SelectMeAsync" />
+    }
 
     <section class="share">
         <h2>Teilen</h2>
@@ -30,11 +35,15 @@ else
     </section>
 
     <h2>Gegner</h2>
+    @if (Locked)
+    {
+        <p class="muted">Wähle oben aus, wer du bist – dann kannst du die Gegner öffnen.</p>
+    }
     <div class="cards">
         @foreach (var o in _prep.Opponents)
         {
             var total = _prep.Own.Players.Count * o.Participant.Players.Count;
-            <a class="card" href="p/@Token/vs/@o.Participant.Id">
+            <a class="card @(Locked ? "locked" : "")" href="@(Locked ? null : $"p/{Token}/vs/{o.Participant.Id}")" aria-disabled="@Locked">
                 <strong>@o.Participant.Name</strong>
                 <span class="armies">
                     @foreach (var pl in o.Participant.Players)
@@ -62,13 +71,28 @@ else
 
     private PreparationDto? _prep;
     private string? _error;
+    private PlayerDto? _me;
+
+    /// <summary>Editing needs to know who you are before you can open an opponent.</summary>
+    private bool Locked => _prep!.CanEdit && _me is null;
 
     protected override Task OnParametersSetAsync() => LoadAsync();
 
     private async Task LoadAsync()
     {
-        try { _prep = await Api.GetPreparationAsync(Token); }
+        try
+        {
+            _prep = await Api.GetPreparationAsync(Token);
+            var meId = await Me.GetAsync(_prep.Own.Id);
+            _me = _prep.Own.Players.FirstOrDefault(p => p.Id == meId);
+        }
         catch (ApiException e) { _error = e.Message; }
+    }
+
+    private async Task SelectMeAsync(PlayerDto player)
+    {
+        _me = player;
+        await Me.SetAsync(_prep!.Own.Id, player.Id);
     }
 
     private string LinkFor(string token) => Nav.ToAbsoluteUri($"p/{token}").ToString();

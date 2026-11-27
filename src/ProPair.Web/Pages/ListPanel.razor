@@ -1,13 +1,17 @@
 @*
     Army list of one player: list on top (lines can be marked with a colour + short note), free notes below.
     Tap a line to mark it; the note of a mark is shown in the same line.
+    With OnClose it is a panel of its own (name + close button), without it is embedded (e.g. in the list carousel).
 *@
 
-<section class="listpanel settle">
-    <header>
-        <strong>@Player.Name · @Player.ArmyName</strong>
-        <button class="btn" @onclick="OnClose">Schließen</button>
-    </header>
+<section class="listpanel @(OnClose.HasDelegate ? "settle" : "embedded")">
+    @if (OnClose.HasDelegate)
+    {
+        <header>
+            <strong>@Player.Name · @Player.ArmyName</strong>
+            <button class="btn" @onclick="OnClose">Schließen</button>
+        </header>
+    }
 
     @if (Player.IsDummy)
     {
@@ -45,7 +49,7 @@
                     </div>
                     @if (!HasAuthor)
                     {
-                        <p class="hint">Zum Markieren oben deinen Namen eintragen.</p>
+                        <p class="hint">Zum Markieren oben auswählen, wer du bist.</p>
                     }
                 </div>
             }
