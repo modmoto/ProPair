@@ -17,8 +17,9 @@ var app = builder.Build();
 await app.Services.EnsureMongoIndexesAsync();
 
 app.UseDomainErrors();
-app.MapStaticAssets(); // serves the fingerprinted Blazor WASM assets
+// serves the Blazor WASM assets and index.html for all page routes (StaticWebAssetSpaFallbackEnabled
+// in ProPair.Web) – no MapFallbackToFile on top: two fallbacks are ambiguous (500)
+app.MapStaticAssets();
 app.MapProPairApi();
-app.MapFallbackToFile("index.html");
 
 app.Run();
