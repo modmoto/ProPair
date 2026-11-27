@@ -29,6 +29,47 @@ Pairing-Matrix für T9A-Teamturniere (3–8 Spieler pro Team). Matrix bewerten, 
 - Zugangsdaten nie ausgeben, loggen oder committen. Secrets nur maskiert auflisten.
 - NR protokolliert jeden Aufruf: Requests nacheinander, Pausen, ein Hangfire-Worker.
 
+## Setup auf Windows (Umzug vom Mac)
+
+Für Claude auf dem Windows-PC: diese Schritte der Reihe nach ausführen bzw. prüfen. Was der User selbst tun muss, ist markiert.
+
+1. **Werkzeuge** (PowerShell):
+   ```powershell
+   winget install Git.Git GitHub.cli MongoDB.Server MongoDB.DatabaseTools
+   ```
+   .NET 11 SDK von https://dotnet.microsoft.com/download/dotnet/11.0 installieren. Prüfen: `dotnet --list-sdks` zeigt 11.x.
+   MongoDB läuft danach als Windows-Dienst auf `localhost:27017` (kein `mongod --fork` wie auf dem Mac). Prüfen: `Get-Service MongoDB`.
+2. **Repo** (privat, User meldet sich an):
+   ```powershell
+   gh auth login
+   gh repo clone modmoto/ProPair
+   ```
+3. **`.claude/launch.json`**: `runtimeExecutable` ist der Mac-Pfad `/usr/local/share/dotnet/dotnet`. Auf Windows lokal auf `dotnet` ändern, **nicht committen** (der Mac braucht den Pfad).
+4. **New-Recruit-Zugang – macht der User selbst** (Claude fragt nicht nach den Werten):
+   ```powershell
+   dotnet user-secrets set "NewRecruit:Login" "<login>" --id propair
+   dotnet user-secrets set "NewRecruit:Password" "<passwort>" --id propair
+   ```
+   Landet in `%APPDATA%\Microsoft\UserSecrets\propair\secrets.json`.
+5. **Datenbank**, eine von zwei Varianten:
+   - Mit allen Bewertungen, Markierungen und Pairing-Ständen: Der User kopiert den Ordner `.data/propair-dump` vom Mac (liegt nicht im Git) auf den PC, z. B. per USB-Stick oder Cloud-Laufwerk, ins Repo nach `.data\propair-dump`. Dann:
+     ```powershell
+     mongorestore --drop .data\propair-dump
+     ```
+   - Nur Turniere, frisch von New Recruit: Sync starten (Schritt 6), dann
+     ```powershell
+     Invoke-RestMethod -Method Post "http://localhost:5090/sync/backfill?from=2025-11-27&to=2026-11-27"
+     Invoke-RestMethod -Method Post "http://localhost:5090/sync/upcoming"
+     ```
+6. **Starten und prüfen**:
+   ```powershell
+   dotnet test
+   dotnet run --project src/ProPair.Adapters.Rest --launch-profile http
+   dotnet run --project src/ProPair.Adapters.Sync --launch-profile http
+   ```
+   App http://localhost:5054 zeigt die Turnierliste, Sync http://localhost:5090 die Übersicht. Mit Dump: `curl http://localhost:5054/api/tournaments` liefert ca. 56 Turniere.
+7. **Präferenzen merken**: Die Punkte unter „Arbeitsweise“ als Memory anlegen (lagen auf dem Mac nur lokal).
+
 ## Architektur
 
 ```
