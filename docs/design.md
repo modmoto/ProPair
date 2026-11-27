@@ -12,7 +12,7 @@ Pairing-Tool für Tabletop-Teamturniere. Start: The 9th Age (T9A).
 
 **MVP**
 - Turnier aus New Recruit importieren (Teams, Spieler, Listen).
-- Teamformat 8v8, 5v5, 3v3.
+- Teamformat 3v3 bis 8v8 (auch 4v4, 6v6, 7v7). 2v2 wird nicht unterstützt.
 - 16 T9A-Armeen als Auswahl (pro Spieler / Gegner).
 - Matrix mit Dropdown pro Zelle, farbcodiert.
 - Teilen per Link.
@@ -64,7 +64,10 @@ Ende (abhängig von verbleibenden Spielern pro Team):
 
 Damit:
 - 8v8: Runde (8→6), Runde (6→4), Finale mit 4 → 2+2+4 Spiele.
+- 7v7: Runde (7→5), Runde (5→3), Finale mit 3 → 2+2+3 Spiele.
+- 6v6: Runde (6→4), Finale mit 4 → 2+4 Spiele.
 - 5v5: Runde (5→3), Finale mit 3 → 2+3 Spiele.
+- 4v4: Finale mit 4 → 4 Spiele.
 - 3v3: Finale mit 3 → 3 Spiele.
 
 Ablauf als Regel-Objekt modellieren (austauschbar pro Turnier/System). Tisch-/Szenariowahl ggf. später.
@@ -175,9 +178,9 @@ Taktisches DDD nach Evans/Vernon:
 - Default-Skala frei änderbar; betrifft nur künftige Preparations.
 
 **Tournament**
-- Id, Name, GameSystemId, `TeamSize` (3/5/8).
+- Id, Name, GameSystemId, `TeamSize` (3–8).
 - Participants (Entity): Id, Name, Roster.
-- Invariante: Roster-Größe = TeamSize, Armeen aus dem GameSystem.
+- Kader werden beim Sync auf TeamSize gebracht (`Lineups`: Dummies / Überzählige).
 - Quelle: New-Recruit-Import (ExternalId = NR-Turnier-Id).
 
 **Preparation** (Team × Tournament)
@@ -247,8 +250,9 @@ Taktisches DDD nach Evans/Vernon:
 | 14 | Listen-Markierungen | 6 Farben + Zeilen-Notiz, Liste oben, Notizen unten. |
 | 17 | NR-Sync | Eigener Prozess (`Adapters.Sync`, Hangfire, Mongo-Storage), täglich, heute bis +12 Monate. Nur T9A 3rd Edition, nur Teamturniere, keine Ligen, nichts Geschlossenes/Vergangenes. API reiht „Aktualisieren“ nur ein (`ISyncQueue`). |
 | 18 | Listenwechsel | Neue Liste = neue Spieler-Id → Bewertungen/Notizen zurück, `ListChangedAt` → Info-Icon. Verborgene Listen: letzter Stand bleibt, Badge „Keine Listen sichtbar“. |
-| 19 | Teamgröße | 3–8, ergibt sich aus dem größten Kader. Armee aus dem Listentext (NR liefert vor dem Turnier kein JSON). |
-| 20 | Nicht-Spieler | Mitglieder ohne Liste (Coaches, Judges, NPCs) werden beim Sync nicht importiert; die Teamgröße zählt nur Spieler. |
+| 19 | Teamgröße | 3–8, häufigste Spielerzahl der Teams ab 3 (Gleichstand: die größere). Armee aus dem Listentext (NR liefert vor dem Turnier kein JSON). |
+| 20 | Nicht-Spieler | Spieler ist, wer eine Liste hat. Coaches, Judges, NPCs werden nicht importiert; Teams ohne Spieler und mit weniger Mitgliedern als die Teamgröße entfallen. |
+| 21 | Unvollständige Kader | Fehlende Spieler/Listen → „Dummy“. Überzählige Listen bleiben draußen (die ersten zählen). Warnung „Kader unvollständig“ in Turnierliste, Teamwahl, Übersicht und Matrix. |
 
 ## Offene Fragen
 
@@ -259,5 +263,5 @@ Taktisches DDD nach Evans/Vernon:
 - Listenformat bereinigen (Kopfzeilen, Fußzeile, zwei Listen pro Spieler).
 - Regeln aus NR syncen (`id_book` aus Reports?).
 - Admin-UI mit Login für Sync/Dashboard.
-- Kader ungleich groß (Ersatzspieler): Pairing braucht gleiche Größe.
+- Bei Reservespielern selbst wählen, wer spielt (derzeit zählen die ersten Listen).
 - Ist ein Tournament global (mehrere Teams nutzen dasselbe) oder gehört es nur unserem Team?

@@ -92,6 +92,7 @@ public class SyncTournamentsTests
         var t = (await _store.FindByExternalIdAsync("t"))!;
         Assert.Equal(["A3", "A4", "A5", "A6", "A7", "A0", "A1", "A2"], t.Participants[0].Roster.Select(p => p.Name));
         Assert.Equal(8, t.TeamSize!.Value.Value);
+        Assert.Equal(5, t.Participants[1].Roster.Count(p => p.IsDummy));
     }
 
     [Fact]

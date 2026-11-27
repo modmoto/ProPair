@@ -21,6 +21,8 @@ else
         <h1>@_matrix.Own.Name <span class="muted">vs</span> @_matrix.Opponent.Name</h1>
         <a class="pill" href="p/@Token/vs/@OpponentId/pairing">Pairing →</a>
     </div>
+    <RosterWarning Team="_matrix.Own" ShowName="true" />
+    <RosterWarning Team="_matrix.Opponent" ShowName="true" />
     @if (_matrix.IsDemo && _matrix.CanEdit && _cells.Count < _matrix.Own.Players.Count * _matrix.Opponent.Players.Count)
     {
         <button class="btn" @onclick="FillDemoAsync">Demo-Werte füllen</button>

@@ -64,6 +64,7 @@ public sealed class PlayerDoc
     public string ArmyId { get; set; } = "";
     public string ListText { get; set; } = "";
     public DateTimeOffset? ListChangedAt { get; set; }
+    public bool IsDummy { get; set; }
 }
 
 public sealed class ParticipantDoc
@@ -71,6 +72,7 @@ public sealed class ParticipantDoc
     public Guid Id { get; set; }
     public string Name { get; set; } = "";
     public List<PlayerDoc> Roster { get; set; } = [];
+    public List<string>? LeftOut { get; set; }
 }
 
 public sealed class TournamentDoc : IVersionedDocument

@@ -52,6 +52,29 @@ public class GameTreeAdvisorTests
     }
 
     [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    public void Every_team_size_pairs_to_the_end_with_advice(int n)
+    {
+        var (own, opp, score) = Random(n, n);
+        var state = PairingState.Start(own, opp);
+
+        while (state.Step != PairingStep.Done)
+        {
+            Assert.NotEmpty(Nash.Advise(state, score).Own);
+            var (_, _, move) = Moves(state);
+            state = state.Apply(move(0, 0));
+        }
+
+        Assert.Equal(n, state.Games.Count);
+        Assert.Equal(n, state.Games.Select(g => g.Own).Distinct().Count());
+        Assert.Equal(n, state.Games.Select(g => g.Opponent).Distinct().Count());
+    }
+
+    [Theory]
     [InlineData(3, 1)]
     [InlineData(3, 2)]
     [InlineData(5, 3)]

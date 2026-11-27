@@ -6,15 +6,17 @@ public sealed record SourceTournamentDto(string ExternalId, string Name, DateOnl
 /// <summary>Tournament in our database (synced from New Recruit or a demo).</summary>
 public sealed record TournamentSummaryDto(
     Guid Id, string ExternalId, string Name, int? TeamSize, DateOnly? StartDate, DateOnly? EndDate, int TeamCount,
-    bool ListsVisible, DateTimeOffset? LastSyncedAt, bool IsDemo);
+    bool ListsVisible, DateTimeOffset? LastSyncedAt, bool IsDemo, int IncompleteTeams = 0);
 
 public sealed record ImportTournamentRequest(string ExternalId);
 
 /// <param name="ListChangedAt">Set when New Recruit delivered a different list: ratings and notes for this player started over.</param>
+/// <param name="IsDummy">Placeholder for a missing player or list.</param>
 public sealed record PlayerDto(Guid Id, string Name, string ArmyId, string ArmyName, string ArmyShort, string ListText,
-    DateTimeOffset? ListChangedAt = null);
+    DateTimeOffset? ListChangedAt = null, bool IsDummy = false);
 
-public sealed record ParticipantDto(Guid Id, string Name, IReadOnlyList<PlayerDto> Players);
+/// <param name="LeftOut">Players with a list who did not fit into the roster.</param>
+public sealed record ParticipantDto(Guid Id, string Name, IReadOnlyList<PlayerDto> Players, IReadOnlyList<string>? LeftOut = null);
 
 public sealed record TournamentDto(
     Guid Id, string ExternalId, string Name, int? TeamSize, DateOnly? StartDate, IReadOnlyList<ParticipantDto> Participants,

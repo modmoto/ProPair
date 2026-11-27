@@ -18,6 +18,7 @@ else
     <p class="muted">@_prep.Own.Name · @_prep.TeamSize v @_prep.TeamSize @(_prep.CanEdit ? "" : "· nur lesen")</p>
     <NewRecruitStatus TournamentId="_prep.TournamentId" ListsVisible="_prep.ListsVisible" IsDemo="_prep.IsDemo"
                 LastSyncedAt="_prep.LastSyncedAt" OnSynced="LoadAsync" />
+    <RosterWarning Team="_prep.Own" ShowName="true" />
 
     <section class="share">
         <h2>Teilen</h2>
@@ -50,6 +51,7 @@ else
                     <span class="progress"><span style="width:@(100 * o.RatedCells / total)%"></span></span>
                     <span class="muted">@o.RatedCells / @total bewertet</span>
                 }
+                <RosterWarning Team="o.Participant" />
             </a>
         }
     </div>

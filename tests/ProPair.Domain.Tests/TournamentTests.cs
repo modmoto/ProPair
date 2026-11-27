@@ -52,7 +52,7 @@ public class TournamentTests
         var before = a.Roster.Select(p => p.Id).ToList();
         var roster = a.Roster.Select((p, i) => i == 0 ? p with { ListText = "Ogre Khans\n500 - Khan" } : p).ToList();
 
-        t.Update("Cup", null, null, true, [(a.Name, roster)], now);
+        t.Update("Cup", null, null, true, [new(a.Name, roster)], now);
 
         Assert.NotEqual(before[0], t.Participants[0].Roster[0].Id);
         Assert.Equal(now, t.Participants[0].Roster[0].ListChangedAt);
@@ -70,7 +70,7 @@ public class TournamentTests
         var t = NewTournament();
         var ids = t.Participants[0].Roster.Select(p => p.Id).ToList();
 
-        t.Update("Cup", null, null, false, [("A", []), ("B", []), ("C", [])], DateTimeOffset.UnixEpoch);
+        t.Update("Cup", null, null, false, [new("A", []), new("B", []), new("C", [])], DateTimeOffset.UnixEpoch);
 
         Assert.False(t.ListsVisible);
         Assert.Equal(ids, t.Participants[0].Roster.Select(p => p.Id));
@@ -85,9 +85,26 @@ public class TournamentTests
         var keptId = a.Roster[0].Id;
         var newRoster = a.Roster.Select(p => p with { Id = PlayerId.New() }).ToList();
 
-        t.Update("Cup", null, [(a.Name, newRoster)]);
+        t.Update("Cup", null, [new(a.Name, newRoster)]);
 
         Assert.Equal(keptId, t.Participants[0].Roster[0].Id);
+    }
+
+    [Fact]
+    public void Dummies_keep_their_id_until_the_player_arrives()
+    {
+        var t = NewTournament();
+        var players = t.Participants[0].Roster.Take(2).ToList();
+        t.Update("Cup", null, [new("A", [.. players, Player.Dummy(1)])]);
+        var dummy = t.Participants[0].Roster[2].Id;
+        Assert.True(t.Participants[0].IsIncomplete);
+
+        t.Update("Cup", null, [new("A", [.. players, Player.Dummy(1)])]);
+        Assert.Equal(dummy, t.Participants[0].Roster[2].Id);
+
+        t.Update("Cup", null, [new("A", [.. players, new Player(PlayerId.New(), "Late", "ogre-khans", "list")])]);
+        Assert.NotEqual(dummy, t.Participants[0].Roster[2].Id);
+        Assert.False(t.Participants[0].IsIncomplete);
     }
 
     [Fact]

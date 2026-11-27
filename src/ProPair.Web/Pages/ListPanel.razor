@@ -9,6 +9,11 @@
         <button class="btn" @onclick="OnClose">Schließen</button>
     </header>
 
+    @if (Player.IsDummy)
+    {
+        <p class="muted">Platzhalter: Spieler oder Liste fehlt in New Recruit.</p>
+    }
+
     <div class="armylist">
         @foreach (var (line, index) in Lines)
         {

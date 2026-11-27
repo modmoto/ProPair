@@ -7,6 +7,10 @@
     {
         <span><span class="badge warn">Keine Listen sichtbar</span></span>
     }
+    @if (Tournament.IncompleteTeams > 0)
+    {
+        <span><span class="badge warn">@(Tournament.IncompleteTeams == 1 ? "1 Kader unvollständig" : $"{Tournament.IncompleteTeams} Kader unvollständig")</span></span>
+    }
 </button>
 
 @code {

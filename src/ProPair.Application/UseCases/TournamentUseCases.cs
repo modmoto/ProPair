@@ -27,37 +27,36 @@ public sealed class ImportTournament(ITournamentSource source, ITournamentReposi
     {
         var data = await source.GetAsync(externalId, ct) ?? throw new NotFoundException($"Tournament {externalId}");
         if (!data.IsTeamTournament) return null;
-        // coaches, judges and NPCs sit in the teams without a list – only players with a list play
-        var teams = data.Teams
-            .Select(t => t with { Players = t.Players.Where(HasList).ToList() })
-            .ToList();
-        // 2v2 and the like: pairing needs at least 3 per team (unknown while lists are hidden)
-        if (data.ListsVisible && teams.Max(t => (int?)t.Players.Count) is > 0 and < TeamSize.Min) return null;
-
         var start = summary?.StartDate ?? data.StartDate;
         var end = summary?.EndDate ?? data.EndDate;
-        var participants = teams
-            .Select(t => (t.Name, Roster: (IReadOnlyList<Player>)t.Players.Take(TeamSize.Max).Select(ToPlayer).ToList()))
+        var registered = data.Teams
+            .Select(t => new RegisteredTeam(t.Name, t.Players.Count, t.Players.Where(HasList).Select(ToPlayer).ToList()))
             .ToList();
+        // hidden lists: we only learn the team names, the domain keeps the last seen rosters
+        var lineups = data.ListsVisible
+            ? Lineups.Build(registered)
+            : registered.Select(t => new Lineup(t.Name, [])).ToList();
+        if (lineups is null) return null; // 2v2 and the like
 
         var tournament = await tournaments.FindByExternalIdAsync(externalId, ct);
         if (tournament is null)
         {
             tournament = new Tournament(TournamentId.New(), data.ExternalId, data.Name, GameSystem.NinthAge.Id, null, start,
-                participants.Select(p => new Participant(ParticipantId.New(), p.Name, data.ListsVisible ? p.Roster : [])),
+                lineups.Select(l => new Participant(ParticipantId.New(), l.Name, l.Roster, l.LeftOut)),
                 end, data.ListsVisible, clock.Now);
         }
         else
         {
             // a single-tournament sync has no summary: keep the dates we know
             tournament.Update(data.Name, start ?? tournament.StartDate, end ?? tournament.EndDate, data.ListsVisible,
-                participants, clock.Now);
+                lineups, clock.Now);
         }
 
         await tournaments.SaveAsync(tournament, ct);
         return tournament;
     }
 
+    /// <summary>Separates players from coaches, judges and NPCs: only players have a list.</summary>
     private static bool HasList(SourcePlayer p) => p.Lists.Any(l => !string.IsNullOrWhiteSpace(l));
 
     /// <summary>All lists of a player as one text; the army is recognised from it (rough – format cleanup comes later).</summary>

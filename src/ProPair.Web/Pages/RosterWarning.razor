@@ -1,0 +1,29 @@
+@* A team whose roster could not be built completely: dummies or players left out. *@
+@if (Dummies > 0 || LeftOut.Count > 0)
+{
+    <span class="roster-warning">
+        <span class="badge warn">Kader unvollständig</span>
+        <span>
+            @if (ShowName)
+            {
+                <strong>@($"{Team.Name}: ")</strong>
+            }
+            @if (Dummies > 0)
+            {
+                @($"{Dummies}× Dummy – Spieler oder Liste fehlt. ")
+            }
+            @if (LeftOut.Count > 0)
+            {
+                @($"Zu viele Listen, nicht dabei: {string.Join(", ", LeftOut)}.")
+            }
+        </span>
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired] public ParticipantDto Team { get; set; } = null!;
+    [Parameter] public bool ShowName { get; set; }
+
+    private int Dummies => Team.Players.Count(p => p.IsDummy);
+    private IReadOnlyList<string> LeftOut => Team.LeftOut ?? [];
+}

@@ -97,7 +97,8 @@ src/
 ## Sync-Regeln (umgesetzt)
 
 - Täglich 04:00 UTC, heute bis +12 Monate. Überspringt Einzelturniere, 2er-Teams, geschlossen/vorbei, Ligen (> 4 Tage).
-- Mitglieder ohne Liste (Coaches, Judges, NPCs) sind keine Spieler und werden nicht importiert – vor der Begrenzung auf 8.
+- Spieler ist, wer eine Liste hat; Coaches, Judges, NPCs werden nicht importiert (Domain: `Lineups`).
+- Teamgröße = häufigste Spielerzahl (3–8). Fehlende → „Dummy“, überzählige draußen; UI zeigt „Kader unvollständig“.
 - Liste verborgen → letzter Stand bleibt, Badge „Keine Listen sichtbar“.
 - Liste geändert → neue Spieler-Id (Bewertungen/Notizen weg), `ListChangedAt` → Info-Icon in der Matrix.
 - Armee aus Text: Namen + Übersetzungen, sonst typische Einheiten; leer → „unknown“ („?“).
@@ -106,7 +107,7 @@ src/
 ## Offene Punkte
 
 - Listenformat bereinigen (Kopf-/Fußzeilen, zwei Listen pro Spieler).
-- Ungleich große Kader: Pairing braucht gleiche Größe – Lösung offen. Seit dem Coach-Filter selten (Reservespieler mit Liste, fehlende Liste, TO-Teams).
+- Reservespieler: selbst wählen, wer spielt (derzeit zählen die ersten Listen).
 - Einzel-Sync eines neuen Turniers kennt kein Datum (nur über die Suche).
 - Lokale DB enthält noch den 2v2-„Warpi cup“ (vor dem Filter importiert).
 - Regeln aus NR syncen (`id_book`?), Admin-UI mit Login, PDF-Export, Tisch-/Szenariowahl.

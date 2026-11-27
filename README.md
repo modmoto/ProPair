@@ -42,6 +42,7 @@ dotnet test
 - Täglich 04:00 UTC: Teamturniere „The 9th Age 3rd Edition“ (System 736602462) von heute bis +12 Monate.
 - Übersprungen: Einzelturniere, 2er-Teams, geschlossene/vorbei, Ligen (> 4 Tage).
 - Nur Spieler mit Liste: Coaches, Judges und NPCs werden nicht importiert.
+- Teamgröße 3–8 (häufigste Spielerzahl). Fehlende Spieler/Listen → „Dummy“, überzählige Listen bleiben draußen; die UI zeigt „Kader unvollständig“.
 - Listen verborgen: Badge „Keine Listen sichtbar“, letzter bekannter Stand bleibt.
 - Liste geändert: Spieler bekommt neue Id → Bewertungen/Notizen für ihn starten neu, Info-Icon in der Matrix.
 - Armee: aus dem Listentext (Namen + Übersetzungen FR/DE/ES/IT/PL, sonst typische Einheiten). Leere Listen → „?“.

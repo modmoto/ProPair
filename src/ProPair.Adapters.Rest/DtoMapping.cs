@@ -16,17 +16,17 @@ internal static class DtoMapping
 
     public static TournamentSummaryDto ToSummaryDto(this Tournament t) =>
         new(t.Id.Value, t.ExternalId, t.Name, t.TeamSize?.Value, t.StartDate, t.EndDate, t.Participants.Count,
-            t.ListsVisible, t.LastSyncedAt, IsDemo(t));
+            t.ListsVisible, t.LastSyncedAt, IsDemo(t), t.Participants.Count(p => p.IsIncomplete));
 
     private static bool IsDemo(Tournament t) => t.ExternalId.StartsWith(FillDemoRatings.DemoPrefix);
 
     public static ParticipantDto ToDto(this Participant p) =>
-        new(p.Id.Value, p.Name, p.Roster.Select(ToDto).ToList());
+        new(p.Id.Value, p.Name, p.Roster.Select(ToDto).ToList(), p.LeftOut);
 
     public static PlayerDto ToDto(this Player p)
     {
         var army = GameSystem.NinthAge.FindArmy(p.ArmyId);
-        return new(p.Id.Value, p.Name, p.ArmyId, army?.Name ?? p.ArmyId, army?.Short ?? p.ArmyId, p.ListText, p.ListChangedAt);
+        return new(p.Id.Value, p.Name, p.ArmyId, army?.Name ?? p.ArmyId, army?.Short ?? p.ArmyId, p.ListText, p.ListChangedAt, p.IsDummy);
     }
 
     public static IReadOnlyList<RatingLevelDto> ToDto(this RatingScale s) =>
