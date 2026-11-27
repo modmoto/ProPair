@@ -1,0 +1,36 @@
+@* Read-only army list for the pairing: line marks with their notes, free notes below. *@
+
+<div class="armylist-ro">
+    @if (ShowHeader)
+    {
+        <header>
+            <span class="army">@Player.ArmyShort</span>
+            <strong>@Player.Name</strong>
+            <span class="muted">@Player.ArmyName</span>
+        </header>
+    }
+    <div class="armylist">
+        @foreach (var (line, index) in Player.ListText.Split('\n').Select((l, i) => (l, i)))
+        {
+            var mark = Marks.FirstOrDefault(m => m.LineIndex == index);
+            <div class="listline @(mark is null ? "" : $"mark-{mark.Color}")">
+                <span class="text">@line</span>
+                @if (!string.IsNullOrEmpty(mark?.Note))
+                {
+                    <span class="marknote">@mark.Note</span>
+                }
+            </div>
+        }
+    </div>
+    @if (Note is not null)
+    {
+        <p class="note-text">@Note.Text</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PlayerDto Player { get; set; } = default!;
+    [Parameter] public IReadOnlyList<ListMarkDto> Marks { get; set; } = [];
+    [Parameter] public NoteDto? Note { get; set; }
+    [Parameter] public bool ShowHeader { get; set; } = true;
+}

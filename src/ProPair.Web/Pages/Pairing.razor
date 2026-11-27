@@ -66,6 +66,40 @@ else
         <p class="sync @_local.Status.ToString().ToLowerInvariant()">@SyncText</p>
     }
 
+    <div class="viewtabs" role="tablist" aria-label="Ansicht">
+        <button role="tab" class="@(_listView ? "" : "on")" aria-selected="@(!_listView)" @onclick="() => _listView = false">Matrix</button>
+        <button role="tab" class="@(_listView ? "on" : "")" aria-selected="@_listView" @onclick="ShowLists">Listen</button>
+    </div>
+
+    @if (_listView)
+    {
+        var active = ActiveOpponents;
+        var current = active.ElementAtOrDefault(Math.Clamp(_listIndex, 0, Math.Max(active.Count - 1, 0)));
+        @* swipe left/right (or the arrows) through the opponents still in the pairing *@
+        <section class="listview" @ontouchstart="TouchStart" @ontouchend="TouchEnd">
+            <div class="listnav">
+                <button class="btn" aria-label="Vorherige Liste" disabled="@(active.Count < 2)" @onclick="() => MoveList(-1)">‹</button>
+                <span class="dots">
+                    @for (var i = 0; i < active.Count; i++)
+                    {
+                        var index = i;
+                        <button class="dot @(index == _listIndex ? "on" : "")" aria-label="@active[index].Name" @onclick="() => _listIndex = index">
+                            @active[index].ArmyShort
+                        </button>
+                    }
+                </span>
+                <button class="btn" aria-label="Nächste Liste" disabled="@(active.Count < 2)" @onclick="() => MoveList(1)">›</button>
+            </div>
+            @if (current is not null)
+            {
+                <div class="settle" @key="current.Id">
+                    <ArmyList Player="current" Marks="MarksOf(current.Id)" Note="NoteOf(current.Id)" />
+                </div>
+            }
+        </section>
+    }
+    else
+    {
     @* rebuilt (settle-in) only on flip; step changes transition cell by cell so you see what drops out *@
     <div class="matrix-wrap settle" @key="ShowAll">
         <table class="matrix pairing @(_enemyView ? "enemy-view" : "")">
@@ -134,6 +168,22 @@ else
             </tbody>
         </table>
     </div>
+
+    @if (AttackerLists is { Count: 2 } attackers)
+    {
+        @* their two attackers side by side – the lists that matter for the choice *@
+        <section class="duo settle">
+            <h2>Gegner-Attacker</h2>
+            <div class="duo-grid">
+                @foreach (var id in attackers)
+                {
+                    var player = Player(id);
+                    <ArmyList Player="player" Marks="MarksOf(id)" Note="NoteOf(id)" />
+                }
+            </div>
+        </section>
+    }
+    }
 
     @if (_error is not null) { <p class="error">@_error</p> }
 
@@ -279,6 +329,9 @@ else
 
     private bool _showAll;
     private bool _enemyView;    // show the matrix as the opponent sees it (ratings mirrored)
+    private bool _listView;     // lists instead of the matrix
+    private int _listIndex;
+    private double? _touchX;
     private bool _busy;
     private string? _error;
     private HashSet<Guid> _leaving = [];
@@ -326,8 +379,10 @@ else
 
         if (!_p.CanEdit) // viewers follow the captain now and then
             _poll = new Timer(_ => _ = InvokeAsync(async () => await _local.RefreshAsync()), null, 15_000, 15_000);
-        _ = RecomputeAdviceAsync();
-        _ = _local.PreloadAsync(); // round values for every mode, in the background, so the pairing never needs the network
+        // Entering the pairing: compute once. With a fully rated matrix, load the round values of every mode and
+        // the recommendations for this state in every mode (also with the eye off) – afterwards no network is needed.
+        if (_p.UnratedCells == 0) _ = PrecomputeAsync();
+        else _ = RecomputeAdviceAsync();
     }
 
     private void OnLocalChanged() => _ = InvokeAsync(() =>
@@ -421,6 +476,50 @@ else
         await ChangeAsync(() => _local!.ApplyAsync(move));
     }
 
+    // ---------- lists during the pairing ----------
+
+    /// <summary>Opponents still in the pairing (all of them once it is done).</summary>
+    private List<PlayerDto> ActiveOpponents =>
+        _p!.Opponent.Players.Where(p => Done || Remaining(p.Id, false)).ToList();
+
+    /// <summary>Their two attackers: once tapped in the attackers step, and in the choice step.</summary>
+    private IReadOnlyList<Guid>? AttackerLists => _p!.Step switch
+    {
+        "attackers" when _oppAttackers.Count == 2 => _oppAttackers,
+        "choices" => _p.OpponentAttackers,
+        _ => null,
+    };
+
+    private IReadOnlyList<ListMarkDto> MarksOf(Guid id) => (_p!.ListMarks ?? []).Where(m => m.PlayerId == id).ToList();
+    private NoteDto? NoteOf(Guid id) => (_p!.PlayerNotes ?? []).FirstOrDefault(n => n.PlayerId == id)?.Note;
+
+    /// <summary>Starts at their defender (or the one being picked), otherwise at the first active opponent.</summary>
+    private void ShowLists()
+    {
+        var active = ActiveOpponents;
+        var start = OppDef is { } d ? active.FindIndex(p => p.Id == d) : -1;
+        _listIndex = Math.Max(start, 0);
+        _listView = true;
+    }
+
+    private void MoveList(int delta)
+    {
+        var count = ActiveOpponents.Count;
+        if (count == 0) return;
+        _listIndex = ((_listIndex + delta) % count + count) % count;
+    }
+
+    private void TouchStart(TouchEventArgs e) => _touchX = e.ChangedTouches.FirstOrDefault()?.ClientX;
+
+    private void TouchEnd(TouchEventArgs e)
+    {
+        if (_touchX is not { } start || e.ChangedTouches.FirstOrDefault() is not { } end) return;
+        var dx = end.ClientX - start;
+        _touchX = null;
+        if (Math.Abs(dx) < 50) return; // a tap or a scroll, not a swipe
+        MoveList(dx < 0 ? 1 : -1);
+    }
+
     /// <summary>Tapping a recommendation selects it in the matrix as well (our side of the current step).</summary>
     private async Task SelectPickAsync(int index)
     {
@@ -484,6 +583,13 @@ else
         _mode = mode;
         await Prefs.SetStringAsync(ModeKey, mode);
         await RecomputeAdviceAsync();
+    }
+
+    private async Task PrecomputeAsync()
+    {
+        await _local!.PreloadAsync();
+        if (_showAdvice) await RecomputeAdviceAsync();
+        else foreach (var mode in LocalPairing.Modes) await _local.AdviseAsync(mode);
     }
 
     /// <summary>

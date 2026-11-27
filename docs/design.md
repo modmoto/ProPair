@@ -106,6 +106,9 @@ Berechnung:
 Darstellung (in der Matrix, mobil):
 - Defender: Badge mit erwartetem Endstand an unseren Namen (★ = bestes), dünner Wahrscheinlichkeitsbalken an Gegner-Namen.
 - Attacker/Wahl: erwarteter Endstand klein in den wählbaren Zellen, beste mit grünem Rahmen. ⚠ bei Schlüsselspielern.
+- **Listen im Pairing:** Umschalter „Matrix | Listen“ über der Tabelle. „Listen“ zeigt die Liste eines aktiven Gegners (Start: deren Defender), Wischen links/rechts bzw. Pfeile/Kürzel wechseln. Markierungen und Notizen aus der Matrix-Seite sind sichtbar, auch offline.
+- **Attacker-Schritt:** Sobald deren 2 Attacker angetippt sind (und im Wahl-Schritt) stehen beide Listen nebeneinander unter der Matrix.
+- **Vorrechnen:** einmal beim Betreten des Pairings, nur bei vollständig bewerteter Matrix (beide Modi, auch bei ausgeschaltetem Auge).
 - Pick antippen wählt ihn auch in der Matrix aus (unsere Seite des Schritts); umgekehrt springt die Vorschau auf den passenden Pick.
 - Option antippen → **Pfad-Vorschau**: wahrscheinliche Matchups gestrichelt in der Matrix (nach Runde nummeriert) + Zeitleiste pro Runde mit Zügen und den daraus entstehenden Matchups samt Bewertung; Runden per Wischen durchgehen; Endstand mit Spanne (Worst/Best).
 - „Was wäre wenn“: Gegner-Namen gedrückt halten = „angenommen, die legen den“ → neu rechnen.

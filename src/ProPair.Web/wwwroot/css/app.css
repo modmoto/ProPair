@@ -518,3 +518,29 @@ button, input, select { font: inherit; }
 .sync.pending::before { content: "● "; }
 .sync.offline { color: #9b231c; }
 .sync.offline::before { content: "○ "; }
+
+/* ---- read-only army lists during the pairing ---- */
+.armylist-ro header { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .4rem; }
+.armylist-ro header .muted { font-size: .75rem; }
+.armylist-ro .armylist { margin-top: .4rem; }
+.armylist-ro .note-text { margin: .6rem 0 0; padding: .5rem .6rem; background: #fff7d6; border-radius: 6px; font-size: .8rem; }
+
+/* ---- matrix | lists switch, list carousel, attacker lists ---- */
+.viewtabs { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 2px; margin: .5rem 0 .3rem; padding: 2px; background: #eceef1; border-radius: 9px; }
+.viewtabs button { min-height: 2.2rem; min-width: 5.5rem; border: none; border-radius: 7px; background: transparent; color: var(--muted); font-weight: 600; cursor: pointer; }
+.viewtabs button.on { background: #fff; color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+
+.listview { touch-action: pan-y; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .6rem .8rem .9rem; }
+.listnav { display: flex; align-items: center; gap: .4rem; margin-bottom: .6rem; }
+.listnav .btn { flex: none; width: var(--tap); padding: 0; font-size: 1.3rem; }
+.listnav .dots { flex: 1; display: flex; justify-content: center; flex-wrap: wrap; gap: .25rem; }
+.listnav .dot { min-height: 1.9rem; padding: 0 .4rem; border: 1px solid var(--line); border-radius: 6px; background: #fff; font-size: .7rem; font-weight: 700; color: var(--muted); cursor: pointer; }
+.listnav .dot.on { background: var(--fg); border-color: var(--fg); color: #fff; }
+
+.duo { margin-top: 1rem; }
+.duo h2 { margin: 0 0 .4rem; }
+.duo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.duo-grid > .armylist-ro { min-width: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .5rem .55rem; }
+.duo-grid .armylist { font-size: .72rem; }
+.duo-grid .listline { padding: .2rem .35rem; margin: 1px -.35rem; }
+@media (min-width: 640px) { .listview, .duo { max-width: 720px; } .duo-grid .armylist { font-size: .8rem; } }
