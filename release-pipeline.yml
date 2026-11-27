@@ -1,6 +1,7 @@
 # Release pipeline: deploys the image of a successful "pro-pair.build" run of main.
 # Secret variables, set on this pipeline in Azure DevOps (never in this file):
-#   MONGO_CONNECTION_STRING, NEW_RECRUIT_LOGIN, NEW_RECRUIT_PASSWORD
+#   DB_SECRET, NEW_RECRUIT_LOGIN, NEW_RECRUIT_PASSWORD
+# DB_SECRET becomes the MongoDB password on the first deployment and cannot be changed here afterwards.
 trigger: none
 
 pool:
@@ -47,9 +48,11 @@ jobs:
                   cd /usr/local/release-compose-files/pro-pair/$(CONTAINER_SUFFIX)
                   export TAG='$(resources.pipeline.pro-pair.runID)'
                   export CONTAINER_SUFFIX='$(CONTAINER_SUFFIX)'
-                  export MONGO_CONNECTION_STRING='$(MONGO_CONNECTION_STRING)'
+                  export DB_SECRET='$(DB_SECRET)'
                   export NEW_RECRUIT_LOGIN='$(NEW_RECRUIT_LOGIN)'
                   export NEW_RECRUIT_PASSWORD='$(NEW_RECRUIT_PASSWORD)'
+                  # part of the connection string; also stops a missing variable from becoming the password
+                  [[ "$DB_SECRET" =~ ^[A-Za-z0-9]+$ ]] || { echo "DB_SECRET must be set, letters and digits only"; exit 1; }
                   docker-compose -p pro-pair-$(CONTAINER_SUFFIX) pull
                   docker-compose -p pro-pair-$(CONTAINER_SUFFIX) up -d
                 failOnStdErr: false

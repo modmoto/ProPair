@@ -7,11 +7,36 @@ services:
     expose:
       - 80
     environment:
-      - Mongo__ConnectionString=${MONGO_CONNECTION_STRING}
+      - Mongo__ConnectionString=mongodb://admin:${DB_SECRET}@mongo-db-pro-pair-${CONTAINER_SUFFIX}:27017/?authSource=admin
       - NewRecruit__Login=${NEW_RECRUIT_LOGIN}
       - NewRecruit__Password=${NEW_RECRUIT_PASSWORD}
+    depends_on:
+      - mongo-db
+    networks:
+      - default
+      - db
+
+  mongo-db:
+    image: mongo:6
+    container_name: mongo-db-pro-pair-${CONTAINER_SUFFIX}
+    restart: unless-stopped
+    command: --wiredTigerCacheSizeGB=1
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      # only used on the very first start (empty volume); changing it later does not change the password
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_SECRET}
+    volumes:
+      - mongo-db-pro-pair:/data/db
+    # no published port and not in the caddy network: only the app reaches the database
+    networks:
+      - db
 
 networks:
   default:
     name: caddy
     external: true
+  db:
+
+volumes:
+  mongo-db-pro-pair:
+    name: mongo-db-pro-pair-${CONTAINER_SUFFIX}

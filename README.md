@@ -53,8 +53,12 @@ Einrichten in Azure DevOps (New pipeline → GitHub → ProPair → „Existing 
 1. `/azure-pipelines.yml`, Name `pro-pair.build`: testet, pusht `modmoto/pro-pair` nach Docker Hub.
 2. `/release-pipeline.yml`: deployt jeden erfolgreichen `main`-Build per SSH (`docker-compose.token.yml`, Netz `caddy`, Container `pro-pair-prod`).
 
-Secret-Variablen der Release-Pipeline: `MONGO_CONNECTION_STRING`, `NEW_RECRUIT_LOGIN`, `NEW_RECRUIT_PASSWORD`.
+Secret-Variablen der Release-Pipeline: `DB_SECRET`, `NEW_RECRUIT_LOGIN`, `NEW_RECRUIT_PASSWORD`.
 Service-Connections: `official-docker-modmoto`, `HetziPrivate`.
+
+MongoDB läuft in der Compose-Datei mit (`mongo-db-pro-pair-prod`, ohne offenen Port). `DB_SECRET` (nur Buchstaben und Ziffern) wird beim ersten Deployment das Passwort von `admin`; später ändern geht nur in der Datenbank selbst.
+
+Domain und Backup stehen im Repo `modmoto/host-bootstrap` (`caddy/Caddyfile`, `db-backups/README.md`).
 
 Sofort synchronisieren (auf dem Server, sonst erst 04:00 UTC):
 
