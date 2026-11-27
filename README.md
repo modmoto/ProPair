@@ -43,10 +43,20 @@ dotnet test
 **Beispiel (Bild rechts):** Verteidigt Ben, ist uns mindestens 0 sicher. Verteidigt Anna, sind +2 möglich, aber auch −2. Die beste Mischung ist 80 % Ben, 20 % Anna, fair erwartet +0,4. Ein rein pessimistischer Ansatz (der Gegner sieht unseren Zug) käme nur auf 0.
 
 **Austauschbar:**
-- `IPairingAdvisor`: der ganze Algorithmus. Die App kennt nur dieses Interface.
+- `IPairingAdvisor`: der ganze Algorithmus. Die App kennt nur dieses Interface, pro Modus über `IPairingAdvisorProvider`.
 - `GameTreeAdvisor(IMatrixGameSolver)`: der Spielbaum. Wie ein einzelner Schritt gelöst wird, entscheidet der Solver:
   - `EquilibriumSolver`: Nash, der Standard.
   - `PessimisticSolver`: Maximin, der Gegner sieht unseren Zug (sichere Untergrenze).
 - Registriert in `ProPair.Application/DependencyInjection.cs`.
 
-**In der UI:** Das Augen-Symbol schaltet die Empfehlungen ein, standardmäßig sind sie aus. Gerechnet wird nur, wenn sie an sind.
+**Modi** (umschaltbar im Empfehlungs-Panel, pro Gerät gemerkt):
+
+| Modus | Was zählt | Technisch |
+|-------|-----------|-----------|
+| Optimal | höchster fairer Erwartungswert, Plus und Minus gleich gewichtet | Nash, lineare Bewertung |
+| Minus vermeiden | schlechte Matchups vermeiden geht vor gute holen | Nash, Minus-Bewertungen × 1,5 (`AdviceModes.MinusWeight`) |
+| Absichern | was wir garantiert mindestens bekommen | Maximin (`PessimisticSolver`) |
+
+1,5 ist bewusst moderat: Ein „-“ (−2) kostet dann so viel, wie „+“ und „0/+“ zusammen bringen. Die Gewichtung beeinflusst nur die Reihenfolge der Empfehlungen. Gesamtstand, Matchups und vorhergesagte Endstände zeigen immer echte Punkte (`WeightedScoreAdvisor`).
+
+**In der UI:** Das Augen-Symbol schaltet die Empfehlungen ein, standardmäßig sind sie aus. Gerechnet wird nur, wenn sie an sind. Der wahrscheinliche Verlauf erscheint in der Matrix als Rahmen: gepunktet = nächste Runde, strichpunktiert = übernächste, gestrichelt = dritte (gleiche Linien als Legende in der Zeitleiste).

@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using ProPair.Application.Ports;
 using ProPair.Application.UseCases;
-using ProPair.Domain.Pairing.Advice;
 
 namespace ProPair.Application;
 
@@ -11,9 +10,9 @@ public static class DependencyInjection
     {
         services.AddSingleton<IClock, SystemClock>();
 
-        // The recommendation algorithm. Swap here: another IPairingAdvisor, or the step solver
-        // (PessimisticSolver = maximin, EquilibriumSolver = Nash, the default).
-        services.AddSingleton<IPairingAdvisor>(new GameTreeAdvisor(new EquilibriumSolver()));
+        // The recommendation algorithm per mode (Optimal, AvoidMinus, Safe). Swap the provider – or change
+        // AdviceModes.Create – to plug in another IPairingAdvisor or step solver.
+        services.AddSingleton<IPairingAdvisorProvider, DefaultPairingAdvisorProvider>();
         services.AddScoped<SearchSourceTournaments>();
         services.AddScoped<ImportTournament>();
         services.AddScoped<StartPreparation>();

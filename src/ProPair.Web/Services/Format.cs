@@ -10,6 +10,9 @@ public static class Format
     public static string Score(double value) =>
         Math.Round(value, 1).ToString("+0.#;−0.#;0", De);
 
+    /// <summary>Plain factor in German notation, e.g. "1,5".</summary>
+    public static string Factor(double value) => value.ToString("0.#", De);
+
     /// <summary>Probability as whole percent, e.g. "42 %".</summary>
     public static string Percent(double p) => $"{Math.Round(p * 100):0} %";
 

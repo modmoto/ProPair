@@ -25,7 +25,7 @@ public class PairingFlowTests
         return (prep.EditToken.Value, prep.ReadToken.Value, opp.Id, await getMatrix.ExecuteAsync(prep.EditToken.Value, opp.Id));
     }
 
-    private GetPairing GetPairing => new(new GetMatrix(_store, _store, _store), _store, new GameTreeAdvisor(new EquilibriumSolver()));
+    private GetPairing GetPairing => new(new GetMatrix(_store, _store, _store), _store, new DefaultPairingAdvisorProvider());
 
     [Fact]
     public async Task Pairing_runs_to_the_end_with_recommendations()
@@ -38,10 +38,14 @@ public class PairingFlowTests
         var withoutAdvice = await GetPairing.ExecuteAsync(edit, oppId);
         Assert.Null(withoutAdvice.Advice); // advice only on request
 
-        var start = await GetPairing.ExecuteAsync(edit, oppId, withAdvice: true);
+        var start = await GetPairing.ExecuteAsync(edit, oppId, AdviceMode.Optimal);
         Assert.Equal(2, start.Advice!.Expected, 6);
         Assert.Equal(3, start.Advice.Own.Count);
         Assert.Equal(6, start.UnratedCells);
+
+        var avoid = await GetPairing.ExecuteAsync(edit, oppId, AdviceMode.AvoidMinus);
+        Assert.Equal(AdviceMode.AvoidMinus, avoid.Mode);
+        Assert.Equal(0, avoid.FixedScore); // standings never weighted
 
         await play.ExecuteAsync(edit, oppId, new DefendersMove(own[0], opp[0]));
         await play.ExecuteAsync(edit, oppId, new AttackersMove(own[1], own[2], opp[1], opp[2]));

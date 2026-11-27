@@ -117,7 +117,7 @@ else
                         var level = Shown(LevelAt(own.Id, opp.Id));
                         var css = CellClass(own.Id, opp.Id);
                         var round = PredictedRound(own.Id, opp.Id);
-                        <td class="@css @AdviceCellClass(own.Id, opp.Id) @(round is null ? "" : "predicted") @(_enemyView ? "enemy" : "")" data-round="@round"
+                        <td class="@css @AdviceCellClass(own.Id, opp.Id) @(round is null ? "" : $"path-{round}") @(_enemyView ? "enemy" : "")"
                             style="@(css is "cross" ? "" : $"background:{level?.Color ?? "#fff"}")"
                             @onclick="() => TapCell(own.Id, opp.Id)">
                             @level?.Label
@@ -142,8 +142,15 @@ else
             {
                 <header>
                     <h2>Empfehlung</h2>
-                    <span class="muted">fair erwartet <strong>@Format.Score(a.Expected)</strong></span>
+                    <span class="muted">@HeadLine(a)</span>
                 </header>
+                <div class="modes" role="radiogroup" aria-label="Modus">
+                    @foreach (var (key, label) in Modes)
+                    {
+                        <button class="@(_mode == key ? "on" : "")" role="radio" aria-checked="@(_mode == key)"
+                                disabled="@_busy" @onclick="() => SetModeAsync(key)">@label</button>
+                    }
+                </div>
                 <div class="picks">
                     @foreach (var (path, i) in a.TopPicks.Select((p, i) => (p, i)))
                     {
@@ -157,8 +164,22 @@ else
                                 }
                             </span>
                             <span class="nums">
-                                <strong>@Format.Score(path.Option.Expected)</strong>
-                                <small>min @Format.Score(path.Option.Worst) · @Format.Percent(path.Option.Probability)</small>
+                                @switch (a.Mode)
+                                {
+                                    case "avoidminus":
+                                        @* the weighting only decides the order – shown are real points *@
+                                        <strong>@Format.Score(path.Total)</strong>
+                                        <small>Endstand im Verlauf</small>
+                                        break;
+                                    case "safe":
+                                        <strong>@Format.Score(path.Option.Worst)</strong>
+                                        <small>mindestens</small>
+                                        break;
+                                    default:
+                                        <strong>@Format.Score(path.Option.Expected)</strong>
+                                        <small>min @Format.Score(path.Option.Worst) · @Format.Percent(path.Option.Probability)</small>
+                                        break;
+                                }
                             </span>
                         </button>
                     }
@@ -169,7 +190,7 @@ else
                         @foreach (var round in preview.Steps.GroupBy(st => st.Round))
                         {
                             <li>
-                                <span class="r">Runde @round.Key</span>
+                                <span class="r"><span class="swatch path-@(round.Key - FirstPathRound + 1)"></span>Runde @round.Key</span>
                                 <div class="rbody">
                                 <span class="steps">
                                     @foreach (var st in round)
@@ -201,7 +222,7 @@ else
                             </li>
                         }
                     </ol>
-                    <p class="muted pathtotal">Wahrscheinlicher Endstand: <strong>@Format.Score(preview.Total)</strong> · gestrichelt in der Matrix</p>
+                    <p class="muted pathtotal">Wahrscheinlicher Endstand: <strong>@Format.Score(preview.Total)</strong></p>
                 }
             }
         </section>
@@ -237,10 +258,17 @@ else
     private const int LeaveMillis = 220; // = --motion in app.css
 
     private const string AdviceKey = "advice";
+    private const string ModeKey = "adviceMode";
+
+    private static readonly (string Key, string Label)[] Modes =
+        [("optimal", "Optimal"), ("avoidminus", "Minus vermeiden"), ("safe", "Absichern")];
 
     private PairingDto? _p;
     private bool _showAdvice;   // recommendations: off by default, remembered per device
     private int _pick;          // which top pick's path is previewed
+    private string _mode = "optimal";
+
+    private string? AdviceArg => _showAdvice ? _mode : null;
     private bool _showAll;
     private bool _enemyView;    // show the matrix as the opponent sees it (ratings mirrored)
     private bool _busy;
@@ -276,7 +304,9 @@ else
     protected override async Task OnParametersSetAsync()
     {
         _showAdvice = await Prefs.GetAsync(AdviceKey);
-        await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, _showAdvice));
+        var stored = await Prefs.GetStringAsync(ModeKey);
+        _mode = stored is "avoidminus" or "safe" ? stored : "optimal";
+        await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, AdviceArg));
     }
 
     // ---------- interaction ----------
@@ -294,7 +324,7 @@ else
             // defenders are already saved: take them back, keep the other one picked
             var keepOwn = own ? null : _p.OwnDefender;
             var keepOpp = own ? _p.OpponentDefender : null;
-            await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId, _showAdvice));
+            await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId, AdviceArg));
             _ownDefender = keepOwn;
             _oppDefender = keepOpp;
             return;
@@ -304,7 +334,7 @@ else
         else _oppDefender = _oppDefender == id ? null : id;
 
         if (_ownDefender is { } d && _oppDefender is { } e)
-            await AutoSubmitAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(d, e), _showAdvice));
+            await AutoSubmitAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(d, e), AdviceArg));
     }
 
     private async Task TapCell(Guid own, Guid opp)
@@ -332,9 +362,9 @@ else
 
         // complete step → enter it automatically (wrong tap? Undo)
         if (_p.Step == "attackers" && _ownAttackers.Count == 2 && _oppAttackers.Count == 2)
-            await AutoSubmitAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownAttackers, _oppAttackers), _showAdvice));
+            await AutoSubmitAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownAttackers, _oppAttackers), AdviceArg));
         else if (_p.Step == "choices" && _ownAccepts is { } take && _oppAccepts is { } taken)
-            await AutoSubmitAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(take, taken), _showAdvice));
+            await AutoSubmitAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(take, taken), AdviceArg));
     }
 
     /// <summary>Shows the last tap for a moment, then saves the step.</summary>
@@ -358,7 +388,15 @@ else
     {
         _showAdvice = !_showAdvice;
         await Prefs.SetAsync(AdviceKey, _showAdvice);
-        if (_showAdvice) await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, true));
+        if (_showAdvice) await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, _mode));
+    }
+
+    private async Task SetModeAsync(string mode)
+    {
+        if (_mode == mode) return;
+        _mode = mode;
+        await Prefs.SetStringAsync(ModeKey, mode);
+        await LoadAsync(() => Api.GetPairingAsync(Token, OpponentId, _mode));
     }
 
     // ---------- recommendations ----------
@@ -389,8 +427,20 @@ else
         };
     }
 
+    /// <summary>1 = next round (dotted), 2 = the one after (dash-dot), 3 = third (dashed).</summary>
     private int? PredictedRound(Guid own, Guid opp) =>
-        Preview?.Games.FirstOrDefault(g => g.OwnPlayerId == own && g.OpponentPlayerId == opp)?.Round;
+        Preview?.Games.FirstOrDefault(g => g.OwnPlayerId == own && g.OpponentPlayerId == opp)?.Round is { } r
+            ? r - FirstPathRound + 1
+            : null;
+
+    private int FirstPathRound => Preview?.Steps.FirstOrDefault()?.Round ?? _p!.Round;
+
+    private string HeadLine(PairingAdviceDto a) => a.Mode switch
+    {
+        "avoidminus" => $"Minus zählt {Format.Factor(a.MinusWeight)}×",
+        "safe" => $"sicher mindestens {Format.Score(a.Expected)}",
+        _ => $"fair erwartet {Format.Score(a.Expected)}",
+    };
 
     private static string StepLabel(string step) => step switch
     {
@@ -404,7 +454,7 @@ else
     private async Task UndoAsync()
     {
         if (HasLocalPick) { ResetPicks(); return; } // first undo clears unsaved taps
-        await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId, _showAdvice));
+        await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId, AdviceArg));
     }
 
 

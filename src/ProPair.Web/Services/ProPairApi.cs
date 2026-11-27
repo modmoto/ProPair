@@ -42,22 +42,22 @@ public sealed class ProPairApi(HttpClient http)
 
     private static string PairingUrl(string token, Guid opponentId) => $"api/p/{token}/matrices/{opponentId}/pairing";
 
-    /// <summary>Recommendations are only computed when asked for.</summary>
-    private static string Advice(bool advice) => advice ? "?advice=true" : "";
+    /// <summary>Recommendations are only computed when asked for: mode = optimal | avoidminus | safe, null = none.</summary>
+    private static string Advice(string? mode) => mode is null ? "" : $"?advice={mode}";
 
-    public async Task<PairingDto> GetPairingAsync(string token, Guid opponentId, bool advice) =>
+    public async Task<PairingDto> GetPairingAsync(string token, Guid opponentId, string? advice) =>
         await ReadAsync<PairingDto>(await http.GetAsync($"{PairingUrl(token, opponentId)}{Advice(advice)}"));
 
-    public async Task<PairingDto> SetDefendersAsync(string token, Guid opponentId, DefendersRequest request, bool advice) =>
+    public async Task<PairingDto> SetDefendersAsync(string token, Guid opponentId, DefendersRequest request, string? advice) =>
         await ReadAsync<PairingDto>(await http.PostAsJsonAsync($"{PairingUrl(token, opponentId)}/defenders{Advice(advice)}", request));
 
-    public async Task<PairingDto> SetAttackersAsync(string token, Guid opponentId, AttackersRequest request, bool advice) =>
+    public async Task<PairingDto> SetAttackersAsync(string token, Guid opponentId, AttackersRequest request, string? advice) =>
         await ReadAsync<PairingDto>(await http.PostAsJsonAsync($"{PairingUrl(token, opponentId)}/attackers{Advice(advice)}", request));
 
-    public async Task<PairingDto> SetChoicesAsync(string token, Guid opponentId, ChoicesRequest request, bool advice) =>
+    public async Task<PairingDto> SetChoicesAsync(string token, Guid opponentId, ChoicesRequest request, string? advice) =>
         await ReadAsync<PairingDto>(await http.PostAsJsonAsync($"{PairingUrl(token, opponentId)}/choices{Advice(advice)}", request));
 
-    public async Task<PairingDto> UndoPairingAsync(string token, Guid opponentId, bool advice) =>
+    public async Task<PairingDto> UndoPairingAsync(string token, Guid opponentId, string? advice) =>
         await ReadAsync<PairingDto>(await http.PostAsync($"{PairingUrl(token, opponentId)}/undo{Advice(advice)}", null));
 
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response)

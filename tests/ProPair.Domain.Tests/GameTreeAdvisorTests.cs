@@ -225,3 +225,43 @@ public class WholeTeamThinkingTests
             $"take 0 → {advice.Own[0].Expected}, take 0/+ → {takeQ1.Expected}");
     }
 }
+
+public class AdviceModeTests
+{
+    /// <summary>
+    /// Final round of 3, choice step. Taking Q1 gives our defender a "+" (+2) but sends Q2 to the others: a "-" (−2).
+    /// Taking Q2 gives 0 and the rest 0. Optimal sees both as 0; with minus weighted 1.5× (+2 −3 = −1) Q2 wins.
+    /// </summary>
+    [Fact]
+    public void Avoid_minus_removes_the_minus_where_optimal_is_indifferent_or_greedy()
+    {
+        var own = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList(); // D, A1, A2
+        var opp = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList(); // E, Q1, Q2
+        PlayerId d = own[0], q1 = opp[1], q2 = opp[2];
+        // final round of 3: D takes Q1 or Q2, the refused attacker plays our refused attacker
+        double Score(PlayerId o, PlayerId p) => o == d ? (p == q1 ? 2 : 0) : p == q2 ? -2 : 0;
+
+        var state = PairingState.Start(own, opp)
+            .Apply(new DefendersMove(d, opp[0]))
+            .Apply(new AttackersMove(own[1], own[2], q1, q2));
+
+        var optimal = AdviceModes.Create(AdviceMode.Optimal).Advise(state, Score);
+        var avoid = AdviceModes.Create(AdviceMode.AvoidMinus).Advise(state, Score);
+
+        Assert.Equal(0, optimal.Own[0].Expected, 6);                // both options worth 0
+        Assert.Equal(q2, avoid.Own[0].Players[0]);                  // weighted: +2 −3 = −1 < 0 → take the 0
+        Assert.All(avoid.TopPicks, p => Assert.Equal(p.Games.Sum(g => g.Score), p.Total, 6)); // real points
+    }
+
+    [Fact]
+    public void Safe_mode_uses_the_guaranteed_value()
+    {
+        var own = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList();
+        var opp = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList();
+        double[,] m = { { 2, -1, 0 }, { -2, 1, 1 }, { 0, 0, -1 } };
+        double Score(PlayerId o, PlayerId p) => m[own.IndexOf(o), opp.IndexOf(p)];
+
+        Assert.Equal(0, AdviceModes.Create(AdviceMode.Safe).Advise(PairingState.Start(own, opp), Score).Expected, 6);
+        Assert.Equal(0.4, AdviceModes.Create(AdviceMode.Optimal).Advise(PairingState.Start(own, opp), Score).Expected, 6);
+    }
+}

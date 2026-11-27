@@ -65,8 +65,9 @@ public sealed record PredictedGameDto(int Round, Guid OwnPlayerId, Guid Opponent
 public sealed record PredictedPathDto(MoveOptionDto Option, IReadOnlyList<PredictedStepDto> Steps,
     IReadOnlyList<PredictedGameDto> Games, double Total);
 
+/// <param name="Mode">optimal | avoidminus | safe. In avoidminus, Expected/Worst are weighted (minus ×1.5); path games and totals are real points.</param>
 /// <param name="Expected">Final total if both teams play perfectly from here.</param>
-public sealed record PairingAdviceDto(double Expected, IReadOnlyList<MoveOptionDto> Own, IReadOnlyList<MoveOptionDto> Opponent,
+public sealed record PairingAdviceDto(string Mode, double MinusWeight, double Expected, IReadOnlyList<MoveOptionDto> Own, IReadOnlyList<MoveOptionDto> Opponent,
     IReadOnlyList<PredictedPathDto> TopPicks);
 
 public sealed record PairingDto(
