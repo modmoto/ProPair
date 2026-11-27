@@ -100,15 +100,13 @@ else
 
     @if (_shown is not null)
     {
-        <section class="listpanel settle">
-            <header>
-                <strong>@_shown.Name · @_shown.ArmyName</strong>
-                <button class="btn" @onclick="() => _shown = null">Schließen</button>
-            </header>
-            <NoteEditor Note="PlayerNote(_shown.Id)" CanEdit="_matrix.CanEdit" HasAuthor="HasAuthor"
-                        Placeholder="Notiz zur Liste, z. B. „Achtung auf …“" OnSave="text => SavePlayerNoteAsync(_shown.Id, text)" />
-            <pre>@_shown.ListText</pre>
-        </section>
+        var shown = _shown;
+        <div @ref="_panel">
+        <ListPanel Player="shown" Marks="MarksFor(shown.Id)" Note="PlayerNote(shown.Id)"
+                   CanEdit="_matrix.CanEdit" HasAuthor="HasAuthor" OnClose="() => _shown = null"
+                   OnSaveNote="text => SavePlayerNoteAsync(shown.Id, text)"
+                   OnMark="m => SaveListMarkAsync(shown.Id, m)" />
+        </div>
     }
 
     @if (_sheet is var (sheetOwn, sheetOpp))
@@ -180,6 +178,8 @@ else
     private readonly SemaphoreSlim _writeQueue = new(1, 1); // keep edits in order, one request at a time
 
     private ElementReference _grid;
+    private ElementReference _panel;
+    private Guid? _revealed;
     private DotNetObjectReference<Matrix>? _self;
     private bool _longPressReady;
 
@@ -194,6 +194,14 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (_shown is not null && _revealed != _shown.Id)
+        {
+            _revealed = _shown.Id;
+            try { await Js.InvokeVoidAsync("proPair.reveal", _panel); }
+            catch (JSException) { /* scrolling is a nicety */ }
+        }
+        else if (_shown is null) _revealed = null;
+
         if (_matrix is null || _longPressReady) return;
         _longPressReady = true;
         _self = DotNetObjectReference.Create(this);
@@ -252,7 +260,8 @@ else
 
     private NoteDto? CellNote(Guid own, Guid opp) => _cellNotes.GetValueOrDefault((own, opp));
     private NoteDto? PlayerNote(Guid id) => _playerNotes.GetValueOrDefault(id);
-    private bool HasPlayerNote(Guid id) => _playerNotes.ContainsKey(id);
+    private bool HasPlayerNote(Guid id) => _playerNotes.ContainsKey(id) || _matrix!.ListMarks.Any(m => m.PlayerId == id);
+    private IReadOnlyList<ListMarkDto> MarksFor(Guid id) => _matrix!.ListMarks.Where(m => m.PlayerId == id).ToList();
 
     private async Task SetAsync(Guid own, Guid opp, string? key)
     {
@@ -272,6 +281,13 @@ else
     private async Task SavePlayerNoteAsync(Guid playerId, string text)
     {
         await WriteAsync(() => Api.SetPlayerNoteAsync(Token, playerId, new SetNoteRequest(text, _author!)));
+        await LoadAsync();
+    }
+
+    private async Task SaveListMarkAsync(Guid playerId, (int LineIndex, string LineText, string? Color, string? Note) m)
+    {
+        await WriteAsync(() => Api.SetListMarkAsync(Token, playerId, m.LineIndex,
+            new SetListMarkRequest(m.LineText, m.Color, m.Note, _author!)));
         await LoadAsync();
     }
 

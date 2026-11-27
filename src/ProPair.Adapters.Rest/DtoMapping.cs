@@ -44,7 +44,11 @@ internal static class DtoMapping
                 .ToList(),
             v.Preparation.PlayerNotes
                 .Where(n => v.Own.Roster.Concat(v.Opponent.Roster).Any(p => p.Id == n.Key))
-                .Select(n => new PlayerNoteDto(n.Key.Value, n.Value.ToDto())).ToList());
+                .Select(n => new PlayerNoteDto(n.Key.Value, n.Value.ToDto())).ToList(),
+            v.Own.Roster.Concat(v.Opponent.Roster)
+                .SelectMany(p => v.Preparation.MarksFor(p.Id, p.ListText).Select(m => new ListMarkDto(
+                    p.Id.Value, m.LineIndex, m.Color.ToString().ToLowerInvariant(), m.Note, m.Author, m.UpdatedAt)))
+                .ToList());
 
     public static NoteDto ToDto(this Domain.Common.Note n) => new(n.Text, n.Author, n.UpdatedAt);
 

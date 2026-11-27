@@ -31,6 +31,17 @@ public sealed class PlayerNoteDoc
     public NoteDoc Note { get; set; } = new();
 }
 
+public sealed class ListMarkDoc
+{
+    public Guid PlayerId { get; set; }
+    public int LineIndex { get; set; }
+    public string LineText { get; set; } = "";
+    public string Color { get; set; } = "";
+    public string? Note { get; set; }
+    public string Author { get; set; } = "";
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
 public sealed class CellNoteDoc
 {
     public Guid Own { get; set; }
@@ -84,6 +95,7 @@ public sealed class PreparationDoc : IVersionedDocument
     public string EditToken { get; set; } = "";
     public string ReadToken { get; set; } = "";
     public List<PlayerNoteDoc> PlayerNotes { get; set; } = [];
+    public List<ListMarkDoc> ListMarks { get; set; } = [];
 }
 
 public sealed class CellDoc

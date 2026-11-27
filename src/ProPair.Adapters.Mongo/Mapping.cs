@@ -51,13 +51,21 @@ internal static class Mapping
         OwnParticipantId = p.OwnParticipantId.Value, RatingScale = ToDoc(p.RatingScale),
         EditToken = p.EditToken.Value, ReadToken = p.ReadToken.Value,
         PlayerNotes = p.PlayerNotes.Select(n => new PlayerNoteDoc { PlayerId = n.Key.Value, Note = ToDoc(n.Value) }).ToList(),
+        ListMarks = p.ListMarks.Select(m => new ListMarkDoc
+        {
+            PlayerId = m.Key.PlayerId.Value, LineIndex = m.Value.LineIndex, LineText = m.Value.LineText,
+            Color = m.Value.Color.ToString(), Note = m.Value.Note, Author = m.Value.Author, UpdatedAt = m.Value.UpdatedAt,
+        }).ToList(),
     };
 
     public static Preparation ToDomain(PreparationDoc d) => WithVersion(new Preparation(
         new PreparationId(d.Id), new TeamId(d.TeamId), new TournamentId(d.TournamentId),
         new ParticipantId(d.OwnParticipantId), ToDomain(d.RatingScale),
         new ShareToken(d.EditToken), new ShareToken(d.ReadToken),
-        (d.PlayerNotes ?? []).ToDictionary(n => new PlayerId(n.PlayerId), n => ToDomain(n.Note))), d.Version);
+        (d.PlayerNotes ?? []).ToDictionary(n => new PlayerId(n.PlayerId), n => ToDomain(n.Note)),
+        (d.ListMarks ?? []).ToDictionary(m => new ListLineKey(new PlayerId(m.PlayerId), m.LineIndex),
+            m => new ListMark(m.LineIndex, m.LineText, Enum.Parse<MarkColor>(m.Color), m.Note, m.Author, m.UpdatedAt))),
+        d.Version);
 
     public static MatrixDoc ToDoc(Matrix m) => new()
     {

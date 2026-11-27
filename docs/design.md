@@ -82,7 +82,7 @@ Ansicht:
 - Oben neben dem Titel: Gesamtstand der festen Matchups (Summe der Scores, grün/rot) und x/8 gepaart.
 - Unter der Matrix: Liste der festen Matchups mit Bewertung; neue Matchups blenden ein.
 - Flip-Button oben rechts: ursprüngliche Matrix. Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
-- Empfehlungen sind vorerst ausgeblendet (Solver läuft weiter im Backend), Details unter der Matrix kommen später.
+- Empfehlungen sind vorerst ausgeblendet (Solver läuft weiter im Backend), siehe Konzept unten.
 - Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
 
 Solver (`PairingSolver`, Domain Service):
@@ -92,6 +92,23 @@ Solver (`PairingSolver`, Domain Service):
 - Gegner-Sicht = negierte eigene Matrix. Unbewertete Felder zählen 0 (Hinweis in der UI).
 - Läuft serverseitig; Offline im Client später möglich (Domain ist abhängigkeitsfrei).
 - Später: gemischte Strategien (Nash pro Schritt) statt reinem Maximin.
+
+### Empfehlungen (Konzept, noch nicht umgesetzt)
+
+Berechnung:
+- Spielbaum von hinten aufrollen: am Ende ist jedes Spiel aus der Matrix bekannt, davor wählt jede Seite ihr Bestes. Gegner = gleiche Matrix, negiert.
+- Verdeckte Schritte als gemischte Strategie (Nash pro Schritt, kleines LP): liefert Wahrscheinlichkeiten („die legen zu 45 % DL“) und damit den **wahrscheinlichsten Pfad** statt nur Worst case.
+- **Schlüsselspieler:** pro Spieler, wie viel schlechter der Rest wird, wenn er jetzt verbraucht wird → Warnung „danach kein Counter gegen SE (−3)“.
+
+Darstellung (in der Matrix, mobil):
+- Defender: Badge mit erwartetem Endstand an unseren Namen (★ = bestes), dünner Wahrscheinlichkeitsbalken an Gegner-Namen.
+- Attacker/Wahl: erwarteter Endstand klein in den wählbaren Zellen, beste mit grünem Rahmen. ⚠ bei Schlüsselspielern.
+- Option antippen → **Pfad-Vorschau**: wahrscheinliche Matchups gestrichelt in der Matrix (nach Runde nummeriert) + Zeitleiste; Runden per Wischen durchgehen; Endstand mit Spanne (Worst/Best).
+- „Was wäre wenn“: Gegner-Namen gedrückt halten = „angenommen, die legen den“ → neu rechnen.
+- **Ausblendbar:** Schalter „Empfehlungen“ (Augen-Icon) neben dem Flip-Button. Standard **aus**, pro Gerät gemerkt – damit man sich nicht unbewusst von Zahlen leiten lässt. Aus = keine Zahlen, keine Rahmen, keine Warnungen.
+
+Umsetzung in Stufen: (1) bestehende Maximin-Zahlen einblenden, (2) Pfad-Vorschau, (3) Nash-Wahrscheinlichkeiten, (4) Schlüsselspieler + „Was wäre wenn“.
+Grenze: nur so gut wie die Matrix; später evtl. Regler „Unsicherheit“.
 
 `PairingSession` speichert nur die eingegebenen Züge; der Zustand wird über `PairingState` neu abgespielt (Undo = letzten Zug entfernen).
 
@@ -161,6 +178,7 @@ Taktisches DDD nach Evans/Vernon:
 - `RatingScale`: Kopie der Team-Default-Skala beim Anlegen, danach unveränderlich.
 - `EditToken`, `ReadToken`.
 - PlayerNotes: Spieler → Notiz zur Liste.
+- ListMarks: (Spieler, Zeile) → Farbe + Notiz. Zeile über Index + Text; nach Re-Import über den Text wiedergefunden.
 - Invariante: pro Team und Turnier genau eine Preparation.
 
 **Matrix** (Preparation × Gegner)
@@ -187,7 +205,8 @@ Taktisches DDD nach Evans/Vernon:
 - Eine gemeinsame Wertung pro Zelle, letzte Änderung gewinnt. Jede Änderung als `RatingChanged` (wer, wann, alt → neu).
 - Autor: Name wird beim ersten Bearbeiten abgefragt, im Browser gespeichert.
 - **Zelle:** Tap = Dropdown (schnell bewerten). Long-Press (Handy) / Rechtsklick (Desktop) = Bottom-Sheet mit Bewertung, Notiz zum Matchup und „Verlauf anzeigen“ (lädt bei Bedarf). Kein History-Icon.
-- **Liste:** Tap auf Spielername = Liste + Notiz zur Liste („Achtung auf …“).
+- **Liste:** Tap auf Spielername = Panel: **Liste oben, Notizen darunter**.
+- **Markierungen in der Liste:** einzelne Zeile antippen → 6 Farben (rot, orange, gelb, grün, blau, pink) + kurze Notiz, die in derselben Zeile steht („Achtung, kann Flammenwerfer“). Farben haben keine feste Bedeutung – das Team entscheidet. Markierung entfernen = ✕.
 - Punkt oben rechts markiert Zellen/Spieler mit Notiz.
 - Matchup-Notizen liegen im `Matrix`-Aggregat, Listen-Notizen in der `Preparation` (gelten für alle Gegner des Turniers).
 - Leerer Text löscht eine Notiz. Max. 2000 Zeichen.
@@ -213,8 +232,10 @@ Taktisches DDD nach Evans/Vernon:
 | 8 | Modellierung | DDD, Aggregate wie oben. |
 | 9 | New Recruit | Import im MVP, zunächst Fake-Quelle. |
 | 10 | UI | Mobile first. |
-| 12 | Notizen/Verlauf | Long-Press/Rechtsklick-Sheet je Zelle, Listen-Notiz per Tap auf Spieler. |
 | 11 | Pairing | Auswahl per Tap in der Matrix (Namen = Defender, Zellen = Attacker/Wahl). Rest-Matrix, Flip auf Vollmatrix (vergeben = grau). Empfehlungen vorerst aus. |
+| 12 | Notizen/Verlauf | Long-Press/Rechtsklick-Sheet je Zelle, Listen-Notiz per Tap auf Spieler. |
+| 13 | Empfehlungen | Ausblendbar, Standard aus (keine psychologische Beeinflussung). |
+| 14 | Listen-Markierungen | 6 Farben + Zeilen-Notiz, Liste oben, Notizen unten. |
 
 ## Offene Fragen
 

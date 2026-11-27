@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<SetCellNote>();
         services.AddScoped<GetCellHistory>();
         services.AddScoped<SetPlayerNote>();
+        services.AddScoped<SetListMark>();
         services.AddScoped<GetPairing>();
         services.AddScoped<PlayPairingMove>();
         services.AddScoped<UndoPairingMove>();

@@ -384,3 +384,48 @@ button, input, select { font: inherit; }
     .settle, .matrix .leaving, .sheet, .sheet-backdrop { animation: none; }
     .flip svg { transition: none; }
 }
+
+/* ---- army list with line marks ---- */
+:root {
+    --mark-red: #d9423a;    --mark-red-bg: #fbe3e1;
+    --mark-orange: #f39a3d; --mark-orange-bg: #fdecd9;
+    --mark-yellow: #e2c02c; --mark-yellow-bg: #fcf4cf;
+    --mark-green: #2e9e44;  --mark-green-bg: #dcf1e0;
+    --mark-blue: #2b5fd9;   --mark-blue-bg: #dfe7fb;
+    --mark-pink: #e46fc0;   --mark-pink-bg: #fbe1f3;
+}
+.armylist { margin-top: .6rem; font-size: .85rem; line-height: 1.35; }
+.listline {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .6rem;
+    padding: .3rem .5rem; margin: 1px -.5rem; border-left: 4px solid transparent; border-radius: 4px;
+}
+.listline.tappable { cursor: pointer; }
+.listline.tappable:hover { background: #f1f3f6; }
+.listline.editing { outline: 2px solid var(--accent); outline-offset: -2px; }
+.listline .marknote { font-style: italic; color: var(--fg); opacity: .8; }
+.listline .marknote::before { content: "– "; }
+.listline.mark-red { background: var(--mark-red-bg); border-left-color: var(--mark-red); }
+.listline.mark-orange { background: var(--mark-orange-bg); border-left-color: var(--mark-orange); }
+.listline.mark-yellow { background: var(--mark-yellow-bg); border-left-color: var(--mark-yellow); }
+.listline.mark-green { background: var(--mark-green-bg); border-left-color: var(--mark-green); }
+.listline.mark-blue { background: var(--mark-blue-bg); border-left-color: var(--mark-blue); }
+.listline.mark-pink { background: var(--mark-pink-bg); border-left-color: var(--mark-pink); }
+
+.markeditor { margin: .2rem 0 .5rem; padding: .6rem; background: #f6f7f9; border-radius: 8px; }
+.swatches { display: grid; grid-template-columns: repeat(7, 1fr); gap: .35rem; }
+.swatch { height: 2.4rem; border: 2px solid transparent; border-radius: 8px; cursor: pointer; }
+.swatch.on { border-color: var(--fg); box-shadow: inset 0 0 0 2px #fff; }
+.swatch.clear { background: #fff; border-color: var(--line); color: var(--muted); }
+.swatch:disabled { opacity: .4; cursor: default; }
+.swatch.mark-red { background: var(--mark-red); }
+.swatch.mark-orange { background: var(--mark-orange); }
+.swatch.mark-yellow { background: var(--mark-yellow); }
+.swatch.mark-green { background: var(--mark-green); }
+.swatch.mark-blue { background: var(--mark-blue); }
+.swatch.mark-pink { background: var(--mark-pink); }
+.marknote-input { display: flex; gap: .4rem; margin-top: .5rem; }
+.marknote-input input {
+    flex: 1; min-width: 0; min-height: var(--tap); padding: 0 .6rem; border: 1px solid var(--line); border-radius: 6px;
+    font-size: 16px; background: #fff;
+}
+.listpanel h3 { font-size: .85rem; color: var(--muted); margin: 1rem 0 .4rem; font-weight: 600; }

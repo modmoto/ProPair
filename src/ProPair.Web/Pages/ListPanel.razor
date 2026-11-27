@@ -1,0 +1,105 @@
+@*
+    Army list of one player: list on top (lines can be marked with a colour + short note), free notes below.
+    Tap a line to mark it; the note of a mark is shown in the same line.
+*@
+
+<section class="listpanel settle">
+    <header>
+        <strong>@Player.Name · @Player.ArmyName</strong>
+        <button class="btn" @onclick="OnClose">Schließen</button>
+    </header>
+
+    <div class="armylist">
+        @foreach (var (line, index) in Lines)
+        {
+            var mark = MarkAt(index);
+            var editing = _editLine == index;
+            <div class="listline @(mark is null ? "" : $"mark-{mark.Color}") @(editing ? "editing" : "") @(CanEdit && IsUnit(line) ? "tappable" : "")"
+                 @onclick="() => StartEdit(index, line)">
+                <span class="text">@line</span>
+                @if (!string.IsNullOrEmpty(mark?.Note))
+                {
+                    <span class="marknote">@mark.Note</span>
+                }
+            </div>
+            @if (editing)
+            {
+                <div class="markeditor settle">
+                    <div class="swatches">
+                        @foreach (var color in Colors)
+                        {
+                            <button class="swatch mark-@color @(mark?.Color == color ? "on" : "")" title="@color"
+                                    disabled="@(!HasAuthor || _saving)" @onclick="() => SaveAsync(index, line, color)"></button>
+                        }
+                        <button class="swatch clear" title="Markierung entfernen" disabled="@(mark is null || _saving)"
+                                @onclick="() => SaveAsync(index, line, null)">✕</button>
+                    </div>
+                    <div class="marknote-input">
+                        <input maxlength="200" placeholder="Notiz zur Zeile, z. B. kann Flammenwerfer" @bind="_noteInput" @bind:event="oninput" />
+                        <button class="btn" disabled="@(!HasAuthor || _saving)" @onclick="() => SaveAsync(index, line, mark?.Color ?? DefaultColor)">OK</button>
+                    </div>
+                    @if (!HasAuthor)
+                    {
+                        <p class="hint">Zum Markieren oben deinen Namen eintragen.</p>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    <h3>Notizen</h3>
+    <NoteEditor Note="Note" CanEdit="CanEdit" HasAuthor="HasAuthor"
+                Placeholder="Weitere Notizen zur Liste…" OnSave="OnSaveNote" />
+</section>
+
+@code {
+    [Parameter, EditorRequired] public PlayerDto Player { get; set; } = default!;
+    [Parameter] public IReadOnlyList<ListMarkDto> Marks { get; set; } = [];
+    [Parameter] public NoteDto? Note { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool HasAuthor { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<string> OnSaveNote { get; set; }
+    [Parameter] public EventCallback<(int LineIndex, string LineText, string? Color, string? Note)> OnMark { get; set; }
+
+    private static readonly string[] Colors = ["red", "orange", "yellow", "green", "blue", "pink"];
+    private const string DefaultColor = "red";
+
+    private int? _editLine;
+    private string? _noteInput;
+    private bool _saving;
+    private Guid _playerId;
+
+    private IEnumerable<(string Line, int Index)> Lines => Player.ListText.Split('\n').Select((l, i) => (l, i));
+
+    /// <summary>Army name header and points total are not units.</summary>
+    private static bool IsUnit(string line) => line.Contains(" - ");
+
+    private ListMarkDto? MarkAt(int index) => Marks.FirstOrDefault(m => m.LineIndex == index);
+
+    protected override void OnParametersSet()
+    {
+        if (_playerId == Player.Id) return;
+        _playerId = Player.Id;
+        _editLine = null;
+    }
+
+    private void StartEdit(int index, string line)
+    {
+        if (!CanEdit || !IsUnit(line)) return;
+        if (_editLine == index) { _editLine = null; return; }
+        _editLine = index;
+        _noteInput = MarkAt(index)?.Note;
+    }
+
+    private async Task SaveAsync(int index, string line, string? color)
+    {
+        _saving = true;
+        try
+        {
+            await OnMark.InvokeAsync((index, line, color, color is null ? null : _noteInput));
+            _editLine = null;
+        }
+        finally { _saving = false; }
+    }
+}

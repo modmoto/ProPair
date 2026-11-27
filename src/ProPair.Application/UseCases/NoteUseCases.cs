@@ -53,3 +53,34 @@ public sealed class SetPlayerNote(IPreparationRepository preparations, ITourname
         }
     }
 }
+
+/// <summary>Colours (or un-marks with color null) one line of a player's list, with an optional short note.</summary>
+public sealed class SetListMark(IPreparationRepository preparations, ITournamentRepository tournaments, IClock clock)
+{
+    private const int MaxAttempts = 5;
+
+    public async Task<Preparation> ExecuteAsync(string token, PlayerId playerId, int lineIndex, string lineText,
+        MarkColor? color, string? note, string author, CancellationToken ct = default)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            var preparation = await preparations.FindByTokenAsync(token, ct) ?? throw new NotFoundException("Preparation");
+            if (preparation.AccessFor(token) != AccessLevel.Edit) throw new ForbiddenException("Read-only link.");
+
+            var tournament = await tournaments.GetAsync(preparation.TournamentId, ct) ?? throw new NotFoundException("Tournament");
+            var player = tournament.Participants.SelectMany(p => p.Roster).FirstOrDefault(r => r.Id == playerId)
+                         ?? throw new DomainException("Player is not part of this tournament.");
+
+            preparation.MarkListLine(playerId, player.ListText, lineIndex, lineText, color, note, author, clock.Now);
+            try
+            {
+                await preparations.SaveAsync(preparation, ct);
+                return preparation;
+            }
+            catch (ConcurrencyException) when (attempt < MaxAttempts)
+            {
+                await Task.Delay(Random.Shared.Next(10, 50) * attempt, ct);
+            }
+        }
+    }
+}

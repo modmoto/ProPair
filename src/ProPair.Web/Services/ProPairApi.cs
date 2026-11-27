@@ -34,6 +34,9 @@ public sealed class ProPairApi(HttpClient http)
     public async Task SetPlayerNoteAsync(string token, Guid playerId, SetNoteRequest request) =>
         await EnsureAsync(await http.PutAsJsonAsync($"api/p/{token}/players/{playerId}/note", request));
 
+    public async Task SetListMarkAsync(string token, Guid playerId, int lineIndex, SetListMarkRequest request) =>
+        await EnsureAsync(await http.PutAsJsonAsync($"api/p/{token}/players/{playerId}/marks/{lineIndex}", request));
+
     public async Task<MatrixDto> FillDemoAsync(string token, Guid opponentId) =>
         await ReadAsync<MatrixDto>(await http.PostAsync($"api/p/{token}/matrices/{opponentId}/demo-fill", null));
 

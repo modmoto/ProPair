@@ -46,3 +46,6 @@ window.proPair.longPress = (root, dotnet) => {
 
     root.addEventListener('touchcancel', cancel);
 };
+
+// Brings a freshly opened panel into view (it opens below the matrix, often off-screen on phones).
+window.proPair.reveal = el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

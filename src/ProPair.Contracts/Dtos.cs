@@ -28,7 +28,13 @@ public sealed record CellDto(Guid OwnPlayerId, Guid OpponentPlayerId, string Lev
 public sealed record MatrixDto(
     string TournamentName, bool CanEdit, bool IsDemo, ParticipantDto Own, ParticipantDto Opponent,
     IReadOnlyList<RatingLevelDto> Scale, IReadOnlyList<CellDto> Cells,
-    IReadOnlyList<CellNoteDto> CellNotes, IReadOnlyList<PlayerNoteDto> PlayerNotes);
+    IReadOnlyList<CellNoteDto> CellNotes, IReadOnlyList<PlayerNoteDto> PlayerNotes, IReadOnlyList<ListMarkDto> ListMarks);
+
+/// <summary>Color: red | orange | yellow | green | blue | pink.</summary>
+public sealed record ListMarkDto(Guid PlayerId, int LineIndex, string Color, string? Note, string Author, DateTimeOffset UpdatedAt);
+
+/// <summary>Color null removes the mark. LineText guards against marking a line of a changed list.</summary>
+public sealed record SetListMarkRequest(string LineText, string? Color, string? Note, string Author);
 
 public sealed record NoteDto(string Text, string Author, DateTimeOffset UpdatedAt);
 

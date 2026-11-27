@@ -3,6 +3,7 @@ using ProPair.Contracts;
 using ProPair.Domain.Common;
 using ProPair.Domain.Matrices;
 using ProPair.Domain.Pairing;
+using ProPair.Domain.Preparations;
 
 namespace ProPair.Adapters.Rest;
 
@@ -58,6 +59,16 @@ internal static class Endpoints
             async (string token, Guid playerId, SetNoteRequest req, SetPlayerNote uc, CancellationToken ct) =>
             {
                 await uc.ExecuteAsync(token, new PlayerId(playerId), req.Text, req.Author, ct);
+                return Results.NoContent();
+            });
+
+        api.MapPut("/p/{token}/players/{playerId:guid}/marks/{lineIndex:int}",
+            async (string token, Guid playerId, int lineIndex, SetListMarkRequest req, SetListMark uc, CancellationToken ct) =>
+            {
+                MarkColor? color = req.Color is null ? null
+                    : Enum.TryParse<MarkColor>(req.Color, ignoreCase: true, out var c) ? c
+                    : throw new DomainException($"Unknown color '{req.Color}'.");
+                await uc.ExecuteAsync(token, new PlayerId(playerId), lineIndex, req.LineText, color, req.Note, req.Author, ct);
                 return Results.NoContent();
             });
 
