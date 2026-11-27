@@ -11,13 +11,13 @@ Pairing-Tool für Tabletop-Teamturniere. Start: The 9th Age (T9A).
 ## Scope
 
 **MVP**
+- Turnier aus New Recruit importieren (Teams, Spieler, Listen).
 - Teamformat 8v8, 5v5, 3v3.
 - 16 T9A-Armeen als Auswahl (pro Spieler / Gegner).
 - Matrix mit Dropdown pro Zelle, farbcodiert.
 - Teilen per Link.
 
 **Später**
-- Turnier aus New Recruit importieren (Listen + Teams).
 - Notizen pro Liste / Matchup ("Achtung auf X").
 - PDF-Export für offline.
 - Live-Sync für Zuschauer (SignalR).
@@ -76,6 +76,24 @@ Ablauf als Regel-Objekt modellieren (austauschbar pro Turnier/System). Tisch-/Sz
 - Gegner-Sicht = negierte eigene Matrix. Wir nehmen an, dass die Teamwertung stimmt.
 - Fokus: Captain bedient das Pairing.
 
+## New-Recruit-Import
+
+Doku: https://www.newrecruit.eu/tutorials/tournament (+ `/tournaments`, `/reports`, `/systems`).
+
+- Auth: HTTP-Header `NR-Login` + `NR-Password` (NR-Account). Kein API-Key.
+- Zugang muss vom NR-Team freigeschaltet werden ("contact NR if you need to access this API").
+- `POST /api/tournament` `{ id }` → Name, Teams, Spieler, Listen. Versteckte Listen fehlen.
+- `POST /api/tournaments` → Suche nach Zeitraum + `id_game_system`, 50 pro Seite.
+- `POST /api/systems` → IDs der Spielsysteme (T9A-ID einmal ermitteln).
+- NR loggt jeden Request mit User.
+
+Umsetzung:
+- Port `ITournamentSource` in Application, Adapter `ProPair.Adapters.NewRecruit`.
+- Zugangsdaten nur serverseitig (User Secrets / Env), nie im Client.
+- Import: Captain gibt Turnier-URL/ID ein → Tournament-Aggregat anlegen bzw. aktualisieren.
+- Rohdaten (Listen) unverändert speichern, Armee über Mapping auf GameSystem-Armeen.
+- Re-Import möglich (Listen ändern sich bis Turnierbeginn).
+
 ## Architektur
 
 Hexagonal (Ports & Adapters). UI austauschbar, API ist die einzige Schnittstelle.
@@ -86,6 +104,7 @@ src/
   ProPair.Application         Use Cases, Ports (IMatrixRepository, ...).
   ProPair.Adapters.Rest       ASP.NET Core Web API, hostet die WASM-App.
   ProPair.Adapters.Mongo      MongoDB-Implementierung der Repository-Ports.
+  ProPair.Adapters.NewRecruit Client für die New-Recruit-API.
   ProPair.Contracts           DTOs, geteilt zwischen API und Client.
   ProPair.Web                 Blazor WebAssembly (nur über Contracts + HTTP).
 tests/
@@ -134,7 +153,7 @@ Taktisches DDD nach Evans/Vernon:
 - Id, Name, GameSystemId, `TeamSize` (3/5/8).
 - Participants (Entity): Id, Name, Roster.
 - Invariante: Roster-Größe = TeamSize, Armeen aus dem GameSystem.
-- Später Quelle für den New-Recruit-Import.
+- Quelle: New-Recruit-Import (ExternalId = NR-Turnier-Id).
 
 **Preparation** (Team × Tournament)
 - Id, TeamId, TournamentId, OwnParticipantId.
@@ -181,10 +200,12 @@ Taktisches DDD nach Evans/Vernon:
 | 6 | Live-Sync | Nicht im MVP. SignalR später als Nice-to-have. |
 | 7 | Matrizen | Pro Turnier eine Matrix je Gegnerteam. |
 | 8 | Modellierung | DDD, Aggregate wie oben. |
+| 9 | New Recruit | Import im MVP. |
 
 ## Offene Fragen
 
 - Tisch-/Szenariowahl im Pairing abbilden?
 - Captain-Zugang ohne Login: eigener Admin-Link pro Team, oder Login (z. B. GitHub/Google)?
-- MVP ohne New Recruit: Turnier, Gegner und Roster manuell durch den Captain anlegen?
+- Fallback, falls NR-Zugang fehlt: Turnier manuell anlegen?
+- Format der Listen aus NR (Text/JSON) – prüfen, sobald Zugang da ist.
 - Ist ein Tournament global (mehrere Teams nutzen dasselbe) oder gehört es nur unserem Team?
