@@ -100,9 +100,22 @@ else
                     <span class="primary waiting">Defender antippen</span>
                     break;
             }
-            <button class="icon" disabled="@(_busy || _p.MoveCount == 0)" @onclick="RestartAsync"
+            <button class="icon" disabled="@(_busy || _p.MoveCount == 0)" @onclick="() => _confirmRestart = true"
                     title="Neu starten" aria-label="Neu starten">⟲</button>
         </div>
+    }
+
+    @if (_confirmRestart)
+    {
+        <div class="sheet-backdrop" @onclick="() => _confirmRestart = false"></div>
+        <section class="sheet confirm" role="alertdialog" aria-label="Pairing neu starten">
+            <strong>Pairing neu starten?</strong>
+            <p class="muted">Alle eingetragenen Züge (@_p.MoveCount) gehen verloren.</p>
+            <div class="confirm-actions">
+                <button class="btn" @onclick="() => _confirmRestart = false">Abbrechen</button>
+                <button class="btn danger-fill" @onclick="RestartAsync">Neu starten</button>
+            </div>
+        </section>
     }
 }
 
@@ -114,6 +127,7 @@ else
 
     private PairingDto? _p;
     private bool _showAll;
+    private bool _confirmRestart;
     private bool _busy;
     private string? _error;
     private HashSet<Guid> _leaving = [];
@@ -221,7 +235,11 @@ else
         await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId));
     }
 
-    private Task RestartAsync() => LoadAsync(() => Api.RestartPairingAsync(Token, OpponentId));
+    private Task RestartAsync()
+    {
+        _confirmRestart = false;
+        return LoadAsync(() => Api.RestartPairingAsync(Token, OpponentId));
+    }
 
     private async Task LoadAsync(Func<Task<PairingDto>> call)
     {

@@ -361,3 +361,8 @@ button, input, select { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
     .sheet, .sheet-backdrop { animation: none; }
 }
+
+/* confirmation dialog (reuses the sheet) */
+.sheet.confirm p { margin: .4rem 0 1rem; }
+.confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.btn.danger-fill { background: #b3261e; border-color: #b3261e; color: #fff; font-weight: 700; }
