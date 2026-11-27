@@ -29,14 +29,14 @@
                         @foreach (var color in Colors)
                         {
                             <button class="swatch mark-@color @(mark?.Color == color ? "on" : "")" title="@color"
-                                    disabled="@(!HasAuthor || _saving)" @onclick="() => SaveAsync(index, line, color)"></button>
+                                    disabled="@(!HasAuthor || _saving)" @onclick="() => SaveAsync(index, line, color, close: false)"></button>
                         }
                         <button class="swatch clear" title="Markierung entfernen" disabled="@(mark is null || _saving)"
-                                @onclick="() => SaveAsync(index, line, null)">✕</button>
+                                @onclick="() => SaveAsync(index, line, null, close: true)">✕</button>
                     </div>
                     <div class="marknote-input">
                         <input maxlength="200" placeholder="Notiz zur Zeile, z. B. kann Flammenwerfer" @bind="_noteInput" @bind:event="oninput" />
-                        <button class="btn" disabled="@(!HasAuthor || _saving)" @onclick="() => SaveAsync(index, line, mark?.Color ?? DefaultColor)">OK</button>
+                        <button class="btn" disabled="@(!HasAuthor || _saving)" @onclick="() => SaveAsync(index, line, mark?.Color ?? DefaultColor, close: true)">OK</button>
                     </div>
                     @if (!HasAuthor)
                     {
@@ -92,13 +92,14 @@
         _noteInput = MarkAt(index)?.Note;
     }
 
-    private async Task SaveAsync(int index, string line, string? color)
+    /// <summary>A colour applies right away and keeps the editor open for the note; OK (or ✕) closes it.</summary>
+    private async Task SaveAsync(int index, string line, string? color, bool close)
     {
         _saving = true;
         try
         {
             await OnMark.InvokeAsync((index, line, color, color is null ? null : _noteInput));
-            _editLine = null;
+            if (close) _editLine = null;
         }
         finally { _saving = false; }
     }

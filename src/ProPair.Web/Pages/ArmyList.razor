@@ -28,7 +28,8 @@
         @foreach (var (line, index) in Player.ListText.Split('\n').Select((l, i) => (l, i)))
         {
             var mark = Marks.FirstOrDefault(m => m.LineIndex == index);
-            <div class="listline @(mark is null ? "" : $"mark-{mark.Color}")">
+            @* hiding notes also hides the mark colours: a plain list *@
+            <div class="listline @(mark is null || !ShowNotes ? "" : $"mark-{mark.Color}")">
                 <span class="text">@line</span>
                 @if (ShowNotes && !string.IsNullOrEmpty(mark?.Note))
                 {
@@ -67,5 +68,5 @@
     /// <summary>Already paired: shown with "(gepickt)" behind the army.</summary>
     [Parameter] public bool Taken { get; set; }
 
-    private bool HasNotes => Note is not null || MatchupNotes.Count > 0 || Marks.Any(m => !string.IsNullOrEmpty(m.Note));
+    private bool HasNotes => Note is not null || MatchupNotes.Count > 0 || Marks.Count > 0;
 }

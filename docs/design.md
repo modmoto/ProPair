@@ -106,7 +106,7 @@ Berechnung:
 Darstellung (in der Matrix, mobil):
 - Defender: Badge mit erwartetem Endstand an unseren Namen (★ = bestes), dünner Wahrscheinlichkeitsbalken an Gegner-Namen.
 - Attacker/Wahl: erwarteter Endstand klein in den wählbaren Zellen, beste mit grünem Rahmen. ⚠ bei Schlüsselspielern.
-- **Listen im Pairing:** Umschalter „Matrix | Listen“ über der Tabelle. „Listen“ zeigt die Liste eines aktiven Gegners (Start: deren Defender), Wischen links/rechts bzw. Pfeile/Kürzel wechseln. Markierungen und Notizen aus der Matrix-Seite sind sichtbar, auch offline. Notizen (Zeilen-Notizen, Listen-Notiz, Matchup-Notizen „gegen …“) per Sprechblase oben rechts ein-/ausblendbar, pro Gerät gemerkt. Bei ausgeklappter Matrix auch schon gepaarte Gegner: Kürzel ausgegraut, „(gepickt)“ hinter der Armee.
+- **Listen im Pairing:** Umschalter „Matrix | Listen“ über der Tabelle. „Listen“ zeigt die Liste eines aktiven Gegners (Start: deren Defender), Wischen links/rechts bzw. Pfeile/Kürzel wechseln. Markierungen und Notizen aus der Matrix-Seite sind sichtbar, auch offline. Notizen (Zeilen-Notizen, Listen-Notiz, Matchup-Notizen „gegen …“) per Sprechblase oben rechts ein-/ausblendbar, pro Gerät gemerkt; ausgeblendet sind auch die Markierungsfarben weg. Bei ausgeklappter Matrix auch schon gepaarte Gegner: Kürzel ausgegraut, „(gepickt)“ hinter der Armee.
 - **Attacker-Schritt:** Sobald deren 2 Attacker angetippt sind (und im Wahl-Schritt) stehen beide Listen nebeneinander unter der Matrix.
 - **Vorrechnen:** einmal beim Betreten des Pairings, nur bei vollständig bewerteter Matrix (beide Modi, auch bei ausgeschaltetem Auge).
 - Pick antippen wählt ihn auch in der Matrix aus (unsere Seite des Schritts); umgekehrt springt die Vorschau auf den passenden Pick.
@@ -213,7 +213,7 @@ Taktisches DDD nach Evans/Vernon:
 - Autor: Name wird beim ersten Bearbeiten abgefragt, im Browser gespeichert.
 - **Zelle:** Tap = Dropdown (schnell bewerten). Long-Press (Handy) / Rechtsklick (Desktop) = Bottom-Sheet mit Bewertung, Notiz zum Matchup und „Verlauf anzeigen“ (lädt bei Bedarf). Kein History-Icon.
 - **Liste:** Tap auf Spielername = Panel: **Liste oben, Notizen darunter**.
-- **Markierungen in der Liste:** einzelne Zeile antippen → 6 Farben (rot, orange, gelb, grün, blau, pink) + kurze Notiz, die in derselben Zeile steht („Achtung, kann Flammenwerfer“). Farben haben keine feste Bedeutung – das Team entscheidet. Markierung entfernen = ✕.
+- **Markierungen in der Liste:** einzelne Zeile antippen → 6 Farben (rot, orange, gelb, grün, blau, pink; Farbe wirkt sofort, Feld bleibt offen bis OK) + kurze Notiz, die in derselben Zeile steht („Achtung, kann Flammenwerfer“). Farben haben keine feste Bedeutung – das Team entscheidet. Markierung entfernen = ✕.
 - Punkt oben rechts markiert Zellen/Spieler mit Notiz.
 - Matchup-Notizen liegen im `Matrix`-Aggregat, Listen-Notizen in der `Preparation` (gelten für alle Gegner des Turniers).
 - Leerer Text löscht eine Notiz. Max. 2000 Zeichen.
