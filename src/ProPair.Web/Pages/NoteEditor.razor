@@ -1,0 +1,58 @@
+@* Note text with explicit save; shows who changed it last. Empty text deletes the note. *@
+
+<div class="note-editor">
+    @if (CanEdit)
+    {
+        <textarea rows="3" maxlength="2000" placeholder="@Placeholder" @bind="_text" @bind:event="oninput"></textarea>
+        <div class="note-foot">
+            <span class="muted">@Meta</span>
+            <button class="btn" disabled="@(!Dirty || _saving || !HasAuthor)" @onclick="SaveAsync">
+                @(_saving ? "…" : "Speichern")
+            </button>
+        </div>
+        @if (!HasAuthor)
+        {
+            <p class="hint">Zum Speichern oben deinen Namen eintragen.</p>
+        }
+    }
+    else if (Note is not null)
+    {
+        <p class="note-text">@Note.Text</p>
+        <span class="muted">@Meta</span>
+    }
+    else
+    {
+        <p class="muted">Keine Notiz.</p>
+    }
+</div>
+
+@code {
+    [Parameter] public NoteDto? Note { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool HasAuthor { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Notiz…";
+    [Parameter] public EventCallback<string> OnSave { get; set; }
+
+    private string _text = "";
+    private NoteDto? _shown;
+    private bool _saving;
+
+    private bool Dirty => _text.Trim() != (Note?.Text ?? "");
+    private string Meta => Note is null ? "" : $"{Note.Author} · {Format.When(Note.UpdatedAt)}";
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_shown, Note)) // new cell/player or saved: show stored text
+        {
+            _shown = Note;
+            _text = Note?.Text ?? "";
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        try { await OnSave.InvokeAsync(_text); }
+        finally { _saving = false; }
+    }
+}

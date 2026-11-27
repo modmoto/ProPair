@@ -1,6 +1,8 @@
 @page "/p/{Token}/vs/{OpponentId:guid}"
+@implements IDisposable
 @inject ProPairApi Api
 @inject AuthorStore Authors
+@inject IJSRuntime Js
 
 <PageTitle>ProPair – @_matrix?.Own.Name vs @_matrix?.Opponent.Name</PageTitle>
 
@@ -33,7 +35,7 @@ else
         </form>
     }
 
-    <div class="matrix-wrap">
+    <div class="matrix-wrap" @ref="_grid">
         <table class="matrix">
             <thead>
             <tr>
@@ -41,7 +43,8 @@ else
                 @foreach (var opp in _matrix.Opponent.Players)
                 {
                     <th>
-                        <button class="@(_shown == opp ? "active" : "")" title="Liste anzeigen" @onclick="() => Toggle(opp)">
+                        <button class="@(_shown == opp ? "active" : "") @(HasPlayerNote(opp.Id) ? "has-note" : "")"
+                                title="Liste & Notiz" @onclick="() => Toggle(opp)">
                             <span class="army">@opp.ArmyShort</span>
                             <span class="player">@opp.Name</span>
                         </button>
@@ -54,7 +57,8 @@ else
             {
                 <tr>
                     <th class="row">
-                        <button class="@(_shown == own ? "active" : "")" title="Liste anzeigen" @onclick="() => Toggle(own)">
+                        <button class="@(_shown == own ? "active" : "") @(HasPlayerNote(own.Id) ? "has-note" : "")"
+                                title="Liste & Notiz" @onclick="() => Toggle(own)">
                             <span class="army">@own.ArmyShort</span>
                             <span class="player">@own.Name</span>
                         </button>
@@ -62,11 +66,11 @@ else
                     @foreach (var opp in _matrix.Opponent.Players)
                     {
                         var level = LevelAt(own.Id, opp.Id);
-                        <td style="background:@(level?.Color ?? "transparent")">
+                        <td style="background:@(level?.Color ?? "transparent")" data-own="@own.Id" data-opp="@opp.Id"
+                            class="@(_cellNotes.ContainsKey((own.Id, opp.Id)) ? "has-note" : "") @(_sheet == (own.Id, opp.Id) ? "sheet-open" : "")">
                             @if (CanEditNow)
                             {
-                                <select value="@(level?.Key ?? "")"
-                                        @onchange="e => SetAsync(own.Id, opp.Id, e.Value as string)">
+                                <select value="@(level?.Key ?? "")" @onchange="e => SetAsync(own.Id, opp.Id, e.Value as string)">
                                     <option value=""></option>
                                     @foreach (var l in _matrix.Scale)
                                     {
@@ -86,6 +90,14 @@ else
         </table>
     </div>
 
+    <div class="legend">
+        @foreach (var l in _matrix.Scale)
+        {
+            <span style="background:@l.Color">@l.Label</span>
+        }
+    </div>
+    <p class="subtle">Lange drücken oder Rechtsklick auf ein Feld: Notiz &amp; Verlauf.</p>
+
     @if (_shown is not null)
     {
         <section class="listpanel">
@@ -93,16 +105,62 @@ else
                 <strong>@_shown.Name · @_shown.ArmyName</strong>
                 <button class="btn" @onclick="() => _shown = null">Schließen</button>
             </header>
+            <NoteEditor Note="PlayerNote(_shown.Id)" CanEdit="_matrix.CanEdit" HasAuthor="HasAuthor"
+                        Placeholder="Notiz zur Liste, z. B. „Achtung auf …“" OnSave="text => SavePlayerNoteAsync(_shown.Id, text)" />
             <pre>@_shown.ListText</pre>
         </section>
     }
 
-    <div class="legend">
-        @foreach (var l in _matrix.Scale)
-        {
-            <span style="background:@l.Color">@l.Label</span>
-        }
-    </div>
+    @if (_sheet is var (sheetOwn, sheetOpp))
+    {
+        var own = Player(sheetOwn);
+        var opp = Player(sheetOpp);
+        var current = LevelAt(sheetOwn, sheetOpp);
+        <div class="sheet-backdrop" @onclick="CloseSheet"></div>
+        <section class="sheet" role="dialog" aria-label="Matchup">
+            <header>
+                <strong><span class="army">@own.ArmyShort</span> @own.Name <span class="muted">vs</span> <span class="army">@opp.ArmyShort</span> @opp.Name</strong>
+                <button class="btn" @onclick="CloseSheet">Schließen</button>
+            </header>
+
+            <div class="sheet-levels">
+                @foreach (var l in _matrix.Scale)
+                {
+                    <button class="lvl @(current?.Key == l.Key ? "on" : "")" style="background:@l.Color"
+                            disabled="@(!CanEditNow)" @onclick="() => SetAsync(sheetOwn, sheetOpp, l.Key)">@l.Label</button>
+                }
+                <button class="lvl clear @(current is null ? "on" : "")" disabled="@(!CanEditNow)"
+                        @onclick="() => SetAsync(sheetOwn, sheetOpp, null)" title="Bewertung entfernen">∅</button>
+            </div>
+
+            <h3>Notiz</h3>
+            <NoteEditor Note="CellNote(sheetOwn, sheetOpp)" CanEdit="_matrix.CanEdit" HasAuthor="HasAuthor"
+                        Placeholder="Notiz zum Matchup, z. B. Szenario, Gelände …" OnSave="text => SaveCellNoteAsync(sheetOwn, sheetOpp, text)" />
+
+            @if (_history is null)
+            {
+                <button class="link subtle" @onclick="LoadHistoryAsync">Verlauf anzeigen</button>
+            }
+            else
+            {
+                <h3>Verlauf</h3>
+                @if (_history.Count == 0)
+                {
+                    <p class="muted">Noch keine Änderungen.</p>
+                }
+                <ul class="history">
+                    @foreach (var h in _history)
+                    {
+                        <li>
+                            <span class="muted">@Format.When(h.At)</span>
+                            <span>@h.Author</span>
+                            <span class="change">@Label(h.OldLevelKey) → @Label(h.NewLevelKey)</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    }
 }
 
 @code {
@@ -111,13 +169,22 @@ else
 
     private MatrixDto? _matrix;
     private Dictionary<(Guid, Guid), string> _cells = [];
+    private Dictionary<(Guid, Guid), NoteDto> _cellNotes = [];
+    private Dictionary<Guid, NoteDto> _playerNotes = [];
     private string? _author;
     private string? _authorInput;
     private string? _error;
     private PlayerDto? _shown;
+    private (Guid Own, Guid Opp)? _sheet;
+    private IReadOnlyList<RatingChangeDto>? _history;
     private readonly SemaphoreSlim _writeQueue = new(1, 1); // keep edits in order, one request at a time
 
-    private bool CanEditNow => _matrix!.CanEdit && !string.IsNullOrWhiteSpace(_author);
+    private ElementReference _grid;
+    private DotNetObjectReference<Matrix>? _self;
+    private bool _longPressReady;
+
+    private bool HasAuthor => !string.IsNullOrWhiteSpace(_author);
+    private bool CanEditNow => _matrix!.CanEdit && HasAuthor;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -125,40 +192,100 @@ else
         await LoadAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_matrix is null || _longPressReady) return;
+        _longPressReady = true;
+        _self = DotNetObjectReference.Create(this);
+        try { await Js.InvokeVoidAsync("proPair.longPress", _grid, _self); }
+        catch (JSException) { /* script missing: the matrix still works, only the sheet is unreachable */ }
+    }
+
+    [JSInvokable]
+    public async Task OnCellLongPress(string own, string opp)
+    {
+        _sheet = (Guid.Parse(own), Guid.Parse(opp));
+        _history = null;
+        _shown = null;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private void CloseSheet()
+    {
+        _sheet = null;
+        _history = null;
+    }
+
+    private async Task LoadHistoryAsync()
+    {
+        if (_sheet is not var (own, opp)) return;
+        try { _history = await Api.GetCellHistoryAsync(Token, OpponentId, own, opp); }
+        catch (ApiException e) { _error = e.Message; }
+    }
+
     private async Task LoadAsync()
     {
         try
         {
             _matrix = await Api.GetMatrixAsync(Token, OpponentId);
-            _cells = _matrix.Cells.ToDictionary(c => (c.OwnPlayerId, c.OpponentPlayerId), c => c.LevelKey);
+            Apply(_matrix);
         }
         catch (ApiException e) { _error = e.Message; }
     }
 
+    private void Apply(MatrixDto m)
+    {
+        _cells = m.Cells.ToDictionary(c => (c.OwnPlayerId, c.OpponentPlayerId), c => c.LevelKey);
+        _cellNotes = m.CellNotes.ToDictionary(c => (c.OwnPlayerId, c.OpponentPlayerId), c => c.Note);
+        _playerNotes = m.PlayerNotes.ToDictionary(n => n.PlayerId, n => n.Note);
+    }
+
     private void Toggle(PlayerDto player) => _shown = _shown == player ? null : player;
+
+    private PlayerDto Player(Guid id) => _matrix!.Own.Players.Concat(_matrix.Opponent.Players).First(p => p.Id == id);
 
     private RatingLevelDto? LevelAt(Guid own, Guid opp) =>
         _cells.TryGetValue((own, opp), out var key) ? _matrix!.Scale.FirstOrDefault(l => l.Key == key) : null;
 
+    private string Label(string? key) => key is null ? "leer" : _matrix!.Scale.FirstOrDefault(l => l.Key == key)?.Label ?? key;
+
+    private NoteDto? CellNote(Guid own, Guid opp) => _cellNotes.GetValueOrDefault((own, opp));
+    private NoteDto? PlayerNote(Guid id) => _playerNotes.GetValueOrDefault(id);
+    private bool HasPlayerNote(Guid id) => _playerNotes.ContainsKey(id);
+
     private async Task SetAsync(Guid own, Guid opp, string? key)
     {
+        if (!CanEditNow) return;
         key = string.IsNullOrEmpty(key) ? null : key;
         if (key is null) _cells.Remove((own, opp)); else _cells[(own, opp)] = key;
+        await WriteAsync(() => Api.SetRatingAsync(Token, OpponentId, new SetRatingRequest(own, opp, key, _author!)));
+        if (_history is not null) await LoadHistoryAsync();
+    }
+
+    private async Task SaveCellNoteAsync(Guid own, Guid opp, string text)
+    {
+        await WriteAsync(() => Api.SetCellNoteAsync(Token, OpponentId, own, opp, new SetNoteRequest(text, _author!)));
+        await LoadAsync();
+    }
+
+    private async Task SavePlayerNoteAsync(Guid playerId, string text)
+    {
+        await WriteAsync(() => Api.SetPlayerNoteAsync(Token, playerId, new SetNoteRequest(text, _author!)));
+        await LoadAsync();
+    }
+
+    private async Task WriteAsync(Func<Task> write)
+    {
         _error = null;
         await _writeQueue.WaitAsync();
-        try
-        {
-            await Api.SetRatingAsync(Token, OpponentId, new SetRatingRequest(own, opp, key, _author!));
-        }
+        try { await write(); }
         catch (ApiException e)
         {
             _error = e.Message;
             await LoadAsync();
         }
-        finally
-        {
-            _writeQueue.Release();
-        }
+        finally { _writeQueue.Release(); }
     }
 
     private async Task FillDemoAsync()
@@ -166,7 +293,7 @@ else
         try
         {
             _matrix = await Api.FillDemoAsync(Token, OpponentId);
-            _cells = _matrix.Cells.ToDictionary(c => (c.OwnPlayerId, c.OpponentPlayerId), c => c.LevelKey);
+            Apply(_matrix);
         }
         catch (ApiException e) { _error = e.Message; }
     }
@@ -177,4 +304,6 @@ else
         await Authors.SetAsync(_authorInput);
         _author = _authorInput.Trim();
     }
+
+    public void Dispose() => _self?.Dispose();
 }

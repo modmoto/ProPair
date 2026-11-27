@@ -18,7 +18,7 @@ public class PairingFlowTests
         var prep = await new StartPreparation(_store, _store, _store).ExecuteAsync(tournament.Id, own.Id);
         var getMatrix = new GetMatrix(_store, _store, _store);
         // own[0] wins every game: defending with him guarantees +2
-        var setRating = new SetRating(_store, getMatrix, _store, new FixedClock());
+        var setRating = new SetRating(getMatrix, _store, new FixedClock());
         foreach (var o in opp.Roster)
             await setRating.ExecuteAsync(prep.EditToken.Value, opp.Id, new CellKey(own.Roster[0].Id, o.Id), "plus", "Captain");
         return (prep.EditToken.Value, prep.ReadToken.Value, opp.Id, await getMatrix.ExecuteAsync(prep.EditToken.Value, opp.Id));

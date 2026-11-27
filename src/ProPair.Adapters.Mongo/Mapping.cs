@@ -17,6 +17,9 @@ internal static class Mapping
     public static RatingScale ToDomain(List<RatingLevelDoc> d) =>
         new(d.Select(l => new RatingLevel(l.Key, l.Label, l.Color, l.Score)));
 
+    private static NoteDoc ToDoc(Note n) => new() { Text = n.Text, Author = n.Author, UpdatedAt = n.UpdatedAt };
+    private static Note ToDomain(NoteDoc n) => new(n.Text, n.Author, n.UpdatedAt);
+
     public static TeamDoc ToDoc(Team t) => new()
     {
         Id = t.Id.Value, Version = t.Version, Name = t.Name, DefaultRatingScale = ToDoc(t.DefaultRatingScale),
@@ -47,12 +50,14 @@ internal static class Mapping
         Id = p.Id.Value, Version = p.Version, TeamId = p.TeamId.Value, TournamentId = p.TournamentId.Value,
         OwnParticipantId = p.OwnParticipantId.Value, RatingScale = ToDoc(p.RatingScale),
         EditToken = p.EditToken.Value, ReadToken = p.ReadToken.Value,
+        PlayerNotes = p.PlayerNotes.Select(n => new PlayerNoteDoc { PlayerId = n.Key.Value, Note = ToDoc(n.Value) }).ToList(),
     };
 
     public static Preparation ToDomain(PreparationDoc d) => WithVersion(new Preparation(
         new PreparationId(d.Id), new TeamId(d.TeamId), new TournamentId(d.TournamentId),
         new ParticipantId(d.OwnParticipantId), ToDomain(d.RatingScale),
-        new ShareToken(d.EditToken), new ShareToken(d.ReadToken)), d.Version);
+        new ShareToken(d.EditToken), new ShareToken(d.ReadToken),
+        (d.PlayerNotes ?? []).ToDictionary(n => new PlayerId(n.PlayerId), n => ToDomain(n.Note))), d.Version);
 
     public static MatrixDoc ToDoc(Matrix m) => new()
     {
@@ -67,6 +72,8 @@ internal static class Mapping
             Own = h.Cell.OwnPlayerId.Value, Opponent = h.Cell.OpponentPlayerId.Value,
             Old = h.OldLevelKey, New = h.NewLevelKey, Author = h.Author, At = h.OccurredAt,
         }).ToList(),
+        Notes = m.Notes.Select(n => new CellNoteDoc
+            { Own = n.Key.OwnPlayerId.Value, Opponent = n.Key.OpponentPlayerId.Value, Note = ToDoc(n.Value) }).ToList(),
     };
 
     public static Matrix ToDomain(MatrixDoc d)
@@ -77,7 +84,9 @@ internal static class Mapping
             d.OpponentPlayerIds.Select(i => new PlayerId(i)).ToList(),
             d.Cells.ToDictionary(c => new CellKey(new PlayerId(c.Own), new PlayerId(c.Opponent)), c => c.Level),
             d.History.Select(h => new RatingChanged(id, new CellKey(new PlayerId(h.Own), new PlayerId(h.Opponent)),
-                h.Old, h.New, h.Author, h.At))), d.Version);
+                h.Old, h.New, h.Author, h.At)),
+            (d.Notes ?? []).ToDictionary(n => new CellKey(new PlayerId(n.Own), new PlayerId(n.Opponent)), n => ToDomain(n.Note))),
+            d.Version);
     }
 
     public static PairingSessionDoc ToDoc(PairingSession s) => new()

@@ -27,7 +27,19 @@ public sealed record CellDto(Guid OwnPlayerId, Guid OpponentPlayerId, string Lev
 
 public sealed record MatrixDto(
     string TournamentName, bool CanEdit, bool IsDemo, ParticipantDto Own, ParticipantDto Opponent,
-    IReadOnlyList<RatingLevelDto> Scale, IReadOnlyList<CellDto> Cells);
+    IReadOnlyList<RatingLevelDto> Scale, IReadOnlyList<CellDto> Cells,
+    IReadOnlyList<CellNoteDto> CellNotes, IReadOnlyList<PlayerNoteDto> PlayerNotes);
+
+public sealed record NoteDto(string Text, string Author, DateTimeOffset UpdatedAt);
+
+public sealed record CellNoteDto(Guid OwnPlayerId, Guid OpponentPlayerId, NoteDto Note);
+
+public sealed record PlayerNoteDto(Guid PlayerId, NoteDto Note);
+
+/// <summary>Empty text removes the note.</summary>
+public sealed record SetNoteRequest(string? Text, string Author);
+
+public sealed record RatingChangeDto(string? OldLevelKey, string? NewLevelKey, string Author, DateTimeOffset At);
 
 public sealed record SetRatingRequest(Guid OwnPlayerId, Guid OpponentPlayerId, string? LevelKey, string Author);
 

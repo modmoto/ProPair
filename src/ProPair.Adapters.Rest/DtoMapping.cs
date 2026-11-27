@@ -39,7 +39,14 @@ internal static class DtoMapping
             v.Tournament.ExternalId.StartsWith(FillDemoRatings.DemoPrefix), v.Own.ToDto(), v.Opponent.ToDto(),
             v.Preparation.RatingScale.ToDto(),
             v.Matrix.Cells.Select(c => new CellDto(c.Key.OwnPlayerId.Value, c.Key.OpponentPlayerId.Value, c.Value))
-                .ToList());
+                .ToList(),
+            v.Matrix.Notes.Select(n => new CellNoteDto(n.Key.OwnPlayerId.Value, n.Key.OpponentPlayerId.Value, n.Value.ToDto()))
+                .ToList(),
+            v.Preparation.PlayerNotes
+                .Where(n => v.Own.Roster.Concat(v.Opponent.Roster).Any(p => p.Id == n.Key))
+                .Select(n => new PlayerNoteDto(n.Key.Value, n.Value.ToDto())).ToList());
+
+    public static NoteDto ToDto(this Domain.Common.Note n) => new(n.Text, n.Author, n.UpdatedAt);
 
     public static PairingDto ToDto(this PairingView v)
     {

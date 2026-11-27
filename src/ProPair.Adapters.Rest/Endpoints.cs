@@ -41,6 +41,26 @@ internal static class Endpoints
                 return Results.NoContent();
             });
 
+        api.MapPut("/p/{token}/matrices/{opponentId:guid}/cells/{own:guid}/{opp:guid}/note",
+            async (string token, Guid opponentId, Guid own, Guid opp, SetNoteRequest req, SetCellNote uc, CancellationToken ct) =>
+            {
+                await uc.ExecuteAsync(token, new ParticipantId(opponentId), new CellKey(new PlayerId(own), new PlayerId(opp)),
+                    req.Text, req.Author, ct);
+                return Results.NoContent();
+            });
+
+        api.MapGet("/p/{token}/matrices/{opponentId:guid}/cells/{own:guid}/{opp:guid}/history",
+            async (string token, Guid opponentId, Guid own, Guid opp, GetCellHistory uc, CancellationToken ct) =>
+                (await uc.ExecuteAsync(token, new ParticipantId(opponentId), new CellKey(new PlayerId(own), new PlayerId(opp)), ct))
+                .Select(h => new RatingChangeDto(h.OldLevelKey, h.NewLevelKey, h.Author, h.OccurredAt)));
+
+        api.MapPut("/p/{token}/players/{playerId:guid}/note",
+            async (string token, Guid playerId, SetNoteRequest req, SetPlayerNote uc, CancellationToken ct) =>
+            {
+                await uc.ExecuteAsync(token, new PlayerId(playerId), req.Text, req.Author, ct);
+                return Results.NoContent();
+            });
+
         api.MapPost("/p/{token}/matrices/{opponentId:guid}/demo-fill",
             async (string token, Guid opponentId, FillDemoRatings fill, GetMatrix get, CancellationToken ct) =>
             {

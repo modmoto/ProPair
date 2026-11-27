@@ -46,7 +46,7 @@ public class PreparationFlowTests
         var opp = tournament.Participants[1];
         var prep = await new StartPreparation(_store, _store, _store).ExecuteAsync(tournament.Id, own.Id);
         var cell = new CellKey(own.Roster[0].Id, opp.Roster[0].Id);
-        var setRating = new SetRating(_store, GetMatrix, _store, new FixedClock());
+        var setRating = new SetRating(GetMatrix, _store, new FixedClock());
 
         await setRating.ExecuteAsync(prep.EditToken.Value, opp.Id, cell, "plus", "Simon");
 

@@ -18,7 +18,6 @@ Pairing-Tool für Tabletop-Teamturniere. Start: The 9th Age (T9A).
 - Teilen per Link.
 
 **Später**
-- Notizen pro Liste / Matchup ("Achtung auf X").
 - PDF-Export für offline.
 - Live-Sync für Zuschauer (SignalR).
 - Weitere Spielsysteme.
@@ -158,11 +157,12 @@ Taktisches DDD nach Evans/Vernon:
 - Id, TeamId, TournamentId, OwnParticipantId.
 - `RatingScale`: Kopie der Team-Default-Skala beim Anlegen, danach unveränderlich.
 - `EditToken`, `ReadToken`.
+- PlayerNotes: Spieler → Notiz zur Liste.
 - Invariante: pro Team und Turnier genau eine Preparation.
 
 **Matrix** (Preparation × Gegner)
 - Id, PreparationId, OpponentParticipantId.
-- Cells: (OwnPlayerId, OpponentPlayerId) → Rating, Notiz.
+- Cells: (OwnPlayerId, OpponentPlayerId) → Rating; Notes: Zelle → Notiz.
 - History: `RatingChanged` (Zelle, alt, neu, Autor, Zeitpunkt), append-only.
 - Invariante: Rating muss in der Skala der Preparation liegen.
 - Eigenes Aggregat, damit gleichzeitiges Arbeiten an verschiedenen Gegnern nicht kollidiert.
@@ -179,13 +179,15 @@ Taktisches DDD nach Evans/Vernon:
 
 - `PairingSolver`: berechnet den besten Pfad aus Matrix + Pairing-Zustand. Zustandslos.
 
-## Zusammenarbeit & Verlauf
+## Zusammenarbeit, Notizen & Verlauf
 
-- Eine gemeinsame Wertung pro Zelle, letzte Änderung gewinnt.
-- Jede Änderung wird als `RatingChange` gespeichert (wer, wann, alt → neu).
-- Autor: Name wird beim ersten Öffnen des Links abgefragt, im Browser gespeichert.
-- UI: kein History-Icon. Rechtsklick (mobil: Long-Press) auf Zelle → Kontextmenü mit "Verlauf".
-- MVP-Fallback: Verlauf nur speichern, Anzeige später.
+- Eine gemeinsame Wertung pro Zelle, letzte Änderung gewinnt. Jede Änderung als `RatingChanged` (wer, wann, alt → neu).
+- Autor: Name wird beim ersten Bearbeiten abgefragt, im Browser gespeichert.
+- **Zelle:** Tap = Dropdown (schnell bewerten). Long-Press (Handy) / Rechtsklick (Desktop) = Bottom-Sheet mit Bewertung, Notiz zum Matchup und „Verlauf anzeigen“ (lädt bei Bedarf). Kein History-Icon.
+- **Liste:** Tap auf Spielername = Liste + Notiz zur Liste („Achtung auf …“).
+- Punkt oben rechts markiert Zellen/Spieler mit Notiz.
+- Matchup-Notizen liegen im `Matrix`-Aggregat, Listen-Notizen in der `Preparation` (gelten für alle Gegner des Turniers).
+- Leerer Text löscht eine Notiz. Max. 2000 Zeichen.
 
 ## Stand POC
 
@@ -208,6 +210,7 @@ Taktisches DDD nach Evans/Vernon:
 | 8 | Modellierung | DDD, Aggregate wie oben. |
 | 9 | New Recruit | Import im MVP, zunächst Fake-Quelle. |
 | 10 | UI | Mobile first. |
+| 12 | Notizen/Verlauf | Long-Press/Rechtsklick-Sheet je Zelle, Listen-Notiz per Tap auf Spieler. |
 | 11 | Pairing | Auswahl per Tap in der Matrix (Namen = Defender, Zellen = Attacker/Wahl). Rest-Matrix, Flip auf Vollmatrix (vergeben = grau). Empfehlungen vorerst aus. |
 
 ## Offene Fragen

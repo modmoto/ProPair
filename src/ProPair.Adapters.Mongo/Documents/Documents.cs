@@ -18,6 +18,26 @@ public sealed class RatingLevelDoc
     public decimal Score { get; set; }
 }
 
+public sealed class NoteDoc
+{
+    public string Text { get; set; } = "";
+    public string Author { get; set; } = "";
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public sealed class PlayerNoteDoc
+{
+    public Guid PlayerId { get; set; }
+    public NoteDoc Note { get; set; } = new();
+}
+
+public sealed class CellNoteDoc
+{
+    public Guid Own { get; set; }
+    public Guid Opponent { get; set; }
+    public NoteDoc Note { get; set; } = new();
+}
+
 public sealed class TeamDoc : IVersionedDocument
 {
     [BsonId] public Guid Id { get; set; }
@@ -63,6 +83,7 @@ public sealed class PreparationDoc : IVersionedDocument
     public List<RatingLevelDoc> RatingScale { get; set; } = [];
     public string EditToken { get; set; } = "";
     public string ReadToken { get; set; } = "";
+    public List<PlayerNoteDoc> PlayerNotes { get; set; } = [];
 }
 
 public sealed class CellDoc
@@ -92,6 +113,7 @@ public sealed class MatrixDoc : IVersionedDocument
     public List<Guid> OpponentPlayerIds { get; set; } = [];
     public List<CellDoc> Cells { get; set; } = [];
     public List<RatingChangeDoc> History { get; set; } = [];
+    public List<CellNoteDoc> Notes { get; set; } = [];
 }
 
 public sealed class PairingMoveDoc

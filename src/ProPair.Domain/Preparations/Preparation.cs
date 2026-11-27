@@ -16,6 +16,8 @@ public enum AccessLevel { None, Read, Edit }
 /// <summary>Our team's preparation for one tournament. The rating scale is copied from the team and fixed.</summary>
 public sealed class Preparation : AggregateRoot<PreparationId>
 {
+    private readonly Dictionary<PlayerId, Note> _playerNotes;
+
     public TeamId TeamId { get; }
     public TournamentId TournamentId { get; }
     public ParticipantId OwnParticipantId { get; }
@@ -23,9 +25,14 @@ public sealed class Preparation : AggregateRoot<PreparationId>
     public ShareToken EditToken { get; }
     public ShareToken ReadToken { get; }
 
+    /// <summary>Notes on players' lists (own and opponents), shared by all matrices of this tournament.</summary>
+    public IReadOnlyDictionary<PlayerId, Note> PlayerNotes => _playerNotes;
+
     public Preparation(PreparationId id, TeamId teamId, TournamentId tournamentId, ParticipantId ownParticipantId,
-        RatingScale ratingScale, ShareToken editToken, ShareToken readToken) : base(id)
+        RatingScale ratingScale, ShareToken editToken, ShareToken readToken,
+        IDictionary<PlayerId, Note>? playerNotes = null) : base(id)
     {
+        _playerNotes = new Dictionary<PlayerId, Note>(playerNotes ?? new Dictionary<PlayerId, Note>());
         TeamId = teamId;
         TournamentId = tournamentId;
         OwnParticipantId = ownParticipantId;
@@ -39,6 +46,14 @@ public sealed class Preparation : AggregateRoot<PreparationId>
         tournament.GetParticipant(ownParticipantId); // must exist
         return new Preparation(PreparationId.New(), team.Id, tournament.Id, ownParticipantId,
             team.DefaultRatingScale, ShareToken.New(), ShareToken.New());
+    }
+
+    /// <summary>Sets the note on a player's list; empty text removes it. The caller checks the player is in the tournament.</summary>
+    public void SetPlayerNote(PlayerId playerId, string? text, string author, DateTimeOffset now)
+    {
+        var note = Note.Create(text, author, now);
+        if (note is null) _playerNotes.Remove(playerId);
+        else if (_playerNotes.GetValueOrDefault(playerId)?.Text != note.Text) _playerNotes[playerId] = note;
     }
 
     public AccessLevel AccessFor(string token) =>

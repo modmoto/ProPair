@@ -96,21 +96,27 @@ public sealed class GetMatrix(
     }
 }
 
-public sealed class SetRating(
-    IPreparationRepository preparations, GetMatrix getMatrix, IMatrixRepository matrices, IClock clock)
+public sealed class SetRating(GetMatrix getMatrix, IMatrixRepository matrices, IClock clock)
+{
+    public Task<Matrix> ExecuteAsync(string token, ParticipantId opponentId, CellKey cell, string? levelKey,
+        string author, CancellationToken ct = default) =>
+        MatrixUpdate.RunAsync(getMatrix, matrices, token, opponentId,
+            view => view.Matrix.SetRating(cell, levelKey, author, view.Preparation.RatingScale, clock.Now), ct);
+}
+
+/// <summary>Load → change → save with optimistic concurrency; on conflict reload and apply again (last write wins).</summary>
+internal static class MatrixUpdate
 {
     private const int MaxAttempts = 5;
 
-    public async Task<Matrix> ExecuteAsync(string token, ParticipantId opponentId, CellKey cell, string? levelKey,
-        string author, CancellationToken ct = default)
+    public static async Task<Matrix> RunAsync(GetMatrix getMatrix, IMatrixRepository matrices, string token,
+        ParticipantId opponentId, Action<MatrixView> change, CancellationToken ct)
     {
-        var (preparation, access) = await Access.ResolveAsync(preparations, token, ct);
-        if (access != AccessLevel.Edit) throw new ForbiddenException("Read-only link.");
-
         for (var attempt = 1; ; attempt++)
         {
             var view = await getMatrix.ExecuteAsync(token, opponentId, ct);
-            view.Matrix.SetRating(cell, levelKey, author, preparation.RatingScale, clock.Now);
+            if (view.Access != AccessLevel.Edit) throw new ForbiddenException("Read-only link.");
+            change(view);
             try
             {
                 await matrices.SaveAsync(view.Matrix, ct);
@@ -118,7 +124,6 @@ public sealed class SetRating(
             }
             catch (ConcurrencyException) when (attempt < MaxAttempts)
             {
-                // someone else saved in between: reload and apply again (last write wins per cell)
                 await Task.Delay(Random.Shared.Next(10, 50) * attempt, ct);
             }
         }
