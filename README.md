@@ -16,6 +16,8 @@ dotnet run --project src/ProPair.Adapters.Rest --launch-profile http
 
 App: http://localhost:5054
 
+In Rider: die geteilten Run-Configs aus `.run/` nutzen. Sie brauchen Chrome, weil Rider für Blazor den System-Standardbrowser ablehnt.
+
 Sync-Prozess (New Recruit → Mongo, Hangfire):
 
 ```bash
