@@ -79,6 +79,22 @@ public class SyncTournamentsTests
     }
 
     [Fact]
+    public async Task Members_without_a_list_are_not_players()
+    {
+        _source.Add("t", Today.AddDays(10), Today.AddDays(11), SourceStatus.Open);
+        // coaches first, more members than the largest team size
+        _source.AddMembers("t", new SourcePlayer("Coach", []), new SourcePlayer("Judge", [" "]),
+            new SourcePlayer("A3", [OK]), new SourcePlayer("A4", [OK]), new SourcePlayer("A5", [OK]),
+            new SourcePlayer("A6", [OK]), new SourcePlayer("A7", [OK]));
+
+        await Sync().OneAsync("t");
+
+        var t = (await _store.FindByExternalIdAsync("t"))!;
+        Assert.Equal(["A3", "A4", "A5", "A6", "A7", "A0", "A1", "A2"], t.Participants[0].Roster.Select(p => p.Name));
+        Assert.Equal(8, t.TeamSize!.Value.Value);
+    }
+
+    [Fact]
     public async Task Update_request_goes_to_the_queue_but_not_for_demos()
     {
         var queue = new RecordingQueue();
@@ -112,6 +128,14 @@ public class SyncTournamentsTests
                 Enumerable.Range(0, 3).Select(i => new SourcePlayer($"{n}{i}", [i == 0 ? EoS : OK])).ToList())).ToList();
             _all[id] = (new SourceTournamentSummary(id, id, start, end, status),
                 new SourceTournament(id, id, null, null, team, ListsVisible: true, teams));
+        }
+
+        /// <summary>Puts more members in front of team A.</summary>
+        public void AddMembers(string id, params SourcePlayer[] members)
+        {
+            var (summary, data) = _all[id];
+            var first = data.Teams[0];
+            _all[id] = (summary, data with { Teams = [first with { Players = [.. members, .. first.Players] }, .. data.Teams.Skip(1)] });
         }
 
         public void SetList(string id, int player, string list)

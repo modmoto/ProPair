@@ -248,6 +248,7 @@ Taktisches DDD nach Evans/Vernon:
 | 17 | NR-Sync | Eigener Prozess (`Adapters.Sync`, Hangfire, Mongo-Storage), täglich, heute bis +12 Monate. Nur T9A 3rd Edition, nur Teamturniere, keine Ligen, nichts Geschlossenes/Vergangenes. API reiht „Aktualisieren“ nur ein (`ISyncQueue`). |
 | 18 | Listenwechsel | Neue Liste = neue Spieler-Id → Bewertungen/Notizen zurück, `ListChangedAt` → Info-Icon. Verborgene Listen: letzter Stand bleibt, Badge „Keine Listen sichtbar“. |
 | 19 | Teamgröße | 3–8, ergibt sich aus dem größten Kader. Armee aus dem Listentext (NR liefert vor dem Turnier kein JSON). |
+| 20 | Nicht-Spieler | Mitglieder ohne Liste (Coaches, Judges, NPCs) werden beim Sync nicht importiert; die Teamgröße zählt nur Spieler. |
 
 ## Offene Fragen
 

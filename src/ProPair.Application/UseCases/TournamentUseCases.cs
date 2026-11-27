@@ -27,12 +27,16 @@ public sealed class ImportTournament(ITournamentSource source, ITournamentReposi
     {
         var data = await source.GetAsync(externalId, ct) ?? throw new NotFoundException($"Tournament {externalId}");
         if (!data.IsTeamTournament) return null;
+        // coaches, judges and NPCs sit in the teams without a list – only players with a list play
+        var teams = data.Teams
+            .Select(t => t with { Players = t.Players.Where(HasList).ToList() })
+            .ToList();
         // 2v2 and the like: pairing needs at least 3 per team (unknown while lists are hidden)
-        if (data.ListsVisible && data.Teams.Max(t => (int?)t.Players.Count) is > 0 and < TeamSize.Min) return null;
+        if (data.ListsVisible && teams.Max(t => (int?)t.Players.Count) is > 0 and < TeamSize.Min) return null;
 
         var start = summary?.StartDate ?? data.StartDate;
         var end = summary?.EndDate ?? data.EndDate;
-        var participants = data.Teams
+        var participants = teams
             .Select(t => (t.Name, Roster: (IReadOnlyList<Player>)t.Players.Take(TeamSize.Max).Select(ToPlayer).ToList()))
             .ToList();
 
@@ -53,6 +57,8 @@ public sealed class ImportTournament(ITournamentSource source, ITournamentReposi
         await tournaments.SaveAsync(tournament, ct);
         return tournament;
     }
+
+    private static bool HasList(SourcePlayer p) => p.Lists.Any(l => !string.IsNullOrWhiteSpace(l));
 
     /// <summary>All lists of a player as one text; the army is recognised from it (rough – format cleanup comes later).</summary>
     private static Player ToPlayer(SourcePlayer p)
