@@ -193,3 +193,35 @@ public class AdvisorSwapTests
         Assert.All(advice.Own, o => Assert.Equal(o.Worst, o.Expected, 6));
     }
 }
+
+public class WholeTeamThinkingTests
+{
+    /// <summary>
+    /// Choice step: their attackers on our defender are Q1 (we'd score 0/+ = +1) and Q2 (0).
+    /// Q2 crushes everyone else in our team (−2), Q1 loses to everyone else (+1).
+    /// Taking the "better" 0/+ sends Q2 back into the pool – so the advisor must prefer the 0.
+    /// </summary>
+    [Fact]
+    public void Takes_the_zero_to_remove_a_dangerous_attacker_from_the_pool()
+    {
+        var own = Enumerable.Range(0, 5).Select(_ => PlayerId.New()).ToList(); // D, A1, A2, O3, O4
+        var opp = Enumerable.Range(0, 5).Select(_ => PlayerId.New()).ToList(); // E, Q1, Q2, R3, R4
+        PlayerId d = own[0], q1 = opp[1], q2 = opp[2];
+        double Score(PlayerId o, PlayerId p) =>
+            o == d ? (p == q1 ? 1 : 0)
+            : p == q2 ? -2
+            : p == q1 ? 1
+            : 0;
+
+        var state = PairingState.Start(own, opp)
+            .Apply(new DefendersMove(d, opp[0]))
+            .Apply(new AttackersMove(own[1], own[2], q1, q2));
+
+        var advice = new GameTreeAdvisor(new EquilibriumSolver()).Advise(state, Score);
+
+        Assert.Equal(q2, advice.Own[0].Players[0]);
+        var takeQ1 = advice.Own.Single(o => o.Players[0] == q1);
+        Assert.True(advice.Own[0].Expected > takeQ1.Expected,
+            $"take 0 → {advice.Own[0].Expected}, take 0/+ → {takeQ1.Expected}");
+    }
+}
