@@ -1,3 +1,8 @@
+/* FocusOnNavigate focuses the h1 after each navigation (for screen readers) – no visible frame */
+h1:focus {
+    outline: none;
+}
+
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
 }
