@@ -22,11 +22,11 @@ public class NoteFlowTests
 
         await new SetRating(GetMatrix, _store, new FixedClock()).ExecuteAsync(edit, opp.Id, cell, "plus", "A");
         await new SetRating(GetMatrix, _store, new FixedClock()).ExecuteAsync(edit, opp.Id, cell, "zero", "B");
-        await new SetCellNote(GetMatrix, _store, new FixedClock()).ExecuteAsync(edit, opp.Id, cell, "Tisch mit Wald!", "A");
+        await new SetCellNote(GetMatrix, _store, new FixedClock()).ExecuteAsync(edit, opp.Id, cell, "Table with forest!", "A");
         await new SetPlayerNote(_store, _store, new FixedClock()).ExecuteAsync(edit, opp.Roster[1].Id, "Achtung Flieger", "A");
 
         var view = await GetMatrix.ExecuteAsync(prep.ReadToken.Value, opp.Id);
-        Assert.Equal("Tisch mit Wald!", view.Matrix.NoteAt(cell)!.Text);
+        Assert.Equal("Table with forest!", view.Matrix.NoteAt(cell)!.Text);
         Assert.Equal("Achtung Flieger", view.Preparation.PlayerNotes[opp.Roster[1].Id].Text);
 
         var history = await new GetCellHistory(GetMatrix).ExecuteAsync(prep.ReadToken.Value, opp.Id, cell);

@@ -48,7 +48,7 @@ public sealed class LocalPairing(ProPairApi api, Preferences store, string token
         catch (Exception e) when (e is HttpRequestException or ApiException or TaskCanceledException)
         {
             _base = await ReadAsync<PairingDto>(Key("base"))
-                    ?? throw new ApiException("Keine Verbindung und noch keine Daten auf diesem Gerät.");
+                    ?? throw new ApiException("No connection and no data on this device yet.");
             Status = SyncStatus.Offline;
         }
 

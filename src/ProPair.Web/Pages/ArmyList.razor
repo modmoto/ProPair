@@ -6,12 +6,12 @@
         <header>
             <span class="army">@Player.ArmyShort</span>
             <strong>@Player.Name</strong>
-            <span class="muted">@Player.ArmyName@(Taken ? " (gepickt)" : "")</span>
+            <span class="muted">@Player.ArmyName@(Taken ? " (picked)" : "")</span>
             @if (OnToggleNotes.HasDelegate && HasNotes)
             {
                 <button class="notes-toggle @(ShowNotes ? "on" : "")" @onclick="OnToggleNotes"
-                        title="@(ShowNotes ? "Notizen verstecken" : "Notizen anzeigen")"
-                        aria-label="@(ShowNotes ? "Notizen verstecken" : "Notizen anzeigen")" aria-pressed="@ShowNotes">
+                        title="@(ShowNotes ? "Hide notes" : "Show notes")"
+                        aria-label="@(ShowNotes ? "Hide notes" : "Show notes")" aria-pressed="@ShowNotes">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
@@ -47,7 +47,7 @@
             }
             @foreach (var (against, note) in MatchupNotes)
             {
-                <p class="note-text matchup"><span class="muted">gegen @against:</span> @note.Text</p>
+                <p class="note-text matchup"><span class="muted">vs @against:</span> @note.Text</p>
             }
         </div>
     }
@@ -65,7 +65,7 @@
     [Parameter] public bool ShowNotes { get; set; } = true;
     [Parameter] public EventCallback OnToggleNotes { get; set; }
 
-    /// <summary>Already paired: shown with "(gepickt)" behind the army.</summary>
+    /// <summary>Already paired: shown with "(picked)" behind the army.</summary>
     [Parameter] public bool Taken { get; set; }
 
     private bool HasNotes => Note is not null || MatchupNotes.Count > 0 || Marks.Count > 0;

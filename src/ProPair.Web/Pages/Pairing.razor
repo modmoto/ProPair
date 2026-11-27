@@ -1,5 +1,5 @@
-@page "/vorbereitung/{Token}/gegner/{OpponentId:guid}/pairing"
-@page "/vorbereitung/{Token}/gegner/{OpponentId:guid}/pairing/listen"
+@page "/preparation/{Token}/opponent/{OpponentId:guid}/pairing"
+@page "/preparation/{Token}/opponent/{OpponentId:guid}/pairing/lists"
 @implements IDisposable
 @inject ProPairApi Api
 @inject Preferences Prefs
@@ -17,7 +17,7 @@
 
 @if (_p is null)
 {
-    @if (_error is not null) { <p class="error">@_error</p> } else { <p>Lade…</p> }
+    @if (_error is not null) { <p class="error">@_error</p> } else { <p>Loading…</p> }
 }
 else
 {
@@ -25,8 +25,8 @@ else
     <div class="titlebar">
         <h1>@_p.Own.Name <span class="muted">vs</span> @_p.Opponent.Name</h1>
         <button class="eye @(_showAdvice ? "on" : "")" @onclick="ToggleAdviceAsync" disabled="@_busy"
-                title="@(_showAdvice ? "Empfehlungen ausblenden" : "Empfehlungen einblenden")"
-                aria-label="@(_showAdvice ? "Empfehlungen ausblenden" : "Empfehlungen einblenden")" aria-pressed="@_showAdvice">
+                title="@(_showAdvice ? "Hide recommendations" : "Show recommendations")"
+                aria-label="@(_showAdvice ? "Hide recommendations" : "Show recommendations")" aria-pressed="@_showAdvice">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
@@ -38,22 +38,22 @@ else
             </svg>
         </button>
         <button class="enemy-toggle @(_enemyView ? "on" : "")" @onclick="() => _enemyView = !_enemyView"
-                title="@(_enemyView ? "Zurück zu unserer Sicht" : "Gegner-Sicht: Bewertungen umgedreht")"
-                aria-label="Gegner-Sicht" aria-pressed="@_enemyView">
+                title="@(_enemyView ? "Back to our view" : "Opponent view: ratings flipped")"
+                aria-label="Opponent view" aria-pressed="@_enemyView">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M4 7h14" /><path d="M14 3l4 4-4 4" />
                 <path d="M20 17H6" /><path d="M10 13l-4 4 4 4" />
             </svg>
         </button>
-        <span class="total @TotalClass" title="Summe der festen Matchups (@_p.Games.Count/@_p.Own.Players.Count)">
+        <span class="total @TotalClass" title="Sum of fixed matchups (@_p.Games.Count/@_p.Own.Players.Count)">
             <strong>@Format.Score(_p.FixedScore)</strong>
             <small>@_p.Games.Count/@_p.Own.Players.Count</small>
         </span>
         @if (_p.CanEdit)
         {
             <button class="undo" disabled="@(_busy || _p.MoveCount == 0 && !HasLocalPick)" @onclick="UndoAsync"
-                    title="Rückgängig" aria-label="Rückgängig">
+                    title="Undo" aria-label="Undo">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M9 14 4 9l5-5" />
@@ -68,9 +68,9 @@ else
         <p class="sync @_local.Status.ToString().ToLowerInvariant()">@SyncText</p>
     }
 
-    <nav class="viewtabs" aria-label="Ansicht">
+    <nav class="viewtabs" aria-label="View">
         <a class="@(_listView ? "" : "on")" aria-current="@(_listView ? null : "page")" href="@Routes.Pairing(Token, OpponentId)">Matrix</a>
-        <a class="@(_listView ? "on" : "")" aria-current="@(_listView ? "page" : null)" href="@Routes.PairingLists(Token, OpponentId)">Listen</a>
+        <a class="@(_listView ? "on" : "")" aria-current="@(_listView ? "page" : null)" href="@Routes.PairingLists(Token, OpponentId)">Lists</a>
     </nav>
 
     @if (_listView)
@@ -80,7 +80,7 @@ else
         @* swipe left/right (or the arrows) through the opponents still in the pairing *@
         <section class="listview" @ontouchstart="TouchStart" @ontouchend="TouchEnd">
             <div class="listnav">
-                <button class="btn" aria-label="Vorherige Liste" disabled="@(active.Count < 2)" @onclick="() => MoveList(-1)">‹</button>
+                <button class="btn" aria-label="Previous list" disabled="@(active.Count < 2)" @onclick="() => MoveList(-1)">‹</button>
                 <span class="dots">
                     @for (var i = 0; i < active.Count; i++)
                     {
@@ -91,7 +91,7 @@ else
                         </button>
                     }
                 </span>
-                <button class="btn" aria-label="Nächste Liste" disabled="@(active.Count < 2)" @onclick="() => MoveList(1)">›</button>
+                <button class="btn" aria-label="Next list" disabled="@(active.Count < 2)" @onclick="() => MoveList(1)">›</button>
             </div>
             @if (current is not null)
             {
@@ -113,8 +113,8 @@ else
                 <th class="corner">
                     @* full matrix ↔ remaining players: expand / collapse arrows *@
                     <button class="flip @(ShowAll ? "on" : "")" @onclick="ToggleView" disabled="@Done"
-                            title="@(ShowAll ? "Nur verbleibende Spieler" : "Ganze Matrix zeigen")"
-                            aria-label="@(ShowAll ? "Nur verbleibende Spieler" : "Ganze Matrix zeigen")">
+                            title="@(ShowAll ? "Only remaining players" : "Show full matrix")"
+                            aria-label="@(ShowAll ? "Only remaining players" : "Show full matrix")">
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             @if (ShowAll)
@@ -186,7 +186,7 @@ else
     {
         @* their two attackers side by side – the lists that matter for the choice *@
         <section class="duo settle">
-            <h2>Gegner-Attacker</h2>
+            <h2>Opponent attackers</h2>
             <div class="duo-grid">
                 @foreach (var id in attackers)
                 {
@@ -206,14 +206,14 @@ else
         <section class="advice settle">
             @if (Advice is not { } a)
             {
-                <p class="muted">@(_adviceLoading ? "Rechne…" : "Empfehlungen kommen, sobald einmal Netz da war.")</p>
+                <p class="muted">@(_adviceLoading ? "Calculating…" : "Recommendations appear once the network has been available.")</p>
             }
             else
             {
                 <header>
-                    <h2>Empfehlung</h2>
+                    <h2>Recommendation</h2>
                 </header>
-                <div class="modes" role="radiogroup" aria-label="Modus">
+                <div class="modes" role="radiogroup" aria-label="Mode">
                     @foreach (var (key, label) in Modes)
                     {
                         <button class="@(_mode == key ? "on" : "")" role="radio" aria-checked="@(_mode == key)"
@@ -223,12 +223,12 @@ else
                 <p class="modehint">
                     @if (_mode == "avoidminus" && a.MinusFactors.Count > 0)
                     {
-                        <span>Schlechte Matchups vermeiden:</span>
+                        <span>Avoid bad matchups:</span>
                         @foreach (var (f, i) in a.MinusFactors.Select((f, i) => (f, i)))
                         {
                             var level = _p.Scale.FirstOrDefault(l => l.Key == f.LevelKey);
                             <span class="chip-inline" style="background:@level?.Color">@level?.Label</span>
-                            <span>zählt @Format.Factor(f.Factor)-fach@(i < a.MinusFactors.Count - 1 ? "," : ".")</span>
+                            <span>counts @Format.Factor(f.Factor)×@(i < a.MinusFactors.Count - 1 ? "," : ".")</span>
                         }
                     }
                     else
@@ -250,8 +250,8 @@ else
                             </span>
                             @* always real points – a mode's weighting only changes the order *@
                             <span class="nums">
-                                <span class="final"><small>Gesamtwertung</small> <strong>@Format.Score(path.Final.Value)</strong> <em>@Format.Percent(path.Final.Probability)</em></span>
-                                <span class="round">Diese Runde @Format.Score(path.ThisRound.Value) · @Format.Percent(path.ThisRound.Probability)</span>
+                                <span class="final"><small>Total score</small> <strong>@Format.Score(path.Final.Value)</strong> <em>@Format.Percent(path.Final.Probability)</em></span>
+                                <span class="round">This round @Format.Score(path.ThisRound.Value) · @Format.Percent(path.ThisRound.Probability)</span>
                             </span>
                         </button>
                     }
@@ -262,12 +262,12 @@ else
                         @foreach (var round in preview.Steps.GroupBy(st => st.Round))
                         {
                             <li>
-                                <span class="r path-@(round.Key - FirstPathRound + 1)">Runde @round.Key</span>
+                                <span class="r path-@(round.Key - FirstPathRound + 1)">Round @round.Key</span>
                                 @foreach (var st in round)
                                 {
                                     @if (st.Step == "choices")
                                     {
-                                        <span class="st"><em>Wahl</em> wir: @Names(st.Own) · die: @Names(st.Opponent)</span>
+                                        <span class="st"><em>Choice</em> us: @Names(st.Own) · them: @Names(st.Opponent)</span>
                                     }
                                     else
                                     {
@@ -290,7 +290,7 @@ else
                             </li>
                         }
                     </ol>
-                    <p class="muted pathtotal">Gezeigter Verlauf endet bei <strong>@Format.Score(preview.Total)</strong></p>
+                    <p class="muted pathtotal">Shown path ends at <strong>@Format.Score(preview.Total)</strong></p>
                 }
             }
         </section>
@@ -329,7 +329,7 @@ else
     private const string ModeKey = "adviceMode";
 
     private static readonly (string Key, string Label)[] Modes =
-        [("optimal", "Optimal"), ("avoidminus", "Minus vermeiden")];
+        [("optimal", "Optimal"), ("avoidminus", "Avoid minus")];
 
     private PairingDto? _p;
     private LocalPairing? _local;
@@ -343,7 +343,7 @@ else
 
     private bool _showAll;
     private bool _enemyView;    // show the matrix as the opponent sees it (ratings mirrored)
-    private bool _listView;     // lists instead of the matrix: its own URL (…/pairing/listen)
+    private bool _listView;     // lists instead of the matrix: its own URL (…/pairing/lists)
     private (string, Guid)? _loaded;   // pairing loaded for (token, opponent); switching the view keeps it
     private int _listIndex;
     private double? _touchX;
@@ -381,7 +381,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        var lists = Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].TrimEnd('/').EndsWith("/listen");
+        var lists = Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].TrimEnd('/').EndsWith("/lists");
         if (lists && !_listView && _p is not null) ShowLists();
         _listView = lists;
         if (_loaded == (Token, OpponentId)) return;
@@ -426,9 +426,9 @@ else
 
     private string SyncText => _local!.Status switch
     {
-        SyncStatus.Pending => "Noch nicht gespeichert – wird gesendet, sobald Netz da ist.",
-        SyncStatus.Offline => "Offline – du arbeitest mit dem Stand auf diesem Gerät.",
-        _ => "Gespeichert",
+        SyncStatus.Pending => "Not saved yet – sent as soon as the network is back.",
+        SyncStatus.Offline => "Offline – you are working with this device's copy.",
+        _ => "Saved",
     };
 
     // ---------- interaction ----------
@@ -700,15 +700,15 @@ else
 
     private string ModeHint => _mode switch
     {
-        "avoidminus" => "Schlechte Matchups vermeiden: Minus-Matchups zählen in der Entscheidung stärker.",
-        _ => "Bester Durchschnitt: Plus und Minus zählen gleich, der Gegner spielt ebenfalls optimal.",
+        "avoidminus" => "Avoid bad matchups: minus matchups weigh more in the decision.",
+        _ => "Best average: plus and minus count equally, the opponent also plays optimally.",
     };
 
     private static string StepLabel(string step) => step switch
     {
         "defenders" => "D",
         "attackers" => "A",
-        _ => "Wahl",
+        _ => "Choice",
     };
 
     private string Names(IReadOnlyList<Guid> ids) => string.Join(" + ", ids.Select(id => Player(id).Name));

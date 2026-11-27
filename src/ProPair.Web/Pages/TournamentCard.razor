@@ -5,11 +5,11 @@
     </span>
     @if (!Tournament.ListsVisible)
     {
-        <span><span class="badge warn">Keine Listen sichtbar</span></span>
+        <span><span class="badge warn">No lists visible</span></span>
     }
     @if (Tournament.IncompleteTeams > 0)
     {
-        <span><span class="badge warn">@(Tournament.IncompleteTeams == 1 ? "1 Kader unvollständig" : $"{Tournament.IncompleteTeams} Kader unvollständig")</span></span>
+        <span><span class="badge warn">@(Tournament.IncompleteTeams == 1 ? "1 incomplete roster" : $"{Tournament.IncompleteTeams} incomplete rosters")</span></span>
     }
 </button>
 
@@ -22,6 +22,6 @@
     {
         ({ } s, { } e) when e > s => $"{s:dd.MM.}–{e:dd.MM.yyyy}",
         ({ } s, _) => $"{s:dd.MM.yyyy}",
-        _ => "ohne Datum",
+        _ => "no date",
     };
 }

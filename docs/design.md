@@ -1,272 +1,272 @@
 # ProPair – Design
 
-Pairing-Tool für Tabletop-Teamturniere. Start: The 9th Age (T9A).
+Pairing tool for tabletop team tournaments. Start: The 9th Age (T9A).
 
-## Ziel
+## Goal
 
-- Paarungsmatrix pflegen: eigene Spieler (Zeilen) vs. gegnerische Spieler/Armeen (Spalten).
-- Team trägt Einschätzungen gemeinsam ein – per Link, ohne Login.
-- Während des Live-Pairings: Matrix öffnen, Züge eintragen, besten Pfad vorgeschlagen bekommen.
+- Maintain the pairing matrix: own players (rows) vs. opposing players/armies (columns).
+- The team enters assessments together – via link, without login.
+- During the live pairing: open the matrix, enter moves, get the best path suggested.
 
 ## Scope
 
 **MVP**
-- Turnier aus New Recruit importieren (Teams, Spieler, Listen).
-- Teamformat 3v3 bis 8v8 (auch 4v4, 6v6, 7v7). 2v2 wird nicht unterstützt.
-- 16 T9A-Armeen als Auswahl (pro Spieler / Gegner).
-- Matrix mit Dropdown pro Zelle, farbcodiert.
-- Teilen per Link.
+- Import a tournament from New Recruit (teams, players, lists).
+- Team format 3v3 to 8v8 (also 4v4, 6v6, 7v7). 2v2 is not supported.
+- 16 T9A armies to choose from (per player / opponent).
+- Matrix with a dropdown per cell, colour-coded.
+- Share via link.
 
-**Später**
-- PDF-Export für offline.
-- Live-Sync für Zuschauer (SignalR).
-- Weitere Spielsysteme.
+**Later**
+- PDF export for offline use.
+- Live sync for viewers (SignalR).
+- Further game systems.
 
-## UI-Grundsätze
+## UI principles
 
-- **Mobile first.** Basis-CSS ist das Handy (≥ 360px), größere Screens per `min-width`-Media-Queries.
-- 8×8-Matrix passt ohne Scrollen auf ein 360px-Handy; eigene Spieler als fixierte erste Spalte, Gegner als fixierte Kopfzeile.
-- Touch-Ziele ≥ 44px, Eingaben ≥ 16px (kein iOS-Zoom), native Dropdowns.
-- Keine Hover-only-Funktionen: Liste per Tap auf den Spieler, Verlauf per Long-Press.
-- **Eine** dezente Bewegung überall (220 ms, Einblenden mit 4 px Versatz, Ausblenden umgekehrt): Matrix-Aufbau, Flip, jeder Pairing-Schritt, neue Matchups, Sheets. `prefers-reduced-motion` schaltet sie ab.
+- **Mobile first.** The base CSS is the phone (≥ 360px), larger screens via `min-width` media queries.
+- The 8×8 matrix fits a 360px phone without scrolling; own players as the fixed first column, opponents as the fixed header row.
+- Touch targets ≥ 44px, inputs ≥ 16px (no iOS zoom), native dropdowns.
+- No hover-only features: list via tap on the player, history via long-press.
+- **One** subtle motion everywhere (220 ms, fade in with a 4 px offset, fade out the reverse): matrix build-up, flip, every pairing step, new matchups, sheets. `prefers-reduced-motion` turns it off.
 
-## Bewertungsskala
+## Rating scale
 
-Default: 5 Stufen. Jedes Team hat eine Default-Skala (Stufen, Labels, Farben, Score). Beim Anlegen einer Turnier-Vorbereitung wird sie kopiert und ist für dieses Turnier fix.
+Default: 5 levels. Each team has a default scale (levels, labels, colours, score). When a tournament preparation is created, the scale is copied and fixed for that tournament.
 
-| Wert | Farbe | Score |
-|------|-------|-------|
-| +    | grün     | +2 |
-| 0/+  | hellgrün | +1 |
-| 0    | gelb     | 0 |
-| 0/-  | orange   | −1 |
-| -    | rot      | −2 |
+| Value | Colour | Score |
+|-------|--------|-------|
+| +     | green       | +2 |
+| 0/+   | light green | +1 |
+| 0     | yellow      | 0 |
+| 0/-   | orange      | −1 |
+| -     | red         | −2 |
 
-Optional ergänzbar, z. B. `++` (dunkelgrün).
+Optionally extendable, e.g. `++` (dark green).
 
-## T9A-Armeen
+## T9A armies
 
 Beast Herds, Daemon Legions, Dread Elves, Dwarven Holds, Empire of Sonnstahl, Highborn Elves, Infernal Dwarves, Kingdom of Equitaine, Ogre Khans, Orcs and Goblins, Saurian Ancients, Sylvan Elves, Undying Dynasties, Vampire Covenant, Vermin Swarm, Warriors of the Dark Gods.
 
-Als Stammdaten pro Spielsystem, nicht hartcodiert.
+Modelled as master data per game system, not hard-coded.
 
-## Pairing-Ablauf (Standard, ETC/WTC-Stil)
+## Pairing flow (standard, ETC/WTC style)
 
-Eine Runde:
-1. Beide Teams legen verdeckt einen **Defender**. Aufdecken.
-2. Beide Teams legen verdeckt **2 Attacker** gegen den gegnerischen Defender. Aufdecken.
-3. Jeder Defender wählt einen der 2 Attacker. → 2 Spiele fix.
-4. Der abgelehnte Attacker geht zurück in den Pool.
+One round:
+1. Both teams secretly place a **defender**. Reveal.
+2. Both teams secretly place **2 attackers** against the opposing defender. Reveal.
+3. Each defender chooses one of the 2 attackers. → 2 games fixed.
+4. The declined attacker goes back into the pool.
 
-Ende (abhängig von verbleibenden Spielern pro Team):
-- **4 übrig:** Defender + 2 Attacker. Abgelehnte Attacker spielen gegeneinander, die letzten zwei ebenfalls.
-- **3 übrig:** Defender + 2 Attacker. Abgelehnte Attacker spielen gegeneinander.
+End (depending on the remaining players per team):
+- **4 left:** defender + 2 attackers. The declined attackers play each other, the last two as well.
+- **3 left:** defender + 2 attackers. The declined attackers play each other.
 
-Damit:
-- 8v8: Runde (8→6), Runde (6→4), Finale mit 4 → 2+2+4 Spiele.
-- 7v7: Runde (7→5), Runde (5→3), Finale mit 3 → 2+2+3 Spiele.
-- 6v6: Runde (6→4), Finale mit 4 → 2+4 Spiele.
-- 5v5: Runde (5→3), Finale mit 3 → 2+3 Spiele.
-- 4v4: Finale mit 4 → 4 Spiele.
-- 3v3: Finale mit 3 → 3 Spiele.
+This gives:
+- 8v8: round (8→6), round (6→4), final with 4 → 2+2+4 games.
+- 7v7: round (7→5), round (5→3), final with 3 → 2+2+3 games.
+- 6v6: round (6→4), final with 4 → 2+4 games.
+- 5v5: round (5→3), final with 3 → 2+3 games.
+- 4v4: final with 4 → 4 games.
+- 3v3: final with 3 → 3 games.
 
-Ablauf als Regel-Objekt modellieren (austauschbar pro Turnier/System). Tisch-/Szenariowahl ggf. später.
+Model the flow as a rule object (replaceable per tournament/system). Table/scenario choice possibly later.
 
-## Pairing-Assistent
+## Pairing assistant
 
-Bedienung – alles in der Matrix, keine Buttons pro Schritt (mobil per Daumen):
-1. **Defender:** links unseren Namen antippen, oben deren → automatisch eingetragen. Defender-Zeile und -Spalte hervorgehoben, Rest blass (Farben bleiben leicht sichtbar). Defender erneut antippen = abwählen.
-2. **Attacker:** Zellen antippen – in unserer Defender-Zeile deren 2 Attacker, in deren Defender-Spalte unsere 2. Kreuzung der Defender ist gesperrt (schraffiert). Nach dem 4. Tap automatisch eingetragen: die nicht gelegten Felder blenden ab und schrumpfen leicht, übrig bleiben die 4 Attacker.
-3. **Wahl:** in der Zeile antippen, wen wir nehmen; in der Spalte, wen sie nehmen → automatisch eingetragen.
-→ Gepaarte Spieler blenden aus, die Matrix wird kleiner.
-- **Rückgängig** fest in der Titelzeile neben dem Gesamtstand (einzige Stelle, die sich nie verschiebt): erst ungespeicherte Taps, dann letzter Schritt. Kein Redo, kein Neu starten.
-- Schrittwechsel als fließender Übergang der Zellen (gleiche 220-ms-Bewegung); neu aufgebaut wird die Matrix nur beim Flip.
+Operation – everything happens in the matrix, no buttons per step (thumb-friendly on mobile):
+1. **Defender:** tap our player on the left, then theirs on top → entered automatically. Defender row and column highlighted, the rest faded (colours stay slightly visible). Tapping a defender again = deselect.
+2. **Attacker:** tap cells – in our defender's row their 2 attackers, in their defender's column our 2 attackers. The crossing of the two defenders is locked (hatched). After the 4th tap it is entered automatically: the cells not played fade and shrink slightly, the 4 attackers remain.
+3. **Choice:** tap in the row who we take; in the column who they take → entered automatically.
+→ Paired players fade out, the matrix gets smaller.
+- **Undo** is fixed in the title bar next to the total score (the only spot that never moves): first unsaved taps, then the last step. No redo, no restart.
+- Step changes are a smooth transition of the cells (same 220 ms motion); the matrix is only rebuilt on flip.
 
-Ansicht:
-- Standard: nur verbleibende Spieler.
-- Oben neben dem Titel: Gesamtstand der festen Matchups (Summe der Scores, grün/rot) und x/8 gepaart.
-- Unter der Matrix: feste Matchups als „Name UD [Bewertung] VC Name“ – Bewertung mittig zwischen beiden Seiten; neue Matchups blenden ein.
-- **Gegner-Ansicht** (⇄ in der Titelzeile): Bewertungen gespiegelt (+ ↔ -, 0/+ ↔ 0/-), jedes Feld rot umrandet. Nur Anzeige, nicht gespeichert.
-- Umschalter in der leeren Ecke oben links der Tabelle (Icon: vier Pfeile nach außen = ganze Matrix, nach innen = nur Rest). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
-- Empfehlungen per Augen-Symbol (Standard aus): %-Marken an Namen, ★ = beste Option, grüne Ringe, Top-3 + wahrscheinlichster Pfad.
-- Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
+View:
+- Default: only remaining players.
+- Next to the title: total score of the fixed matchups (sum of scores, green/red) and x/8 paired.
+- Below the matrix: fixed matchups as "Name UD [rating] VC Name" – rating centred between both sides; new matchups fade in.
+- **Opponent view** (⇄ in the title bar): ratings mirrored (+ ↔ -, 0/+ ↔ 0/-), every cell outlined in red. Display only, not saved.
+- Toggle in the empty top-left corner of the table (icon: four arrows pointing outward = full matrix, inward = remaining only). Taken players light grey, matchups outlined. Automatic after the pairing.
+- Recommendations via the eye icon (default off): % marks next to names, ★ = best option, green rings, top 3 + most likely path.
+- Demo tournaments: button "Fill demo values" on the matrix page (only for fake tournaments).
 
-Solver (`PairingSolver`, Domain Service):
-- Vollständiger Spielbaum, memoisiert über Bitmasken der verbleibenden Spieler. 8v8 ≈ 0,2 s.
-- Simultane Schritte pessimistisch: wir wählen, Gegner antwortet optimal (Maximin).
-- Pro Option: **Worst case** (Gegner optimal) und **⌀** (Durchschnitt über alle Gegner-Antworten).
-- Gegner-Sicht = negierte eigene Matrix. Unbewertete Felder zählen 0 (Hinweis in der UI).
-- Läuft serverseitig; Offline im Client später möglich (Domain ist abhängigkeitsfrei).
-- Später: gemischte Strategien (Nash pro Schritt) statt reinem Maximin.
+Solver (`PairingSolver`, domain service):
+- Full game tree, memoised over bitmasks of the remaining players. 8v8 ≈ 0.2 s.
+- Simultaneous steps assumed pessimistic: we choose, the opponent answers optimally (maximin).
+- Per option: **worst case** (opponent optimal) and **⌀** (average over all opponent answers).
+- Opponent view = negated own matrix. Unrated cells count as 0 (hint in the UI).
+- Runs server-side; offline on the client possible later (domain has no dependencies).
+- Later: mixed strategies (Nash per step) instead of pure maximin.
 
-### Empfehlungen (Stufe 1 + 2 umgesetzt, Details im README)
+### Recommendations (levels 1 + 2 implemented, details in README)
 
-Berechnung:
-- Spielbaum von hinten aufrollen: am Ende ist jedes Spiel aus der Matrix bekannt, davor wählt jede Seite ihr Bestes. Gegner = gleiche Matrix, negiert.
-- Verdeckte Schritte als gemischte Strategie (Nash pro Schritt, kleines LP): liefert Wahrscheinlichkeiten („die legen zu 45 % DL“) und damit den **wahrscheinlichsten Pfad** statt nur Worst case.
-- **Schlüsselspieler:** pro Spieler, wie viel schlechter der Rest wird, wenn er jetzt verbraucht wird → Warnung „danach kein Counter gegen SE (−3)“.
+Calculation:
+- Roll up the game tree from the back: at the end every game from the matrix is known, before that each side picks its best. Opponent = same matrix, negated.
+- Hidden steps as a mixed strategy (Nash per step, small LP): yields probabilities ("they play DL 45 % of the time") and thus the **most likely path** instead of just worst case.
+- **Key players:** per player, how much worse the rest becomes if he is used up now → warning "no counter against SE afterwards (−3)".
 
-Darstellung (in der Matrix, mobil):
-- Defender: Badge mit erwartetem Endstand an unseren Namen (★ = bestes), dünner Wahrscheinlichkeitsbalken an Gegner-Namen.
-- Attacker/Wahl: erwarteter Endstand klein in den wählbaren Zellen, beste mit grünem Rahmen. ⚠ bei Schlüsselspielern.
-- **Listen im Pairing:** Umschalter „Matrix | Listen“ über der Tabelle. „Listen“ zeigt die Liste eines aktiven Gegners (Start: deren Defender), Wischen links/rechts bzw. Pfeile/Kürzel wechseln. Markierungen und Notizen aus der Matrix-Seite sind sichtbar, auch offline. Notizen (Zeilen-Notizen, Listen-Notiz, Matchup-Notizen „gegen …“) per Sprechblase oben rechts ein-/ausblendbar, pro Gerät gemerkt; ausgeblendet sind auch die Markierungsfarben weg. Bei ausgeklappter Matrix auch schon gepaarte Gegner: Kürzel ausgegraut, „(gepickt)“ hinter der Armee.
-- **Attacker-Schritt:** Sobald deren 2 Attacker angetippt sind (und im Wahl-Schritt) stehen beide Listen nebeneinander unter der Matrix.
-- **Vorrechnen:** einmal beim Betreten des Pairings, nur bei vollständig bewerteter Matrix (beide Modi, auch bei ausgeschaltetem Auge).
-- Pick antippen wählt ihn auch in der Matrix aus (unsere Seite des Schritts); umgekehrt springt die Vorschau auf den passenden Pick.
-- Option antippen → **Pfad-Vorschau**: wahrscheinliche Matchups gestrichelt in der Matrix (nach Runde nummeriert) + Zeitleiste pro Runde mit Zügen und den daraus entstehenden Matchups samt Bewertung; Runden per Wischen durchgehen; Endstand mit Spanne (Worst/Best).
-- „Was wäre wenn“: Gegner-Namen gedrückt halten = „angenommen, die legen den“ → neu rechnen.
-- **Ausblendbar:** Schalter „Empfehlungen“ (Augen-Icon) neben dem Flip-Button. Standard **aus**, pro Gerät gemerkt – damit man sich nicht unbewusst von Zahlen leiten lässt. Aus = keine Zahlen, keine Rahmen, keine Warnungen.
+Display (in the matrix, mobile):
+- Defender: badge with expected final score at our name (★ = best), thin probability bar at the opponent's names.
+- Attacker/choice: expected final score small in the selectable cells, best one with a green frame. ⚠ for key players.
+- **Lists during the pairing:** toggle "Matrix | Lists" above the table. "Lists" shows the list of an active opponent (start: their defender); swipe left/right or use arrows/abbreviations to switch. Marks and notes from the matrix page are visible, also offline. Notes (line notes, list note, matchup notes "vs …") can be shown/hidden via the speech bubble at the top right, remembered per device; hiding also removes the mark colours. With the matrix expanded, already paired opponents are shown too: abbreviation greyed out, "(picked)" behind the army.
+- **Attacker step:** as soon as their 2 attackers are tapped (and in the choice step), both lists stand side by side below the matrix.
+- **Pre-calculation:** once when entering the pairing, only with a fully rated matrix (both modes, also with the eye switched off).
+- Tapping a pick also selects it in the matrix (our side of the step); the other way round, the preview jumps to the matching pick.
+- Tapping an option → **path preview**: likely matchups dashed in the matrix (numbered by round) + a timeline per round with the moves and the resulting matchups including their rating; step through rounds by swiping; final score with range (worst/best).
+- "What if": press and hold an opponent's name = "assume they play that one" → recalculate.
+- **Can be hidden:** the "Recommendations" switch (eye icon) next to the flip button. Default **off**, remembered per device – so that one is not unconsciously guided by numbers. Off = no numbers, no frames, no warnings.
 
-Umsetzung in Stufen: (1) bestehende Maximin-Zahlen einblenden, (2) Pfad-Vorschau, (3) Nash-Wahrscheinlichkeiten, (4) Schlüsselspieler + „Was wäre wenn“.
-Grenze: nur so gut wie die Matrix; später evtl. Regler „Unsicherheit“.
+Implementation in levels: (1) show existing maximin numbers, (2) path preview, (3) Nash probabilities, (4) key players + "what if".
+Limit: only as good as the matrix; maybe an "uncertainty" slider later.
 
-`PairingSession` speichert nur die eingegebenen Züge; der Zustand wird über `PairingState` neu abgespielt (Undo = letzten Zug entfernen).
+`PairingSession` only stores the entered moves; the state is replayed via `PairingState` (undo = remove the last move).
 
-## Architektur
+## Architecture
 
-Hexagonal (Ports & Adapters). UI austauschbar, API ist die einzige Schnittstelle.
+Hexagonal (ports & adapters). UI is replaceable, the API is the only interface.
 
 ```
 src/
-  ProPair.Domain              Entities, Value Objects, Pairing-Regeln, Solver. Keine Abhängigkeiten.
-  ProPair.Application         Use Cases, Ports (IMatrixRepository, ...).
-  ProPair.Adapters.Rest       ASP.NET Core Web API, hostet die WASM-App.
-  ProPair.Adapters.Mongo      MongoDB-Implementierung der Repository-Ports.
-  ProPair.Adapters.NewRecruit Client für die New-Recruit-API.
-  ProPair.Contracts           DTOs, geteilt zwischen API und Client.
-  ProPair.Web                 Blazor WebAssembly (nur über Contracts + HTTP).
+  ProPair.Domain              Entities, value objects, pairing rules, solver. No dependencies.
+  ProPair.Application         Use cases, ports (IMatrixRepository, ...).
+  ProPair.Adapters.Rest       ASP.NET Core Web API, hosts the WASM app.
+  ProPair.Adapters.Mongo      MongoDB implementation of the repository ports.
+  ProPair.Adapters.NewRecruit Client for the New Recruit API.
+  ProPair.Contracts           DTOs, shared between API and client.
+  ProPair.Web                 Blazor WebAssembly (only via contracts + HTTP).
 tests/
   ProPair.Domain.Tests
   ProPair.Application.Tests
 ```
 
 - Stack: .NET 11, Blazor WebAssembly (hosted), MongoDB.
-- Abhängigkeitsrichtung: Adapters → Application → Domain.
-- Domain-Layer läuft auch im Browser (gleiche Assembly): Pairing-Regeln und Empfehlungen funktionieren offline. Die UI enthält keine eigene Logik.
+- Dependency direction: adapters → application → domain.
+- The domain layer also runs in the browser (same assembly): pairing rules and recommendations work offline. The UI contains no logic of its own.
 
-## Domänenmodell (DDD)
+## Domain model (DDD)
 
-Taktisches DDD nach Evans/Vernon:
-- Kleine Aggregate, Referenzen zwischen Aggregaten nur per Id.
-- Invarianten werden im Aggregate Root geprüft, nie im Use Case.
-- Value Objects immutable, Gleichheit über Werte.
-- Änderungen erzeugen Domain Events.
-- Eine Transaktion ändert genau ein Aggregat.
+Tactical DDD after Evans/Vernon:
+- Small aggregates, references between aggregates only by id.
+- Invariants are checked in the aggregate root, never in the use case.
+- Value objects are immutable, equality by value.
+- Changes raise domain events.
+- One transaction changes exactly one aggregate.
 
-### Ubiquitous Language
+### Ubiquitous language
 
-| Begriff | Bedeutung |
-|---------|-----------|
-| GameSystem | Spielsystem (T9A) mit seinen Armeen. |
-| Team | Unser Team, dauerhaft über Turniere hinweg. |
-| Tournament | Ein Turnier: Format, Spielsystem, teilnehmende Teams. |
-| Participant | Ein Team innerhalb eines Turniers, mit Roster. |
-| Roster | Spieler eines Participants (Name, Armee, Liste). |
-| Preparation | Vorbereitung unseres Teams auf ein Turnier. Hält Skala und Share-Links. |
-| Matrix | Bewertungen unseres Rosters gegen einen Gegner-Participant. |
-| RatingScale | Bewertungsstufen (Label, Farbe, Score). |
-| Rating | Eine Stufe aus der RatingScale in einer Zelle. |
-| PairingSession | Ein laufendes Pairing auf Basis einer Matrix. |
+| Term | Meaning |
+|------|---------|
+| GameSystem | Game system (T9A) with its armies. |
+| Team | Our team, lasting across tournaments. |
+| Tournament | A tournament: format, game system, participating teams. |
+| Participant | A team within a tournament, with a roster. |
+| Roster | Players of a participant (name, army, list). |
+| Preparation | Preparation of our team for a tournament. Holds the scale and share links. |
+| Matrix | Ratings of our roster against one opposing participant. |
+| RatingScale | Rating levels (label, colour, score). |
+| Rating | One level from the RatingScale in a cell. |
+| PairingSession | A running pairing based on a matrix. |
 
-### Aggregate
+### Aggregates
 
-**GameSystem** (Referenzdaten)
-- Id, Name, Armeen.
+**GameSystem** (reference data)
+- Id, name, armies.
 
 **Team**
-- Id, Name, `DefaultRatingScale`.
-- Default-Skala frei änderbar; betrifft nur künftige Preparations.
+- Id, name, `DefaultRatingScale`.
+- Default scale freely changeable; only affects future preparations.
 
 **Tournament**
-- Id, Name, GameSystemId, `TeamSize` (3–8).
-- Participants (Entity): Id, Name, Roster.
-- Kader werden beim Sync auf TeamSize gebracht (`Lineups`: Dummies / Überzählige).
-- Quelle: New-Recruit-Import (ExternalId = NR-Turnier-Id).
+- Id, name, GameSystemId, `TeamSize` (3–8).
+- Participants (entity): Id, name, roster.
+- Rosters are brought to TeamSize during sync (`Lineups`: dummies / surplus).
+- Source: New Recruit import (ExternalId = NR tournament id).
 
-**Preparation** (Team × Tournament)
+**Preparation** (team × tournament)
 - Id, TeamId, TournamentId, OwnParticipantId.
-- `RatingScale`: Kopie der Team-Default-Skala beim Anlegen, danach unveränderlich.
+- `RatingScale`: copy of the team's default scale at creation, immutable afterwards.
 - `EditToken`, `ReadToken`.
-- PlayerNotes: Spieler → Notiz zur Liste.
-- ListMarks: (Spieler, Zeile) → Farbe + Notiz. Zeile über Index + Text; nach Re-Import über den Text wiedergefunden.
-- Invariante: pro Team und Turnier genau eine Preparation.
+- PlayerNotes: player → note on the list.
+- ListMarks: (player, line) → colour + note. Line by index + text; after a re-import found again via the text.
+- Invariant: exactly one preparation per team and tournament.
 
-**Matrix** (Preparation × Gegner)
+**Matrix** (preparation × opponent)
 - Id, PreparationId, OpponentParticipantId.
-- Cells: (OwnPlayerId, OpponentPlayerId) → Rating; Notes: Zelle → Notiz.
-- History: `RatingChanged` (Zelle, alt, neu, Autor, Zeitpunkt), append-only.
-- Invariante: Rating muss in der Skala der Preparation liegen.
-- Eigenes Aggregat, damit gleichzeitiges Arbeiten an verschiedenen Gegnern nicht kollidiert.
+- Cells: (OwnPlayerId, OpponentPlayerId) → rating; notes: cell → note.
+- History: `RatingChanged` (cell, old, new, author, time), append-only.
+- Invariant: a rating must be in the preparation's scale.
+- Own aggregate, so that working on different opponents at the same time does not collide.
 
 **PairingSession**
-- Id, PreparationId, OpponentParticipantId, Züge (Defender, Attacker, Wahl).
-- Invariante: Züge folgen dem Pairing-Ablauf.
+- Id, PreparationId, OpponentParticipantId, moves (defender, attacker, choice).
+- Invariant: moves follow the pairing flow.
 
-### Value Objects
+### Value objects
 
 `RatingScale`, `RatingLevel`, `Rating`, `TeamSize`, `ArmyId`, `PlayerRef`, `CellKey`, `ShareToken`, `AuthorName`.
 
-### Domain Services
+### Domain services
 
-- `PairingSolver`: berechnet den besten Pfad aus Matrix + Pairing-Zustand. Zustandslos.
+- `PairingSolver`: calculates the best path from matrix + pairing state. Stateless.
 
-## Zusammenarbeit, Notizen & Verlauf
+## Collaboration, notes & history
 
-- Eine gemeinsame Wertung pro Zelle, letzte Änderung gewinnt. Jede Änderung als `RatingChanged` (wer, wann, alt → neu).
-- Autor: Name wird beim ersten Bearbeiten abgefragt, im Browser gespeichert.
-- **Zelle:** Tap = Dropdown (schnell bewerten). Long-Press (Handy) / Rechtsklick (Desktop) = Bottom-Sheet mit Bewertung, Notiz zum Matchup und „Verlauf anzeigen“ (lädt bei Bedarf). Kein History-Icon.
-- **Liste:** Tap auf Spielername = Panel: **Liste oben, Notizen darunter**.
-- **Markierungen in der Liste:** einzelne Zeile antippen → 6 Farben (rot, orange, gelb, grün, blau, pink; Farbe wirkt sofort, Feld bleibt offen bis OK) + kurze Notiz, die in derselben Zeile steht („Achtung, kann Flammenwerfer“). Farben haben keine feste Bedeutung – das Team entscheidet. Markierung entfernen = ✕.
-- Punkt oben rechts markiert Zellen/Spieler mit Notiz.
-- Matchup-Notizen liegen im `Matrix`-Aggregat, Listen-Notizen in der `Preparation` (gelten für alle Gegner des Turniers).
-- Leerer Text löscht eine Notiz. Max. 2000 Zeichen.
+- One shared rating per cell, last change wins. Every change as `RatingChanged` (who, when, old → new).
+- Author: the name is asked for on the first edit and stored in the browser.
+- **Cell:** tap = dropdown (quick rating). Long-press (phone) / right-click (desktop) = bottom sheet with the rating, a note on the matchup and "Show history" (loads on demand). No history icon.
+- **List:** tap on a player's name = panel: **list on top, notes below**.
+- **Marks in the list:** tap a single line → 6 colours (red, orange, yellow, green, blue, pink; colour applies immediately, the field stays open until OK) + a short note shown on the same line ("Careful, can take flamethrower"). Colours have no fixed meaning – the team decides. Remove mark = ✕.
+- A dot at the top right marks cells/players with a note.
+- Matchup notes live in the `Matrix` aggregate, list notes in the `Preparation` (apply to all opponents of the tournament).
+- Empty text deletes a note. Max. 2000 characters.
 
-## Stand POC
+## Status POC
 
-- Seiten: Turnierauswahl/Import → Team wählen → Übersicht (Teilen, Gegner, Fortschritt) → Matrix.
-- Matrix: Dropdown pro Zelle, Farben aus der Skala, Liste per Tap auf den Spieler.
-- Speichern mit optimistischer Versionierung (Mongo), Retry im Use Case, Client schreibt sequenziell.
-- Tests: Domain (Matrix, Tournament, Preparation), Application (Flow mit Fake-Quelle, In-Memory-Repos).
+- Pages: tournament selection/import → choose team → overview (share, opponents, progress) → matrix.
+- Matrix: dropdown per cell, colours from the scale, list via tap on the player.
+- Saving with optimistic versioning (Mongo), retry in the use case, client writes sequentially.
+- Tests: domain (matrix, tournament, preparation), application (flow with fake source, in-memory repos).
 
-## Entscheidungen
+## Decisions
 
-| # | Thema | Entscheidung |
-|---|-------|--------------|
-| 1 | Skala | Default am Team (5 Stufen: +, 0/+, 0, 0/-, -). Kopie pro Turnier, dort fix. |
-| 2 | Mehrere Bearbeiter | Eine Wertung pro Zelle, Verlauf mit Autor. |
-| 3 | Share-Link | Zwei Tokens: Edit und Read-only. |
+| # | Topic | Decision |
+|---|-------|----------|
+| 1 | Scale | Default on the team (5 levels: +, 0/+, 0, 0/-, -). Copy per tournament, fixed there. |
+| 2 | Multiple editors | One rating per cell, history with author. |
+| 3 | Share link | Two tokens: edit and read-only. |
 | 4 | .NET | .NET 11. |
-| 5 | Gegner-Sicht | Negierte eigene Matrix. |
-| 6 | Live-Sync | Nicht im MVP. SignalR später als Nice-to-have. |
-| 7 | Matrizen | Pro Turnier eine Matrix je Gegnerteam. |
-| 8 | Modellierung | DDD, Aggregate wie oben. |
-| 9 | New Recruit | Import im MVP, zunächst Fake-Quelle. |
+| 5 | Opponent view | Negated own matrix. |
+| 6 | Live sync | Not in the MVP. SignalR later as a nice-to-have. |
+| 7 | Matrices | One matrix per opposing team per tournament. |
+| 8 | Modelling | DDD, aggregates as above. |
+| 9 | New Recruit | Import in the MVP, initially fake source. |
 | 10 | UI | Mobile first. |
-| 11 | Pairing | Auswahl per Tap in der Matrix (Namen = Defender, Zellen = Attacker/Wahl). Rest-Matrix, Flip auf Vollmatrix (vergeben = grau). Empfehlungen vorerst aus. |
-| 12 | Notizen/Verlauf | Long-Press/Rechtsklick-Sheet je Zelle, Listen-Notiz per Tap auf Spieler. |
-| 13 | Empfehlungen | Ausblendbar, Standard aus (keine psychologische Beeinflussung). |
-| 15 | Empfehlungs-Modi | Optimal / Minus vermeiden („-“ 1,5×, „0/-“ 1,25×); Absichern entfernt (Idee, s. offene Fragen); Gewichtung nur für die Entscheidung, alles Angezeigte echte Punkte. Pro Pick: Gesamtwertung + Diese Runde, je wahrscheinlichster Wert mit Wahrscheinlichkeit. Pfad: Ecke im Feld (schwarz / schwarz-hellgrau geteilt / hellgrau je Runde), gleiche Ecke an „Runde N“. |
-| 16 | Offline | Local-first Pairing: Domain-Assembly auch im Browser, Züge lokal + Warteschlange, Sync per kompletter Zugliste, Empfehlungen mit vom Backend vorgerechneten Rundenwerten. PWA: App startet nach erstem Besuch auch ohne Netz. |
-| 14 | Listen-Markierungen | 6 Farben + Zeilen-Notiz, Liste oben, Notizen unten. |
-| 17 | NR-Sync | Eigener Prozess (`Adapters.Sync`, Hangfire, Mongo-Storage), täglich, heute bis +12 Monate. Nur T9A 3rd Edition, nur Teamturniere, keine Ligen, nichts Geschlossenes/Vergangenes. API reiht „Aktualisieren“ nur ein (`ISyncQueue`). |
-| 18 | Listenwechsel | Neue Liste = neue Spieler-Id → Bewertungen/Notizen zurück, `ListChangedAt` → Info-Icon. Verborgene Listen: letzter Stand bleibt, Badge „Keine Listen sichtbar“. |
-| 19 | Teamgröße | 3–8, häufigste Spielerzahl der Teams ab 3 (Gleichstand: die größere). Armee aus dem Listentext (NR liefert vor dem Turnier kein JSON). |
-| 20 | Nicht-Spieler | Spieler ist, wer eine Liste hat. Coaches, Judges, NPCs werden nicht importiert; Teams ohne Spieler und mit weniger Mitgliedern als die Teamgröße entfallen. |
-| 21 | Unvollständige Kader | Fehlende Spieler/Listen → „Dummy“. Überzählige Listen bleiben draußen (die ersten zählen). Warnung „Kader unvollständig“ in Turnierliste, Teamwahl, Übersicht und Matrix. |
-| 22 | Listenformat | Anti-Corruption-Layer im New-Recruit-Adapter (`ArmyListTranslator`): Kopfzeilen, Punktesumme, Footer und doppelte Listen raus, Platzhalter („kadrowicz“) sind keine Liste, unbekannte Formate verlieren nur Summe und Footer. Armee wird vorher aus dem Rohtext erkannt. Listenvergleich zählt nur die Einheiten. |
-| 23 | Release | Ein Docker-Image für App und Sync (zwei Prozesse, endet einer, startet der Container neu). Sync-URLs nur im Container erreichbar (kein Login). Azure DevOps wie FadingFlame: Build → Docker Hub, Release per SSH + docker-compose hinter Caddy. Eigene MongoDB in der Compose-Datei (ohne offenen Port, eigenes Netz), Secrets nur in Azure DevOps. |
-| 24 | Wer bin ich (ohne Login) | Im Bearbeiten-Link wählt man per Flyout, welcher Spieler des eigenen Teams man ist (pro Team im Browser gespeichert, jederzeit wechselbar). Ohne Auswahl keine Gegner-Matrix. Der Spielername ist der Autor aller Änderungen; das freie Namensfeld entfällt. Später ersetzt durch Login. |
-| 25 | Matrix-Ansicht | Eigene Zeile hervorgehoben. Zelle antippen → Flyout mit Bewertungen statt nativem Select. Unter der Matrix ein Karussell (wischen/Pfeile) durch die Gegnerlisten: Kopf mit Armee und Name, darunter die eigene Bewertung (+ Löschen), dann Liste mit Markierungen und Notizen. Teamkollegen öffnen ihre Liste mit Schließen-Button, danach wieder das Karussell. Kein automatisches Scrollen. |
-| 26 | URLs | Sprechende Ressourcen, eine Seite pro Ansicht: `/` Turniere · `/turniere/{id}` Team wählen · `/vorbereitung/{token}` Übersicht · `…/gegner/{id}` Matrix · `…/gegner/{id}/pairing` Pairing-Matrix · `…/pairing/listen` Listen. Die API behält ihre Pfade. |
-| 27 | Empfehlungen | Im Pairing standardmäßig an; ein-/ausblenden merkt sich das Gerät. |
+| 11 | Pairing | Selection by tap in the matrix (names = defender, cells = attacker/choice). Remaining matrix, flip to full matrix (taken = grey). Recommendations off for now. |
+| 12 | Notes/history | Long-press/right-click sheet per cell, list note via tap on a player. |
+| 13 | Recommendations | Can be hidden, default off (no psychological influence). |
+| 15 | Recommendation modes | Optimal / Avoid minus ("-" 1.5×, "0/-" 1.25×); "Safeguard" removed (idea, see open questions); weighting only for the decision, everything shown is real points. Per pick: total score + this round, each with most likely value and its probability. Path: corner in the cell (black / black-light grey split / light grey per round), same corner on the "Round N" labels. |
+| 16 | Offline | Local-first pairing: domain assembly also in the browser, moves local + queue, sync via complete move list, recommendations with round values pre-calculated by the backend. PWA: app starts without network after the first visit. |
+| 14 | List marks | 6 colours + line note, list on top, notes below. |
+| 17 | NR sync | Separate process (`Adapters.Sync`, Hangfire, Mongo storage), daily, today to +12 months. Only T9A 3rd Edition, only team tournaments, no leagues, nothing closed/past. API only enqueues "Update" (`ISyncQueue`). |
+| 18 | List change | New list = new player id → ratings/notes start over, `ListChangedAt` → info icon. Hidden lists: last state stays, badge "No lists visible". |
+| 19 | Team size | 3–8, most common player count of teams with 3 or more (tie: the larger). Army from the list text (NR does not deliver JSON before the tournament). |
+| 20 | Non-players | A player is whoever has a list. Coaches, judges, NPCs are not imported; teams without players and with fewer members than the team size are dropped. |
+| 21 | Incomplete rosters | Missing players/lists → "Dummy". Surplus lists stay out (the first ones count). Warning "Incomplete roster" in the tournament list, team choice, overview and matrix. |
+| 22 | List format | Anti-corruption layer in the New Recruit adapter (`ArmyListTranslator`): header lines, point totals, footers and duplicate lists removed; placeholders ("kadrowicz") are not a list; unknown formats only lose total and footer. Army is detected from the raw text beforehand. List comparison counts only the units. |
+| 23 | Release | One Docker image for app and sync (two processes, if one ends the container restarts). Sync URLs only reachable inside the container (no login). Azure DevOps like FadingFlame: build → Docker Hub, release via SSH + docker-compose behind Caddy. Own MongoDB in the compose file (no open port, own network), secrets only in Azure DevOps. |
+| 24 | Who am I (without login) | In the edit link you pick via flyout which player of your own team you are (stored per team in the browser, changeable any time). Without a selection no opponent matrix. The player name is the author of all changes; the free name field goes away. Later replaced by login. |
+| 25 | Matrix view | Own row highlighted. Tap a cell → flyout with ratings instead of a native select. Below the matrix a carousel (swipe/arrows) through the opponent lists: header with army and name, below it your own rating (+ delete), then the list with marks and notes. Team mates open their list with a close button, afterwards the carousel again. No automatic scrolling. |
+| 26 | URLs | Speaking resources, one page per view: `/` tournaments · `/tournaments/{id}` choose team · `/preparation/{token}` overview · `…/opponent/{id}` matrix · `…/opponent/{id}/pairing` pairing matrix · `…/pairing/lists` lists. The API keeps its paths. |
+| 27 | Recommendations | On by default in the pairing; the device remembers if you show/hide them. |
 
-## Offene Fragen
+## Open questions
 
-- Idee „Absichern“: Gegner sieht unseren Zug, Worst case maximieren (`PessimisticSolver`). Vorerst raus – bei verdeckten Zügen zu pessimistisch.
+- Idea "Safeguard": opponent sees our move, maximise worst case (`PessimisticSolver`). Dropped for now – too pessimistic for hidden moves.
 
-- Tisch-/Szenariowahl im Pairing abbilden?
-- Captain-Zugang ohne Login: eigener Admin-Link pro Team, oder Login (z. B. GitHub/Google)?
-- Regeln aus NR syncen (`id_book` aus Reports?).
-- Admin-UI mit Login für Sync/Dashboard.
-- Bei Reservespielern selbst wählen, wer spielt (derzeit zählen die ersten Listen).
-- Ist ein Tournament global (mehrere Teams nutzen dasselbe) oder gehört es nur unserem Team?
+- Model table/scenario choice in the pairing?
+- Captain access without login: own admin link per team, or login (e.g. GitHub/Google)?
+- Sync rules from NR (`id_book` from reports?).
+- Admin UI with login for sync/dashboard.
+- With reserve players, let the user choose who plays (currently the first lists count).
+- Is a tournament global (several teams use the same one) or does it belong only to our team?

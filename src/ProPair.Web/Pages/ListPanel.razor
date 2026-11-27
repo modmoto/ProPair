@@ -9,13 +9,13 @@
     {
         <header>
             <strong>@Player.Name · @Player.ArmyName</strong>
-            <button class="btn" @onclick="OnClose">Schließen</button>
+            <button class="btn" @onclick="OnClose">Close</button>
         </header>
     }
 
     @if (Player.IsDummy)
     {
-        <p class="muted">Platzhalter: Spieler oder Liste fehlt in New Recruit.</p>
+        <p class="muted">Placeholder: player or list is missing in New Recruit.</p>
     }
 
     <div class="armylist">
@@ -40,25 +40,25 @@
                             <button class="swatch mark-@color @(mark?.Color == color ? "on" : "")" title="@color"
                                     disabled="@(!HasAuthor || _saving)" @onclick="() => SaveAsync(index, line, color, close: false)"></button>
                         }
-                        <button class="swatch clear" title="Markierung entfernen" disabled="@(mark is null || _saving)"
+                        <button class="swatch clear" title="Remove mark" disabled="@(mark is null || _saving)"
                                 @onclick="() => SaveAsync(index, line, null, close: true)">✕</button>
                     </div>
                     <div class="marknote-input">
-                        <input maxlength="200" placeholder="Notiz zur Zeile, z. B. kann Flammenwerfer" @bind="_noteInput" @bind:event="oninput" />
+                        <input maxlength="200" placeholder="Note on this line, e.g. can take flamethrower" @bind="_noteInput" @bind:event="oninput" />
                         <button class="btn" disabled="@(!HasAuthor || _saving)" @onclick="() => SaveAsync(index, line, mark?.Color ?? DefaultColor, close: true)">OK</button>
                     </div>
                     @if (!HasAuthor)
                     {
-                        <p class="hint">Zum Markieren oben auswählen, wer du bist.</p>
+                        <p class="hint">Pick who you are above to mark lines.</p>
                     }
                 </div>
             }
         }
     </div>
 
-    <h3>Notizen</h3>
+    <h3>Notes</h3>
     <NoteEditor Note="Note" CanEdit="CanEdit" HasAuthor="HasAuthor"
-                Placeholder="Weitere Notizen zur Liste…" OnSave="OnSaveNote" />
+                Placeholder="More notes on this list…" OnSave="OnSaveNote" />
 </section>
 
 @code {

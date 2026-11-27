@@ -1,4 +1,4 @@
-@page "/vorbereitung/{Token}/gegner/{OpponentId:guid}"
+@page "/preparation/{Token}/opponent/{OpponentId:guid}"
 @implements IDisposable
 @inject ProPairApi Api
 @inject WhoAmI Me
@@ -12,7 +12,7 @@
 }
 @if (_matrix is null)
 {
-    <p>Lade…</p>
+    <p>Loading…</p>
 }
 else
 {
@@ -29,11 +29,11 @@ else
     }
     @if (_matrix.IsDemo && _matrix.CanEdit && _cells.Count < _matrix.Own.Players.Count * _matrix.Opponent.Players.Count)
     {
-        <button class="btn" @onclick="FillDemoAsync">Demo-Werte füllen</button>
+        <button class="btn" @onclick="FillDemoAsync">Fill demo values</button>
     }
     @if (_matrix.Own.Players.Concat(_matrix.Opponent.Players).Any(ListReset))
     {
-        <p class="list-changed-hint muted"><i class="list-changed">i</i> Neue Liste aus New Recruit – Bewertungen und Notizen für diesen Spieler starten neu.</p>
+        <p class="list-changed-hint muted"><i class="list-changed">i</i> New list from New Recruit – ratings and notes for this player start over.</p>
     }
 
     <div class="matrix-wrap settle" @ref="_grid">
@@ -45,12 +45,12 @@ else
                 {
                     <th>
                         <button class="@(_shown is null && CurrentOpp == opp ? "active" : "") @(HasPlayerNote(opp.Id) ? "has-note" : "")"
-                                title="Liste & Notiz" @onclick="() => ShowOpponent(opp)">
+                                title="List & note" @onclick="() => ShowOpponent(opp)">
                             <span class="army">@opp.ArmyShort</span>
                             <span class="player">@opp.Name</span>
                             @if (ListReset(opp))
                             {
-                                <i class="list-changed" title="Liste am @opp.ListChangedAt?.ToLocalTime().ToString("dd.MM.") geändert">i</i>
+                                <i class="list-changed" title="List changed on @opp.ListChangedAt?.ToLocalTime().ToString("dd.MM.")">i</i>
                             }
                         </button>
                     </th>
@@ -64,12 +64,12 @@ else
                 <tr class="@(isMe ? "me" : "")">
                     <th class="row">
                         <button class="@(_shown == own ? "active" : "") @(HasPlayerNote(own.Id) ? "has-note" : "")"
-                                title="Liste & Notiz" @onclick="() => ShowOwn(own)">
+                                title="List & note" @onclick="() => ShowOwn(own)">
                             <span class="army">@own.ArmyShort</span>
                             <span class="player">@own.Name</span>
                             @if (ListReset(own))
                             {
-                                <i class="list-changed" title="Liste am @own.ListChangedAt?.ToLocalTime().ToString("dd.MM.") geändert">i</i>
+                                <i class="list-changed" title="List changed on @own.ListChangedAt?.ToLocalTime().ToString("dd.MM.")">i</i>
                             }
                         </button>
                     </th>
@@ -82,7 +82,7 @@ else
                             class="@(_cellNotes.ContainsKey((own.Id, opp.Id)) ? "has-note" : "") @(open ? "sheet-open" : "") @(current ? "current" : "")">
                             @if (CanEditNow)
                             {
-                                <button class="cellbtn" aria-label="@own.Name gegen @opp.Name bewerten"
+                                <button class="cellbtn" aria-label="Rate @own.Name vs @opp.Name"
                                         @onclick="() => _quick = (own.Id, opp.Id)">@level?.Label</button>
                             }
                             else
@@ -103,7 +103,7 @@ else
             <span style="background:@l.Color">@l.Label</span>
         }
     </div>
-    <p class="subtle">Lange drücken oder Rechtsklick auf ein Feld: Notiz &amp; Verlauf.</p>
+    <p class="subtle">Long-press or right-click a cell: note &amp; history.</p>
 
     @if (_shown is not null)
     {
@@ -121,7 +121,7 @@ else
         @* swipe left/right (or the arrows) through the opponent lists *@
         <section class="listview opplists" @ontouchstart="TouchStart" @ontouchend="TouchEnd">
             <div class="listnav">
-                <button class="btn" aria-label="Vorherige Liste" disabled="@(players.Count < 2)" @onclick="() => MoveList(-1)">‹</button>
+                <button class="btn" aria-label="Previous list" disabled="@(players.Count < 2)" @onclick="() => MoveList(-1)">‹</button>
                 <span class="dots">
                     @for (var i = 0; i < players.Count; i++)
                     {
@@ -133,7 +133,7 @@ else
                                 @onclick="() => _listIndex = index">@players[index].ArmyShort</button>
                     }
                 </span>
-                <button class="btn" aria-label="Nächste Liste" disabled="@(players.Count < 2)" @onclick="() => MoveList(1)">›</button>
+                <button class="btn" aria-label="Next list" disabled="@(players.Count < 2)" @onclick="() => MoveList(1)">›</button>
             </div>
             <div class="settle" @key="opp.Id">
                 <header class="opphead">
@@ -150,10 +150,10 @@ else
                             <button class="lvl @(mine?.Key == l.Key ? "on" : "")" style="background:@l.Color"
                                     disabled="@(!CanEditNow)" @onclick="() => SetAsync(me.Id, opp.Id, l.Key)">@l.Label</button>
                         }
-                        <button class="lvl clear" disabled="@(!CanEditNow || mine is null)" title="Bewertung löschen"
-                                aria-label="Bewertung löschen" @onclick="() => SetAsync(me.Id, opp.Id, null)"><TrashIcon /></button>
+                        <button class="lvl clear" disabled="@(!CanEditNow || mine is null)" title="Clear rating"
+                                aria-label="Clear rating" @onclick="() => SetAsync(me.Id, opp.Id, null)"><TrashIcon /></button>
                     </div>
-                    <p class="subtle">Deine Bewertung: @me.Name gegen @opp.Name</p>
+                    <p class="subtle">Your rating: @me.Name vs @opp.Name</p>
                 }
                 <ListPanel Player="opp" Marks="MarksFor(opp.Id)" Note="PlayerNote(opp.Id)"
                            CanEdit="_matrix.CanEdit" HasAuthor="HasAuthor"
@@ -169,10 +169,10 @@ else
         var qOpp = Player(quickOpp);
         var qLevel = LevelAt(quickOwn, quickOpp);
         <div class="sheet-backdrop" @onclick="() => _quick = null"></div>
-        <section class="sheet quick" role="dialog" aria-label="Bewerten">
+        <section class="sheet quick" role="dialog" aria-label="Rate">
             <header>
                 <strong><span class="army">@qOwn.ArmyShort</span> @qOwn.Name <span class="muted">vs</span> <span class="army">@qOpp.ArmyShort</span> @qOpp.Name</strong>
-                <button class="x" aria-label="Schließen" @onclick="() => _quick = null">✕</button>
+                <button class="x" aria-label="Close" @onclick="() => _quick = null">✕</button>
             </header>
             <div class="sheet-levels">
                 @foreach (var l in _matrix.Scale)
@@ -180,10 +180,10 @@ else
                     <button class="lvl @(qLevel?.Key == l.Key ? "on" : "")" style="background:@l.Color"
                             @onclick="() => QuickSetAsync(quickOwn, quickOpp, l.Key)">@l.Label</button>
                 }
-                <button class="lvl clear" disabled="@(qLevel is null)" title="Bewertung löschen" aria-label="Bewertung löschen"
+                <button class="lvl clear" disabled="@(qLevel is null)" title="Clear rating" aria-label="Clear rating"
                         @onclick="() => QuickSetAsync(quickOwn, quickOpp, null)"><TrashIcon /></button>
             </div>
-            <button class="link subtle" @onclick="() => OpenSheet(quickOwn, quickOpp)">Notiz &amp; Verlauf</button>
+            <button class="link subtle" @onclick="() => OpenSheet(quickOwn, quickOpp)">Note &amp; history</button>
         </section>
     }
 
@@ -196,7 +196,7 @@ else
         <section class="sheet" role="dialog" aria-label="Matchup">
             <header>
                 <strong><span class="army">@own.ArmyShort</span> @own.Name <span class="muted">vs</span> <span class="army">@opp.ArmyShort</span> @opp.Name</strong>
-                <button class="x" aria-label="Schließen" @onclick="CloseSheet">✕</button>
+                <button class="x" aria-label="Close" @onclick="CloseSheet">✕</button>
             </header>
 
             <div class="sheet-levels">
@@ -205,24 +205,24 @@ else
                     <button class="lvl @(current?.Key == l.Key ? "on" : "")" style="background:@l.Color"
                             disabled="@(!CanEditNow)" @onclick="() => SetAsync(sheetOwn, sheetOpp, l.Key)">@l.Label</button>
                 }
-                <button class="lvl clear" disabled="@(!CanEditNow || current is null)" title="Bewertung löschen"
-                        aria-label="Bewertung löschen" @onclick="() => SetAsync(sheetOwn, sheetOpp, null)"><TrashIcon /></button>
+                <button class="lvl clear" disabled="@(!CanEditNow || current is null)" title="Clear rating"
+                        aria-label="Clear rating" @onclick="() => SetAsync(sheetOwn, sheetOpp, null)"><TrashIcon /></button>
             </div>
 
-            <h3>Notiz</h3>
+            <h3>Note</h3>
             <NoteEditor Note="CellNote(sheetOwn, sheetOpp)" CanEdit="_matrix.CanEdit" HasAuthor="HasAuthor"
-                        Placeholder="Notiz zum Matchup, z. B. Szenario, Gelände …" OnSave="text => SaveCellNoteAsync(sheetOwn, sheetOpp, text)" />
+                        Placeholder="Note on this matchup, e.g. scenario, terrain …" OnSave="text => SaveCellNoteAsync(sheetOwn, sheetOpp, text)" />
 
             @if (_history is null)
             {
-                <button class="link subtle" @onclick="LoadHistoryAsync">Verlauf anzeigen</button>
+                <button class="link subtle" @onclick="LoadHistoryAsync">Show history</button>
             }
             else
             {
-                <h3>Verlauf</h3>
+                <h3>History</h3>
                 @if (_history.Count == 0)
                 {
-                    <p class="muted">Noch keine Änderungen.</p>
+                    <p class="muted">No changes yet.</p>
                 }
                 <ul class="history">
                     @foreach (var h in _history)
@@ -377,7 +377,7 @@ else
     private RatingLevelDto? LevelAt(Guid own, Guid opp) =>
         _cells.TryGetValue((own, opp), out var key) ? _matrix!.Scale.FirstOrDefault(l => l.Key == key) : null;
 
-    private string Label(string? key) => key is null ? "leer" : _matrix!.Scale.FirstOrDefault(l => l.Key == key)?.Label ?? key;
+    private string Label(string? key) => key is null ? "empty" : _matrix!.Scale.FirstOrDefault(l => l.Key == key)?.Label ?? key;
 
     private NoteDto? CellNote(Guid own, Guid opp) => _cellNotes.GetValueOrDefault((own, opp));
     private NoteDto? PlayerNote(Guid id) => _playerNotes.GetValueOrDefault(id);

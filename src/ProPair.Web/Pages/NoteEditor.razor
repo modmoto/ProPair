@@ -6,11 +6,11 @@
         <textarea rows="3" maxlength="2000" placeholder="@Placeholder" disabled="@(!HasAuthor)"
                   @bind="_text" @bind:after="SaveAsync"></textarea>
         <div class="note-foot">
-            <span class="muted">@(_saving ? "Speichert…" : Meta)</span>
+            <span class="muted">@(_saving ? "Saving…" : Meta)</span>
         </div>
         @if (!HasAuthor)
         {
-            <p class="hint">Zum Speichern oben auswählen, wer du bist.</p>
+            <p class="hint">Pick who you are above to save.</p>
         }
     }
     else if (Note is not null)
@@ -20,7 +20,7 @@
     }
     else
     {
-        <p class="muted">Keine Notiz.</p>
+        <p class="muted">No note.</p>
     }
 </div>
 
@@ -28,7 +28,7 @@
     [Parameter] public NoteDto? Note { get; set; }
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public bool HasAuthor { get; set; }
-    [Parameter] public string Placeholder { get; set; } = "Notiz…";
+    [Parameter] public string Placeholder { get; set; } = "Note…";
     [Parameter] public EventCallback<string> OnSave { get; set; }
 
     private string _text = "";

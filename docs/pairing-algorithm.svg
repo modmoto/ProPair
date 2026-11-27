@@ -7,45 +7,45 @@
   <rect width="960" height="470" fill="#f6f7f9"/>
 
   <!-- ============ left: how the tree is searched ============ -->
-  <text x="24" y="34" font-size="16" font-weight="700">So rechnet der Spielbaum</text>
-  <text x="24" y="54" fill="#6b7385">Jeder verdeckte Schritt ist ein kleines Nullsummen-Spiel.</text>
-  <text x="24" y="70" fill="#6b7385">Jede Zelle = Wert von allem, was danach passiert.</text>
+  <text x="24" y="34" font-size="16" font-weight="700">How the game tree is searched</text>
+  <text x="24" y="54" fill="#6b7385">Every hidden step is a small zero-sum game.</text>
+  <text x="24" y="70" fill="#6b7385">Each cell = value of everything that follows.</text>
 
   <g>
     <rect x="24" y="88" width="380" height="54" rx="10" fill="#fff" stroke="#dde1e8"/>
     <text x="40" y="111" font-weight="700">1 · Defender</text>
-    <text x="40" y="129" fill="#6b7385">unsere k Spieler × deren k Spieler (8×8)</text>
+    <text x="40" y="129" fill="#6b7385">our k players × their k players (8×8)</text>
     <line x1="214" y1="142" x2="214" y2="162" stroke="#6b7385" stroke-width="1.6" marker-end="url(#arrow)"/>
 
     <rect x="24" y="164" width="380" height="54" rx="10" fill="#fff" stroke="#dde1e8"/>
     <text x="40" y="187" font-weight="700">2 · Attacker</text>
-    <text x="40" y="205" fill="#6b7385">unsere Paare × deren Paare (bis 21×21)</text>
+    <text x="40" y="205" fill="#6b7385">our pairs × their pairs (up to 21×21)</text>
     <line x1="214" y1="218" x2="214" y2="238" stroke="#6b7385" stroke-width="1.6" marker-end="url(#arrow)"/>
 
     <rect x="24" y="240" width="380" height="54" rx="10" fill="#fff" stroke="#dde1e8"/>
-    <text x="40" y="263" font-weight="700">3 · Wahl</text>
-    <text x="40" y="281" fill="#6b7385">wen wir nehmen × wen sie nehmen (2×2)</text>
+    <text x="40" y="263" font-weight="700">3 · Choice</text>
+    <text x="40" y="281" fill="#6b7385">who we take × who they take (2×2)</text>
     <line x1="214" y1="294" x2="214" y2="314" stroke="#6b7385" stroke-width="1.6" marker-end="url(#arrow)"/>
 
     <rect x="24" y="316" width="380" height="54" rx="10" fill="#e9f6ec" stroke="#2e9e44"/>
-    <text x="40" y="339" font-weight="700">2 Matchups fix → nächste Runde mit k − 2</text>
-    <text x="40" y="357" fill="#6b7385">bei 3 oder 4 Übrigen: Rest direkt gepaart</text>
+    <text x="40" y="339" font-weight="700">2 matchups fixed → next round with k − 2</text>
+    <text x="40" y="357" fill="#6b7385">with 3 or 4 left: rest paired directly</text>
 
     <!-- loop back to the next round -->
     <path d="M404 343 C 450 343, 450 115, 410 115" fill="none" stroke="#2e9e44" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
-    <text x="458" y="229" fill="#2e9e44" font-size="12" transform="rotate(90 458 229)" text-anchor="middle">rekursiv, memoisiert</text>
+    <text x="458" y="229" fill="#2e9e44" font-size="12" transform="rotate(90 458 229)" text-anchor="middle">recursive, memoised</text>
   </g>
 
-  <text x="24" y="398" font-weight="700">Jedes Spiel wird gelöst:</text>
-  <text x="24" y="416" fill="#6b7385">Nash-Gleichgewicht = beste Mischung für beide Seiten,</text>
-  <text x="24" y="432" fill="#6b7385">keiner kann sich durch Abweichen verbessern.</text>
-  <text x="24" y="448" fill="#6b7385">Daraus: Wert, Wahrscheinlichkeiten, wahrscheinlichster Pfad.</text>
+  <text x="24" y="398" font-weight="700">Every game is solved:</text>
+  <text x="24" y="416" fill="#6b7385">Nash equilibrium = best mix for both sides,</text>
+  <text x="24" y="432" fill="#6b7385">neither side can improve by deviating.</text>
+  <text x="24" y="448" fill="#6b7385">Result: value, probabilities, most likely path.</text>
 
   <!-- ============ right: 3v3 example ============ -->
-  <text x="500" y="34" font-size="16" font-weight="700">Beispiel 3 gegen 3</text>
+  <text x="500" y="34" font-size="16" font-weight="700">Example 3 vs 3</text>
 
   <!-- rating matrix -->
-  <text x="500" y="62" font-weight="700">Unsere Matrix</text>
+  <text x="500" y="62" font-weight="700">Our matrix</text>
   <g font-size="12" text-anchor="middle" fill="#6b7385">
     <text x="625" y="84">Xaver DL</text><text x="685" y="84">Yuri HbE</text><text x="745" y="84">Zoe KoE</text>
   </g>
@@ -70,8 +70,8 @@
   <text x="790" y="178" font-size="11" fill="#6b7385">- = −2</text>
 
   <!-- defender game -->
-  <text x="500" y="242" font-weight="700">Defender-Schritt, gelöst</text>
-  <text x="500" y="259" font-size="12" fill="#6b7385">Zelle = erwarteter Endstand, wenn diese beiden verteidigen</text>
+  <text x="500" y="242" font-weight="700">Defender step, solved</text>
+  <text x="500" y="259" font-size="12" fill="#6b7385">Cell = expected final score if these two defend</text>
   <g font-size="12" text-anchor="middle" fill="#6b7385">
     <text x="625" y="272">Xaver</text><text x="685" y="272">Yuri</text><text x="745" y="272">Zoe</text>
     <text x="625" y="286" fill="#1d2330" font-weight="700">40 %</text>
@@ -90,7 +90,7 @@
     <rect x="718" y="326" width="54" height="30" rx="6" fill="#fff" stroke="#2e9e44" stroke-width="2"/><text x="745" y="346">+1</text>
     <rect x="598" y="362" width="54" height="30" rx="6" fill="#fff" stroke="#dde1e8"/><text x="625" y="382" fill="#6b7385">−2</text>
     <rect x="658" y="362" width="54" height="30" rx="6" fill="#fff" stroke="#dde1e8"/><text x="685" y="382" fill="#6b7385">0</text>
-    <rect x="718" y="362" width="54" height="30" rx="6" fill="#fff" stroke="#dde1e8"/><text x="745" y="382" fill="#6b7385">+0,5</text>
+    <rect x="718" y="362" width="54" height="30" rx="6" fill="#fff" stroke="#dde1e8"/><text x="745" y="382" fill="#6b7385">+0.5</text>
   </g>
   <g font-size="12" font-weight="700">
     <text x="782" y="310">20 %</text>
@@ -99,6 +99,6 @@
   </g>
 
   <rect x="500" y="404" width="436" height="50" rx="10" fill="#fff" stroke="#dde1e8"/>
-  <text x="514" y="425"><tspan font-weight="700">Fair erwartet +0,4.</tspan> Ben verteidigt: sicher ≥ 0.</text>
-  <text x="514" y="443" fill="#6b7385">Pessimistisch (Gegner sieht unseren Zug) wären es nur 0.</text>
+  <text x="514" y="425"><tspan font-weight="700">Fair expected +0.4.</tspan> Ben defends: safe ≥ 0.</text>
+  <text x="514" y="443" fill="#6b7385">Pessimistic (opponent sees our move) it would only be 0.</text>
 </svg>

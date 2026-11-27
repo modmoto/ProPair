@@ -4,12 +4,12 @@
 <div class="sync-status">
     @if (!ListsVisible)
     {
-        <span class="badge warn" title="Der Veranstalter hat die Listen in New Recruit verborgen. Wir zeigen den letzten bekannten Stand.">Keine Listen sichtbar</span>
+        <span class="badge warn" title="The organiser hid the lists in New Recruit. We show the last known state.">No lists visible</span>
     }
     @if (!IsDemo)
     {
-        <span class="muted">@(_waiting ? "Wird aktualisiert…" : LastSyncedAt is { } at ? $"Stand {at.ToLocalTime():dd.MM. HH:mm}" : "Noch nicht synchronisiert")</span>
-        <button class="link" disabled="@_waiting" @onclick="SyncAsync">↻ Von New Recruit aktualisieren</button>
+        <span class="muted">@(_waiting ? "Updating…" : LastSyncedAt is { } at ? $"As of {at.ToLocalTime():dd.MM. HH:mm}" : "Not synced yet")</span>
+        <button class="link" disabled="@_waiting" @onclick="SyncAsync">↻ Update from New Recruit</button>
     }
     @if (_message is not null)
     {
@@ -46,7 +46,7 @@
                     return;
                 }
             }
-            _message = "Läuft noch – später neu laden.";
+            _message = "Still running – reload later.";
         }
         catch (ApiException e) { _message = e.Message; }
         finally { _waiting = false; }

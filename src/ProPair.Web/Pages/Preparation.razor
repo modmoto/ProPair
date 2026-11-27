@@ -1,4 +1,4 @@
-@page "/vorbereitung/{Token}"
+@page "/preparation/{Token}"
 @inject ProPairApi Api
 @inject NavigationManager Nav
 @inject WhoAmI Me
@@ -11,12 +11,12 @@
 }
 else if (_prep is null)
 {
-    <p>Lade…</p>
+    <p>Loading…</p>
 }
 else
 {
     <h1>@_prep.TournamentName</h1>
-    <p class="muted">@_prep.Own.Name · @_prep.TeamSize v @_prep.TeamSize @(_prep.CanEdit ? "" : "· nur lesen")</p>
+    <p class="muted">@_prep.Own.Name · @_prep.TeamSize v @_prep.TeamSize @(_prep.CanEdit ? "" : "· read only")</p>
     <NewRecruitStatus TournamentId="_prep.TournamentId" ListsVisible="_prep.ListsVisible" IsDemo="_prep.IsDemo"
                 LastSyncedAt="_prep.LastSyncedAt" OnSynced="LoadAsync" />
     <RosterWarning Team="_prep.Own" ShowName="true" />
@@ -26,18 +26,18 @@ else
     }
 
     <section class="share">
-        <h2>Teilen</h2>
+        <h2>Share</h2>
         @if (_prep.EditToken is not null)
         {
-            <ShareLink Label="Bearbeiten" Url="@LinkFor(_prep.EditToken)" />
+            <ShareLink Label="Edit" Url="@LinkFor(_prep.EditToken)" />
         }
-        <ShareLink Label="Nur lesen" Url="@LinkFor(_prep.ReadToken)" />
+        <ShareLink Label="Read only" Url="@LinkFor(_prep.ReadToken)" />
     </section>
 
-    <h2>Gegner</h2>
+    <h2>Opponents</h2>
     @if (Locked)
     {
-        <p class="muted">Wähle oben aus, wer du bist – dann kannst du die Gegner öffnen.</p>
+        <p class="muted">Pick who you are above, then you can open the opponents.</p>
     }
     <div class="cards">
         @foreach (var o in _prep.Opponents)
@@ -53,12 +53,12 @@ else
                 </span>
                 @if (total == 0)
                 {
-                    <span class="muted">Noch keine Listen bekannt</span>
+                    <span class="muted">No lists known yet</span>
                 }
                 else
                 {
                     <span class="progress"><span style="width:@(100 * o.RatedCells / total)%"></span></span>
-                    <span class="muted">@o.RatedCells / @total bewertet</span>
+                    <span class="muted">@o.RatedCells / @total rated</span>
                 }
                 <RosterWarning Team="o.Participant" />
             </a>

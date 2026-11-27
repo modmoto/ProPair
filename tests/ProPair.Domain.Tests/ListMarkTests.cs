@@ -23,9 +23,9 @@ public class ListMarkTests
     {
         var (prep, player) = NewPreparation();
 
-        prep.MarkListLine(player, List, 3, "350 - Great Cannon", MarkColor.Red, " kann Flammenwerfer ", "Simon", Now);
+        prep.MarkListLine(player, List, 3, "350 - Great Cannon", MarkColor.Red, " can take flamethrower ", "Simon", Now);
         var mark = Assert.Single(prep.MarksFor(player, List));
-        Assert.Equal((3, MarkColor.Red, "kann Flammenwerfer"), (mark.LineIndex, mark.Color, mark.Note));
+        Assert.Equal((3, MarkColor.Red, "can take flamethrower"), (mark.LineIndex, mark.Color, mark.Note));
 
         prep.MarkListLine(player, List, 3, "350 - Great Cannon", null, null, "Simon", Now);
         Assert.Empty(prep.MarksFor(player, List));

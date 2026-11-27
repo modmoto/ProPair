@@ -19,8 +19,8 @@ public class NoteTests
         var cell = new CellKey(own, opp);
         var m = Matrix.Create(PreparationId.New(), ParticipantId.New(), [own], [opp]);
 
-        m.SetNote(cell, "  Achtung auf Kanone  ", "Simon", Now);
-        Assert.Equal(new Note("Achtung auf Kanone", "Simon", Now), m.NoteAt(cell));
+        m.SetNote(cell, "  Watch out for cannon  ", "Simon", Now);
+        Assert.Equal(new Note("Watch out for cannon", "Simon", Now), m.NoteAt(cell));
 
         m.SetNote(cell, " ", "Simon", Now);
         Assert.Null(m.NoteAt(cell));

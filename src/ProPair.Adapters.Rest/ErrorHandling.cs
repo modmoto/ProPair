@@ -14,7 +14,7 @@ internal static class ErrorHandling
             catch (Exception e) when (StatusFor(e) is { } status && !ctx.Response.HasStarted)
             {
                 ctx.Response.StatusCode = status;
-                var message = e is ConcurrencyException ? "Gleichzeitig geändert – bitte erneut versuchen." : e.Message;
+                var message = e is ConcurrencyException ? "Changed by someone else at the same time – please try again." : e.Message;
                 await ctx.Response.WriteAsJsonAsync(new ErrorDto(message));
             }
         });

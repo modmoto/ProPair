@@ -1,22 +1,22 @@
-@page "/turniere/{TournamentId:guid}"
+@page "/tournaments/{TournamentId:guid}"
 @inject ProPairApi Api
 @inject NavigationManager Nav
 
 @* One tournament: pick your team → starts a preparation and opens it. *@
 
-<PageTitle>ProPair – @(_tournament?.Name ?? "Turnier")</PageTitle>
+<PageTitle>ProPair – @(_tournament?.Name ?? "Tournament")</PageTitle>
 
-<a class="link" href="@Routes.Tournaments">← Turniere</a>
+<a class="link" href="@Routes.Tournaments">← Tournaments</a>
 @if (_tournament is null)
 {
-    @if (_error is null) { <p>Lade…</p> }
+    @if (_error is null) { <p>Loading…</p> }
 }
 else
 {
     <h1>@_tournament.Name</h1>
     <NewRecruitStatus TournamentId="_tournament.Id" ListsVisible="_tournament.ListsVisible" IsDemo="_tournament.IsDemo"
                 LastSyncedAt="_tournament.LastSyncedAt" OnSynced="LoadAsync" />
-    <p>Welches ist dein Team?</p>
+    <p>Which is your team?</p>
     <div class="cards">
         @foreach (var p in _tournament.Participants)
         {
@@ -24,7 +24,7 @@ else
                 <strong>@p.Name</strong>
                 @if (p.Players.Count == 0)
                 {
-                    <span class="muted">Noch keine Spieler/Listen bekannt</span>
+                    <span class="muted">No players/lists known yet</span>
                 }
                 <span class="armies">
                     @foreach (var pl in p.Players)

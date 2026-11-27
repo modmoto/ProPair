@@ -1,6 +1,6 @@
 namespace ProPair.Domain.Common;
 
-/// <summary>Free-text note ("Achtung auf X") with who wrote it last.</summary>
+/// <summary>Free-text note ("Watch out for X") with who wrote it last.</summary>
 public sealed record Note(string Text, string Author, DateTimeOffset UpdatedAt)
 {
     public const int MaxLength = 2000;

@@ -2,7 +2,7 @@
 @if (Dummies > 0 || LeftOut.Count > 0)
 {
     <span class="roster-warning">
-        <span class="badge warn">Kader unvollständig</span>
+        <span class="badge warn">Incomplete roster</span>
         <span>
             @if (ShowName)
             {
@@ -10,11 +10,11 @@
             }
             @if (Dummies > 0)
             {
-                @($"{Dummies}× Dummy – Spieler oder Liste fehlt. ")
+                @($"{Dummies}× dummy – player or list missing. ")
             }
             @if (LeftOut.Count > 0)
             {
-                @($"Zu viele Listen, nicht dabei: {string.Join(", ", LeftOut)}.")
+                @($"Too many lists, left out: {string.Join(", ", LeftOut)}.")
             }
         </span>
     </span>

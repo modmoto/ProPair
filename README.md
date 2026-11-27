@@ -1,10 +1,10 @@
 # ProPair
 
-Pairing-Matrix für Tabletop-Teamturniere (The 9th Age). Design: [docs/design.md](docs/design.md).
+Pairing matrix for tabletop team tournaments (The 9th Age). Design: [docs/design.md](docs/design.md).
 
-## Lokal starten
+## Run locally
 
-Voraussetzungen: .NET 11 SDK, MongoDB.
+Requirements: .NET 11 SDK, MongoDB.
 
 ```bash
 mongod --dbpath .data/mongo --fork --logpath .data/mongod.log
@@ -16,23 +16,23 @@ dotnet run --project src/ProPair.Adapters.Rest --launch-profile http
 
 App: http://localhost:5054
 
-In Rider: die geteilten Run-Configs aus `.run/` nutzen. Sie brauchen Chrome, weil Rider für Blazor den System-Standardbrowser ablehnt.
+In Rider: use the shared run configs from `.run/`. They need Chrome, because Rider rejects the system default browser for Blazor.
 
-Sync-Prozess (New Recruit → Mongo, Hangfire):
+Sync process (New Recruit → Mongo, Hangfire):
 
 ```bash
 dotnet user-secrets set "NewRecruit:Login" "<login>" --id propair
 ```
 
 ```bash
-dotnet user-secrets set "NewRecruit:Password" "<passwort>" --id propair
+dotnet user-secrets set "NewRecruit:Password" "<password>" --id propair
 ```
 
 ```bash
 dotnet run --project src/ProPair.Adapters.Sync --launch-profile http
 ```
 
-Sync: http://localhost:5090 (Dashboard `/hangfire`, nur lokal). Auf Servern: Env-Vars `NewRecruit__Login` / `NewRecruit__Password`.
+Sync: http://localhost:5090 (dashboard `/hangfire`, local only). On servers: env vars `NewRecruit__Login` / `NewRecruit__Password`.
 
 ```bash
 dotnet test
@@ -40,105 +40,105 @@ dotnet test
 
 ## Release (Azure DevOps)
 
-Ein Docker-Image (`Dockerfile`) für App (Port 80) und Sync-Prozess. Der Sync hört nur im Container (`SYNC_URLS`, Standard `http://127.0.0.1:5090`).
+One Docker image (`Dockerfile`) for the app (port 80) and the sync process. The sync only listens inside the container (`SYNC_URLS`, default `http://127.0.0.1:5090`).
 
-Lokal bauen:
+Build locally:
 
 ```bash
 docker build -t propair .
 ```
 
-Einrichten in Azure DevOps (New pipeline → GitHub → ProPair → „Existing Azure Pipelines YAML file“):
+Set up in Azure DevOps (New pipeline → GitHub → ProPair → "Existing Azure Pipelines YAML file"):
 
-1. `/azure-pipelines.yml`, Name `pro-pair.build`: testet, pusht `modmoto/pro-pair` nach Docker Hub.
-2. `/release-pipeline.yml`: deployt jeden erfolgreichen `main`-Build per SSH (`docker-compose.token.yml`, Netz `caddy`, Container `pro-pair-prod`).
+1. `/azure-pipelines.yml`, name `pro-pair.build`: tests, pushes `modmoto/pro-pair` to Docker Hub.
+2. `/release-pipeline.yml`: deploys every successful `main` build via SSH (`docker-compose.token.yml`, network `caddy`, container `pro-pair-prod`).
 
-Secret-Variablen der Release-Pipeline: `DB_SECRET`, `NEW_RECRUIT_LOGIN`, `NEW_RECRUIT_PASSWORD`.
-Service-Connections: `official-docker-modmoto`, `HetziPrivate`.
+Secret variables of the release pipeline: `DB_SECRET`, `NEW_RECRUIT_LOGIN`, `NEW_RECRUIT_PASSWORD`.
+Service connections: `official-docker-modmoto`, `HetziPrivate`.
 
-MongoDB läuft in der Compose-Datei mit (`mongo-db-pro-pair-prod`, ohne offenen Port). `DB_SECRET` (nur Buchstaben und Ziffern) wird beim ersten Deployment das Passwort von `admin`; später ändern geht nur in der Datenbank selbst.
+MongoDB runs as part of the compose file (`mongo-db-pro-pair-prod`, no open port). `DB_SECRET` (letters and digits only) becomes the password of `admin` on the first deployment; changing it later only works in the database itself.
 
-Domain und Backup stehen im Repo `modmoto/host-bootstrap` (`caddy/Caddyfile`, `db-backups/README.md`).
+Domain and backup live in the repo `modmoto/host-bootstrap` (`caddy/Caddyfile`, `db-backups/README.md`).
 
-Sofort synchronisieren (auf dem Server, sonst erst 04:00 UTC):
+Sync immediately (on the server, otherwise only at 04:00 UTC):
 
 ```bash
 docker exec pro-pair-prod bash -c 'exec 3<>/dev/tcp/127.0.0.1/5090; printf "POST /sync/upcoming HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nConnection: close\r\n\r\n" >&3; head -1 <&3'
 ```
 
-## New-Recruit-Sync
+## New Recruit sync
 
-- Eigener Prozess `ProPair.Adapters.Sync` mit Hangfire (Jobs in Mongo, Prefix `hangfire`). Die API reiht nur ein.
-- Täglich 04:00 UTC: Teamturniere „The 9th Age 3rd Edition“ (System 736602462) von heute bis +12 Monate.
-- Übersprungen: Einzelturniere, 2er-Teams, geschlossene/vorbei, Ligen (> 4 Tage).
-- Nur Spieler mit Liste: Coaches, Judges und NPCs werden nicht importiert.
-- Teamgröße 3–8 (häufigste Spielerzahl). Fehlende Spieler/Listen → „Dummy“, überzählige Listen bleiben draußen; die UI zeigt „Kader unvollständig“.
-- Listen verborgen: Badge „Keine Listen sichtbar“, letzter bekannter Stand bleibt.
-- Liste geändert: Spieler bekommt neue Id → Bewertungen/Notizen für ihn starten neu, Info-Icon in der Matrix.
-- Listen werden beim Sync bereinigt (Anti-Corruption-Layer im New-Recruit-Adapter): Kopfzeilen, Punktesumme, Footer und doppelte Listen fallen weg, Platzhalter ohne Einheiten zählen nicht als Liste.
-- Armee: aus dem Listentext (Namen + Übersetzungen FR/DE/ES/IT/PL, sonst typische Einheiten). Nicht erkannt → „?“.
-- „Von New Recruit aktualisieren“ im Turnier (vorerst öffentlich, später Admin-UI).
-- Manuell: `POST /sync/upcoming`, `POST /sync/tournaments/{nrId}`, `POST /sync/backfill?from=…&to=…` (auch vergangene, nur zum Testen).
-- NR protokolliert jeden Aufruf: Requests nacheinander, 400 ms Pause, ein Worker.
+- Separate process `ProPair.Adapters.Sync` with Hangfire (jobs in Mongo, prefix `hangfire`). The API only enqueues.
+- Daily at 04:00 UTC: team tournaments "The 9th Age 3rd Edition" (system 736602462) from today to +12 months.
+- Skipped: single tournaments, 2-player teams, closed/past tournaments, leagues (> 4 days).
+- Only players with a list are imported: coaches, judges and NPCs are not imported.
+- Team size 3–8 (most common player count). Missing players/lists → "Dummy"; surplus lists stay out; the UI shows "Incomplete roster".
+- Lists hidden: badge "No lists visible", the last known state stays.
+- List changed: the player gets a new id → ratings/notes for them start over, info icon in the matrix.
+- Lists are cleaned during sync (anti-corruption layer in the New Recruit adapter): header lines, point totals, footers and duplicate lists are dropped; placeholders without units do not count as a list.
+- Army: detected from the list text (names + translations FR/DE/ES/IT/PL, otherwise typical units). Not recognised → "?".
+- "Update from New Recruit" in a tournament (public for now, admin UI later).
+- Manual: `POST /sync/upcoming`, `POST /sync/tournaments/{nrId}`, `POST /sync/backfill?from=…&to=…` (also past tournaments, for testing only).
+- NR logs every call: requests one after another, 400 ms pause, one worker.
 
-## Stand (POC)
+## Status (POC)
 
-- Turniere aus New Recruit (Sync) plus 4 Demo-Turniere (`FakeTournamentSource`).
-- Ablauf: Turnier wählen → eigenes Team wählen → Gegner → Matrix bewerten.
-- Edit-/Read-Link ohne Login. Verlauf wird gespeichert, aber noch nicht angezeigt.
+- Tournaments from New Recruit (sync) plus 4 demo tournaments (`FakeTournamentSource`).
+- Flow: choose tournament → choose own team → opponent → rate the matrix.
+- Edit/read link without login. History is saved, but not shown yet.
 
-## Pairing-Empfehlungen: der Algorithmus
+## Pairing recommendations: the algorithm
 
-![Pairing-Algorithmus](docs/pairing-algorithm.svg)
+![Pairing algorithm](docs/pairing-algorithm.svg)
 
-**Was er tut:** Er rechnet für den aktuellen Pairing-Schritt aus, welche Wahl uns am meisten bringt, wenn der Gegner genauso klug spielt. Annahme: Der Gegner bewertet jedes Spiel genau umgekehrt zu unserer Matrix (+2 für uns = −2 für ihn). Unbewertete Felder zählen 0.
+**What it does:** For the current pairing step it calculates which choice gains us the most if the opponent plays just as well. Assumption: the opponent rates every game exactly the opposite of our matrix (+2 for us = −2 for them). Unrated cells count as 0.
 
-**Wie:**
-1. **Spielbaum:** Alle Verläufe bis zum Ende (Defender → Attacker → Wahl → nächste Runde). Am Ende jedes Zweigs ist der Endstand bekannt, die Summe der Matrix-Werte.
-2. **Jeder verdeckte Schritt ist ein kleines Spiel:** Zeilen = unsere Möglichkeiten, Spalten = die des Gegners, Zelle = Wert von allem, was danach kommt (rekursiv). Größen: Defender 8×8, Attacker-Paare bis 21×21, Wahl 2×2.
-3. **Lösung pro Schritt: Nash-Gleichgewicht** (gemischte Strategien, per Simplex). Beide legen verdeckt, also kann keiner auf den anderen reagieren. Das Gleichgewicht ist die Mischung, bei der sich keiner durch Abweichen verbessert. Ergebnis: ein fairer Erwartungswert und für jede Option eine Wahrscheinlichkeit.
-4. **Memoisierung:** Zustände zu Rundenbeginn werden über die verbleibenden Spieler (Bitmasken) gecacht. 8v8 mit 3 vorhergesagten Pfaden: ca. 0,7 s.
-5. **Ranking der Optionen:** erst Erwartungswert (auf 0,1 gerundet, so wie angezeigt), dann Worst case, dann Wahrscheinlichkeit. Gleich gute Optionen: die sicherere zuerst.
-6. **Wahrscheinlichster Pfad:** Ab einer Option folgt er Schritt für Schritt den wahrscheinlichsten Zügen beider Seiten bis zum Ende. Ergebnis: gestrichelte Felder in der Matrix plus Zeitleiste.
+**How:**
+1. **Game tree:** All lines to the end (defender → attackers → choice → next round). At the end of every branch the final score is known: the sum of the matrix values.
+2. **Every hidden step is a small game:** rows = our options, columns = the opponent's options, cell = value of everything that follows (recursively). Sizes: defenders 8×8, attacker pairs up to 21×21, choice 2×2.
+3. **Solution per step: Nash equilibrium** (mixed strategies, via simplex). Both sides choose in secret, so neither can react to the other. The equilibrium is the mix where no one improves by deviating. Result: a fair expected value and a probability for each option.
+4. **Memoisation:** States at the start of a round are cached by the remaining players (bitmasks). 8v8 with 3 predicted paths: about 0.7 s.
+5. **Ranking of the options:** first expected value (rounded to 0.1, as displayed), then worst case, then probability. Equally good options: the safer one first.
+6. **Most likely path:** From an option on, it follows the most likely moves of both sides step by step until the end. Result: dashed cells in the matrix plus a timeline.
 
-**Beispiel (Bild rechts):** Verteidigt Ben, ist uns mindestens 0 sicher. Verteidigt Anna, sind +2 möglich, aber auch −2. Die beste Mischung ist 80 % Ben, 20 % Anna, fair erwartet +0,4. Ein rein pessimistischer Ansatz (der Gegner sieht unseren Zug) käme nur auf 0.
+**Example (picture on the right):** If Ben defends, we are at least 0 safe. If Anna defends, +2 is possible, but also −2. The best mix is 80 % Ben, 20 % Anna, fair expected +0.4. A purely pessimistic approach (the opponent sees our move) would only reach 0.
 
-**Austauschbar:**
-- `IPairingAdvisor`: der ganze Algorithmus. Die App kennt nur dieses Interface, pro Modus über `IPairingAdvisorProvider`.
-- `GameTreeAdvisor(IMatrixGameSolver)`: der Spielbaum. Wie ein einzelner Schritt gelöst wird, entscheidet der Solver:
-  - `EquilibriumSolver`: Nash, der Standard.
-  - `PessimisticSolver`: Maximin, der Gegner sieht unseren Zug (sichere Untergrenze). Derzeit kein eigener Modus, nur Vergleich/Tests.
-- Registriert in `ProPair.Application/DependencyInjection.cs`.
+**Replaceable:**
+- `IPairingAdvisor`: the whole algorithm. The app only knows this interface, per mode via `IPairingAdvisorProvider`.
+- `GameTreeAdvisor(IMatrixGameSolver)`: the game tree. The solver decides how a single step is solved:
+  - `EquilibriumSolver`: Nash, the default.
+  - `PessimisticSolver`: maximin, the opponent sees our move (safe lower bound). Currently no mode of its own, only for comparison/tests.
+- Registered in `ProPair.Application/DependencyInjection.cs`.
 
-**Modi** (umschaltbar im Empfehlungs-Panel, pro Gerät gemerkt):
+**Modes** (switchable in the recommendation panel, remembered per device):
 
-| Modus | Was zählt | Technisch |
-|-------|-----------|-----------|
-| Optimal | höchster fairer Erwartungswert, Plus und Minus gleich gewichtet | Nash, lineare Bewertung |
-| Minus vermeiden | schlechte Matchups vermeiden geht vor gute holen | Nash, „-“ zählt 1,5-fach, „0/-“ 1,25-fach (`AdviceModes.MinusFactor`) |
+| Mode | What counts | Technical |
+|------|-------------|-----------|
+| Optimal | highest fair expected value, plus and minus weighted equally | Nash, linear scoring |
+| Avoid minus | avoiding bad matchups comes before winning good ones | Nash, "-" counts 1.5×, "0/-" 1.25× (`AdviceModes.MinusFactor`) |
 
-Abgestuft und bewusst moderat: Jeder Minuspunkt bringt 0,25 Aufschlag. Ein „-“ (−2) kostet dann so viel, wie „+“ und „0/+“ zusammen bringen, ein halbes Minus bekommt den halben Aufschlag. Die Gewichtung fließt nur in die Entscheidung ein (`GameTreeAdvisor(solver, weight)`). Alles Angezeigte (Gesamtstand, Matchups, Endstände, Wahrscheinlichkeiten) sind echte Punkte.
+Graded and deliberately moderate: every minus point adds a 0.25 surcharge. A "-" (−2) then costs as much as "+" and "0/+" together bring, a half minus gets half the surcharge. The weighting only feeds into the decision (`GameTreeAdvisor(solver, weight)`). Everything shown (total score, matchups, final scores, probabilities) is real points.
 
-**Werte pro Empfehlung:** groß die **Gesamtwertung** (wahrscheinlichster Wert + wie wahrscheinlich genau dieser ist), klein **Diese Runde** (dasselbe für die aktuelle Runde). Exakt berechnet: Ab der Option folgen beide Seiten ihren Strategien (gemischt, jede Möglichkeit mit ihrer Wahrscheinlichkeit). Alle Verläufe werden durchlaufen und die Wahrscheinlichkeiten je Ergebnis aufsummiert, ohne Simulation.
+**Values per recommendation:** large the **total score** (most likely value + how likely exactly this value is), small **this round** (the same for the current round). Calculated exactly: from the option on, both sides follow their strategies (mixed, each option with its probability). All paths are walked through and the probabilities per result are summed, without simulation.
 
-**In der UI:** Das Augen-Symbol schaltet die Empfehlungen ein, standardmäßig sind sie aus. Gerechnet wird nur, wenn sie an sind. Der wahrscheinliche Verlauf erscheint in der Matrix als Ecke oben rechts im Feld: schwarz = nächste Runde, schwarz/hellgrau geteilt = übernächste, hellgrau = dritte. Die Schildchen „Runde 1/2/3“ in der Zeitleiste tragen dieselbe Ecke.
+**In the UI:** The eye icon switches recommendations on; by default they are off. Calculation only happens while they are on. The likely path appears in the matrix as a corner at the top right of the cell: black = next round, black/light grey split = the one after, light grey = third. The "Round 1/2/3" labels in the timeline carry the same corner.
 
-## Offline: local-first Pairing
+## Offline: local-first pairing
 
-Im Turnier ist das Netz oft weg. Das Pairing darf deshalb nie am Netz hängen:
+Internet connections at tournaments are often gone. Pairing must therefore never depend on the network:
 
-- **Logik nur in der Domain:** Pairing-Regeln (`PairingState`) und Empfehlungs-Algorithmus (`IPairingAdvisor`) stehen einmal im Domain-Projekt. Server und Browser laden dieselbe Assembly, die UI ruft sie nur auf.
-- **Klicks sind lokal:** Jeder Schritt wird sofort auf dem Gerät mit den Domain-Regeln ausgeführt (`LocalPairing`). Kein Klick wartet auf das Netz.
-- **Speichern im Hintergrund:** Die Züge liegen in einer Warteschlange im Browser (localStorage) und gehen als komplette Liste an `PUT …/pairing/moves`, sobald Netz da ist (Retry alle 10 s). Ein Captain trägt ein, deshalb gilt: letzte Liste gewinnt. Der Server spielt sie über die Domain-Regeln nach.
-- **Alles vorgerechnet:** Beim Öffnen werden die Rundenwerte beider Modi geladen. Empfehlungen werden pro Modus und Stand gemerkt; nach dem angezeigten Modus rechnet das Gerät den anderen im Hintergrund. Moduswechsel und Rückgängig sind dadurch sofort da.
-- **Empfehlungen offline:** Der teure Teil (Wert jedes Rundenstarts, bei 8v8 höchstens 5.685 Zahlen) wird beim Öffnen einmal im Backend vorgerechnet (`GET …/pairing/values?mode=`) und im Browser gecacht. Danach rechnet das Gerät pro Schritt nur noch den aktuellen Schritt nach, ohne Netz.
-- **Ohne Netz geöffnet:** Es wird der zuletzt gespeicherte Stand vom Gerät genommen.
-- **Zuschauer** (Lese-Link) holen sich den Stand alle 15 s.
-- Anzeige unter dem Titel: „Gespeichert“ / „Noch nicht gespeichert – wird gesendet, sobald Netz da ist“ / „Offline“.
+- **Logic only in the domain:** Pairing rules (`PairingState`) and the recommendation algorithm (`IPairingAdvisor`) exist once in the domain project. Server and browser load the same assembly; the UI only calls them.
+- **Clicks are local:** Every step is executed immediately on the device with the domain rules (`LocalPairing`). No click waits for the network.
+- **Saving in the background:** The moves sit in a queue in the browser (localStorage) and are sent as a complete list to `PUT …/pairing/moves` as soon as the network is back (retry every 10 s). One captain enters the data, so the rule is: last list wins. The server replays them with the domain rules.
+- **Everything pre-calculated:** When opening, the round values of both modes are loaded. Recommendations are remembered per mode and state; after the shown mode, the device calculates the other one in the background. Switching modes and undo are therefore instant.
+- **Recommendations offline:** The expensive part (value of every round start, at 8v8 at most 5,685 numbers) is calculated once in the backend when opening (`GET …/pairing/values?mode=`) and cached in the browser. Afterwards the device only recalculates the current step, without network.
+- **Opened without network:** The last saved state from the device is used.
+- **Viewers** (read link) fetch the state every 15 s.
+- Status shown below the title: "Saved" / "Not saved yet – sent as soon as the network is back" / "Offline".
 
-- **PWA:** Ein Service Worker cacht die App-Dateien (nur im veröffentlichten Build; im Entwicklungsmodus cacht er absichtlich nichts). Nach dem ersten Besuch startet die App auch ohne Netz, inklusive Neuladen, und lädt den zuletzt gespeicherten Pairing-Stand vom Gerät. Lässt sich auf dem Handy über „Zum Startbildschirm hinzufügen“ wie eine App installieren. Neue Versionen werden beim nächsten Öffnen geladen, nachdem alle Tabs der App geschlossen waren.
+- **PWA:** A service worker caches the app files (only in the published build; in development mode it deliberately caches nothing). After the first visit the app also starts without network, including reloads, and loads the last saved pairing state from the device. It can be installed on the phone via "Add to Home Screen" like an app. New versions load on the next opening, once all tabs of the app have been closed.
 
-Offline testen:
+Test offline:
 
 ```bash
 dotnet publish src/ProPair.Adapters.Rest -c Release -o /tmp/propair
@@ -148,4 +148,4 @@ dotnet publish src/ProPair.Adapters.Rest -c Release -o /tmp/propair
 dotnet /tmp/propair/ProPair.Adapters.Rest.dll --contentRoot /tmp/propair --urls http://localhost:5080
 ```
 
-Seite einmal öffnen, Server stoppen, neu laden.
+Open the page once, stop the server, reload.

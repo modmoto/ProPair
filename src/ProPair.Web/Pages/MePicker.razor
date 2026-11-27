@@ -4,14 +4,14 @@
     @if (Selected is null)
     {
         <span class="me-text">
-            <strong>Wer bist du?</strong>
-            <span class="muted">Auswählen, um zu bewerten</span>
+            <strong>Who are you?</strong>
+            <span class="muted">Pick to rate</span>
         </span>
     }
     else
     {
         <span class="me-text">
-            <span class="muted">Ich bin</span>
+            <span class="muted">I am</span>
             <span><span class="army">@Selected.ArmyShort</span> <strong>@Selected.Name</strong></span>
         </span>
     }
@@ -22,10 +22,10 @@
 @if (_open)
 {
     <div class="sheet-backdrop" @onclick="() => _open = false"></div>
-    <section class="sheet me-flyout" role="dialog" aria-label="Wer bist du?">
+    <section class="sheet me-flyout" role="dialog" aria-label="Who are you?">
         <header>
-            <strong>Wer bist du?</strong>
-            <button class="x" aria-label="Schließen" @onclick="() => _open = false">✕</button>
+            <strong>Who are you?</strong>
+            <button class="x" aria-label="Close" @onclick="() => _open = false">✕</button>
         </header>
         <div class="me-options">
             @foreach (var p in Players)

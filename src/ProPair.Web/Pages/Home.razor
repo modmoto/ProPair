@@ -2,18 +2,18 @@
 @inject ProPairApi Api
 @inject NavigationManager Nav
 
-<PageTitle>ProPair – Turnier wählen</PageTitle>
+<PageTitle>ProPair – Choose tournament</PageTitle>
 
-<h1>Turnier wählen</h1>
-<p class="muted">Teamturniere aus New Recruit (The 9th Age), täglich aktualisiert.</p>
+<h1>Choose a tournament</h1>
+<p class="muted">Team tournaments from New Recruit (The 9th Age), updated daily.</p>
 
 @if (_tournaments is null)
 {
-    <p>Lade…</p>
+    <p>Loading…</p>
 }
 else
 {
-    <input class="search" type="search" placeholder="Suchen…" @bind="_query" @bind:event="oninput" />
+    <input class="search" type="search" placeholder="Search…" @bind="_query" @bind:event="oninput" />
     <div class="cards">
         @foreach (var t in Filtered(upcoming: true))
         {
@@ -23,7 +23,7 @@ else
     @if (Filtered(upcoming: false).Any())
     {
         <details class="past">
-            <summary>Vergangene Turniere</summary>
+            <summary>Past tournaments</summary>
             <div class="cards">
                 @foreach (var t in Filtered(upcoming: false))
                 {
@@ -36,13 +36,13 @@ else
 
 @if (_demos is { Count: > 0 })
 {
-    <h2>Demo ausprobieren</h2>
+    <h2>Try a demo</h2>
     <div class="cards">
         @foreach (var d in _demos)
         {
             <button class="card" disabled="@_busy" @onclick="() => ImportDemoAsync(d.ExternalId)">
                 <strong>@d.Name</strong>
-                <span class="muted">Erfundene Teams und Listen</span>
+                <span class="muted">Invented teams and lists</span>
             </button>
         }
     </div>
