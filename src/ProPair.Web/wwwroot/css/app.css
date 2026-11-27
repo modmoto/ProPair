@@ -170,7 +170,8 @@ button, input, select { font: inherit; }
 .author input { min-width: 0; min-height: var(--tap); padding: 0 .6rem; border: 1px solid var(--line); border-radius: 6px; font-size: 16px; /* no iOS zoom */ }
 
 /* matrix: own players in a sticky first column, opponents in a sticky header row */
-.matrix-wrap { overflow: auto; margin: .6rem calc(-1 * var(--pad)) 0; padding: 0 var(--pad); -webkit-overflow-scrolling: touch; }
+/* scrolls sideways only; padding leaves room for the % tips that stick out above and below the table */
+.matrix-wrap { overflow-x: auto; overflow-y: hidden; margin: .1rem calc(-1 * var(--pad)) 0; padding: .6rem var(--pad) .4rem; -webkit-overflow-scrolling: touch; }
 .matrix { border-collapse: separate; border-spacing: 2px; }
 .matrix th { padding: 0; font-weight: 500; vertical-align: bottom; }
 .matrix th button {
@@ -226,7 +227,7 @@ button, input, select { font: inherit; }
 
 @media (min-width: 1024px) {
     .content { max-width: 1200px; padding-top: 1.2rem; }
-    .matrix-wrap { margin-left: 0; margin-right: 0; padding: 0; }
+    .matrix-wrap { margin-left: 0; margin-right: 0; padding: .6rem 0 .4rem; }
     .listpanel { max-width: 720px; }
 }
 
@@ -542,8 +543,8 @@ button, input, select { font: inherit; }
 
 /* ---- matrix | lists switch, list carousel, attacker lists ---- */
 .viewtabs { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 2px; margin: .5rem 0 .3rem; padding: 2px; background: #eceef1; border-radius: 9px; }
-.viewtabs button { min-height: 2.2rem; min-width: 5.5rem; border: none; border-radius: 7px; background: transparent; color: var(--muted); font-weight: 600; cursor: pointer; }
-.viewtabs button.on { background: #fff; color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+.viewtabs a { display: grid; place-items: center; min-height: 2.2rem; min-width: 5.5rem; border-radius: 7px; background: transparent; color: var(--muted); font-weight: 600; text-decoration: none; }
+.viewtabs a.on { background: #fff; color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
 
 .listview { touch-action: pan-y; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .6rem .8rem .9rem; }
 .listnav { display: flex; align-items: center; gap: .4rem; margin-bottom: .6rem; }

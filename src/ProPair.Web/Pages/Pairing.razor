@@ -1,7 +1,9 @@
-@page "/p/{Token}/vs/{OpponentId:guid}/pairing"
+@page "/vorbereitung/{Token}/gegner/{OpponentId:guid}/pairing"
+@page "/vorbereitung/{Token}/gegner/{OpponentId:guid}/pairing/listen"
 @implements IDisposable
 @inject ProPairApi Api
 @inject Preferences Prefs
+@inject NavigationManager Nav
 
 @*
     Live pairing, everything happens in the matrix:
@@ -19,7 +21,7 @@
 }
 else
 {
-    <a class="link" href="p/@Token/vs/@OpponentId">← Matrix</a>
+    <a class="link" href="@Routes.Matrix(Token, OpponentId)">← Matrix</a>
     <div class="titlebar">
         <h1>@_p.Own.Name <span class="muted">vs</span> @_p.Opponent.Name</h1>
         <button class="eye @(_showAdvice ? "on" : "")" @onclick="ToggleAdviceAsync" disabled="@_busy"
@@ -66,10 +68,10 @@ else
         <p class="sync @_local.Status.ToString().ToLowerInvariant()">@SyncText</p>
     }
 
-    <div class="viewtabs" role="tablist" aria-label="Ansicht">
-        <button role="tab" class="@(_listView ? "" : "on")" aria-selected="@(!_listView)" @onclick="() => _listView = false">Matrix</button>
-        <button role="tab" class="@(_listView ? "on" : "")" aria-selected="@_listView" @onclick="ShowLists">Listen</button>
-    </div>
+    <nav class="viewtabs" aria-label="Ansicht">
+        <a class="@(_listView ? "" : "on")" aria-current="@(_listView ? null : "page")" href="@Routes.Pairing(Token, OpponentId)">Matrix</a>
+        <a class="@(_listView ? "on" : "")" aria-current="@(_listView ? "page" : null)" href="@Routes.PairingLists(Token, OpponentId)">Listen</a>
+    </nav>
 
     @if (_listView)
     {
@@ -335,13 +337,14 @@ else
     private bool _adviceLoading;
     private int _adviceRun;
     private Timer? _poll;
-    private bool _showAdvice;   // recommendations: off by default, remembered per device
+    private bool _showAdvice = true;   // recommendations: on by default, remembered per device
     private int _pick;          // which top pick's path is previewed
     private string _mode = "optimal";
 
     private bool _showAll;
     private bool _enemyView;    // show the matrix as the opponent sees it (ratings mirrored)
-    private bool _listView;     // lists instead of the matrix
+    private bool _listView;     // lists instead of the matrix: its own URL (…/pairing/listen)
+    private (string, Guid)? _loaded;   // pairing loaded for (token, opponent); switching the view keeps it
     private int _listIndex;
     private double? _touchX;
     private bool _showNotes = true;   // notes in the lists, remembered per device
@@ -378,7 +381,13 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        _showAdvice = await Prefs.GetAsync(AdviceKey);
+        var lists = Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].TrimEnd('/').EndsWith("/listen");
+        if (lists && !_listView && _p is not null) ShowLists();
+        _listView = lists;
+        if (_loaded == (Token, OpponentId)) return;
+        _loaded = (Token, OpponentId);
+
+        _showAdvice = await Prefs.GetAsync(AdviceKey, fallback: true);
         _showNotes = await Prefs.GetAsync(NotesKey, fallback: true);
         var stored = await Prefs.GetStringAsync(ModeKey);
         _mode = stored is "avoidminus" ? stored : "optimal";
@@ -389,6 +398,7 @@ else
         {
             await _local.LoadAsync();
             _p = _local.View;
+            if (_listView) ShowLists();
         }
         catch (ApiException e) { _error = e.Message; return; }
 
@@ -525,7 +535,6 @@ else
         var active = ActiveOpponents;
         var start = OppDef is { } d ? active.FindIndex(p => p.Id == d) : -1;
         _listIndex = Math.Max(start, 0);
-        _listView = true;
     }
 
     private void MoveList(int delta)

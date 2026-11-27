@@ -4,78 +4,48 @@
 
 <PageTitle>ProPair – Turnier wählen</PageTitle>
 
-@if (_tournament is null)
+<h1>Turnier wählen</h1>
+<p class="muted">Teamturniere aus New Recruit (The 9th Age), täglich aktualisiert.</p>
+
+@if (_tournaments is null)
 {
-    <h1>Turnier wählen</h1>
-    <p class="muted">Teamturniere aus New Recruit (The 9th Age), täglich aktualisiert.</p>
-
-    @if (_tournaments is null)
-    {
-        <p>Lade…</p>
-    }
-    else
-    {
-        <input class="search" type="search" placeholder="Suchen…" @bind="_query" @bind:event="oninput" />
-        <div class="cards">
-            @foreach (var t in Filtered(upcoming: true))
-            {
-                <TournamentCard Tournament="t" Disabled="_busy" OnClick="() => OpenAsync(t.Id)" />
-            }
-        </div>
-        @if (Filtered(upcoming: false).Any())
-        {
-            <details class="past">
-                <summary>Vergangene Turniere</summary>
-                <div class="cards">
-                    @foreach (var t in Filtered(upcoming: false))
-                    {
-                        <TournamentCard Tournament="t" Disabled="_busy" OnClick="() => OpenAsync(t.Id)" />
-                    }
-                </div>
-            </details>
-        }
-    }
-
-    @if (_demos is { Count: > 0 })
-    {
-        <h2>Demo ausprobieren</h2>
-        <div class="cards">
-            @foreach (var d in _demos)
-            {
-                <button class="card" disabled="@_busy" @onclick="() => ImportDemoAsync(d.ExternalId)">
-                    <strong>@d.Name</strong>
-                    <span class="muted">Erfundene Teams und Listen</span>
-                </button>
-            }
-        </div>
-    }
+    <p>Lade…</p>
 }
 else
 {
-    <h1>@_tournament.Name</h1>
-    <NewRecruitStatus TournamentId="_tournament.Id" ListsVisible="_tournament.ListsVisible" IsDemo="_tournament.IsDemo"
-                LastSyncedAt="_tournament.LastSyncedAt" OnSynced="ReloadAsync" />
-    <p>Welches ist dein Team?</p>
+    <input class="search" type="search" placeholder="Suchen…" @bind="_query" @bind:event="oninput" />
     <div class="cards">
-        @foreach (var p in _tournament.Participants)
+        @foreach (var t in Filtered(upcoming: true))
         {
-            <button class="card" disabled="@(_busy || p.Players.Count == 0)" @onclick="() => StartAsync(p.Id)">
-                <strong>@p.Name</strong>
-                @if (p.Players.Count == 0)
+            <TournamentCard Tournament="t" Disabled="_busy" OnClick="() => Open(t.Id)" />
+        }
+    </div>
+    @if (Filtered(upcoming: false).Any())
+    {
+        <details class="past">
+            <summary>Vergangene Turniere</summary>
+            <div class="cards">
+                @foreach (var t in Filtered(upcoming: false))
                 {
-                    <span class="muted">Noch keine Spieler/Listen bekannt</span>
+                    <TournamentCard Tournament="t" Disabled="_busy" OnClick="() => Open(t.Id)" />
                 }
-                <span class="armies">
-                    @foreach (var pl in p.Players)
-                    {
-                        <span class="army" title="@pl.ArmyName">@pl.ArmyShort</span>
-                    }
-                </span>
-                <RosterWarning Team="p" />
+            </div>
+        </details>
+    }
+}
+
+@if (_demos is { Count: > 0 })
+{
+    <h2>Demo ausprobieren</h2>
+    <div class="cards">
+        @foreach (var d in _demos)
+        {
+            <button class="card" disabled="@_busy" @onclick="() => ImportDemoAsync(d.ExternalId)">
+                <strong>@d.Name</strong>
+                <span class="muted">Erfundene Teams und Listen</span>
             </button>
         }
     </div>
-    <button class="link" @onclick="() => _tournament = null">← anderes Turnier</button>
 }
 
 @if (_error is not null)
@@ -86,7 +56,6 @@ else
 @code {
     private IReadOnlyList<TournamentSummaryDto>? _tournaments;
     private IReadOnlyList<SourceTournamentDto>? _demos;
-    private TournamentDto? _tournament;
     private string _query = "";
     private bool _busy;
     private string? _error;
@@ -112,16 +81,12 @@ else
         return upcoming ? hits.OrderBy(t => t.StartDate) : hits.OrderByDescending(t => t.StartDate);
     }
 
-    private Task OpenAsync(Guid id) => RunAsync(async () => _tournament = await Api.GetTournamentAsync(id));
+    private void Open(Guid id) => Nav.NavigateTo(Routes.Tournament(id));
 
-    private Task ReloadAsync() => OpenAsync(_tournament!.Id);
-
-    private Task ImportDemoAsync(string externalId) => RunAsync(async () => _tournament = await Api.ImportAsync(externalId));
-
-    private Task StartAsync(Guid participantId) => RunAsync(async () =>
+    private Task ImportDemoAsync(string externalId) => RunAsync(async () =>
     {
-        var created = await Api.StartPreparationAsync(_tournament!.Id, participantId);
-        Nav.NavigateTo($"p/{created.EditToken}");
+        var imported = await Api.ImportAsync(externalId);
+        Open(imported.Id);
     });
 
     private async Task RunAsync(Func<Task> action)

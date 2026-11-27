@@ -1,4 +1,4 @@
-@page "/p/{Token}"
+@page "/vorbereitung/{Token}"
 @inject ProPairApi Api
 @inject NavigationManager Nav
 @inject WhoAmI Me
@@ -43,7 +43,7 @@ else
         @foreach (var o in _prep.Opponents)
         {
             var total = _prep.Own.Players.Count * o.Participant.Players.Count;
-            <a class="card @(Locked ? "locked" : "")" href="@(Locked ? null : $"p/{Token}/vs/{o.Participant.Id}")" aria-disabled="@Locked">
+            <a class="card @(Locked ? "locked" : "")" href="@(Locked ? null : Routes.Matrix(Token, o.Participant.Id))" aria-disabled="@Locked">
                 <strong>@o.Participant.Name</strong>
                 <span class="armies">
                     @foreach (var pl in o.Participant.Players)
@@ -95,5 +95,5 @@ else
         await Me.SetAsync(_prep!.Own.Id, player.Id);
     }
 
-    private string LinkFor(string token) => Nav.ToAbsoluteUri($"p/{token}").ToString();
+    private string LinkFor(string token) => Nav.ToAbsoluteUri(Routes.Preparation(token)).ToString();
 }

@@ -257,6 +257,8 @@ Taktisches DDD nach Evans/Vernon:
 | 23 | Release | Ein Docker-Image für App und Sync (zwei Prozesse, endet einer, startet der Container neu). Sync-URLs nur im Container erreichbar (kein Login). Azure DevOps wie FadingFlame: Build → Docker Hub, Release per SSH + docker-compose hinter Caddy. Eigene MongoDB in der Compose-Datei (ohne offenen Port, eigenes Netz), Secrets nur in Azure DevOps. |
 | 24 | Wer bin ich (ohne Login) | Im Bearbeiten-Link wählt man per Flyout, welcher Spieler des eigenen Teams man ist (pro Team im Browser gespeichert, jederzeit wechselbar). Ohne Auswahl keine Gegner-Matrix. Der Spielername ist der Autor aller Änderungen; das freie Namensfeld entfällt. Später ersetzt durch Login. |
 | 25 | Matrix-Ansicht | Eigene Zeile hervorgehoben. Zelle antippen → Flyout mit Bewertungen statt nativem Select. Unter der Matrix ein Karussell (wischen/Pfeile) durch die Gegnerlisten: Kopf mit Armee und Name, darunter die eigene Bewertung (+ Löschen), dann Liste mit Markierungen und Notizen. Teamkollegen öffnen ihre Liste mit Schließen-Button, danach wieder das Karussell. Kein automatisches Scrollen. |
+| 26 | URLs | Sprechende Ressourcen, eine Seite pro Ansicht: `/` Turniere · `/turniere/{id}` Team wählen · `/vorbereitung/{token}` Übersicht · `…/gegner/{id}` Matrix · `…/gegner/{id}/pairing` Pairing-Matrix · `…/pairing/listen` Listen. Alte Links `/p/…` werden weitergeleitet. Die API behält ihre Pfade. |
+| 27 | Empfehlungen | Im Pairing standardmäßig an; ein-/ausblenden merkt sich das Gerät. |
 
 ## Offene Fragen
 

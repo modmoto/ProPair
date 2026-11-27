@@ -1,4 +1,4 @@
-@page "/p/{Token}/vs/{OpponentId:guid}"
+@page "/vorbereitung/{Token}/gegner/{OpponentId:guid}"
 @implements IDisposable
 @inject ProPairApi Api
 @inject WhoAmI Me
@@ -16,10 +16,10 @@
 }
 else
 {
-    <a class="link" href="p/@Token">← @_matrix.TournamentName</a>
+    <a class="link" href="@Routes.Preparation(Token)">← @_matrix.TournamentName</a>
     <div class="titlebar">
         <h1>@_matrix.Own.Name <span class="muted">vs</span> @_matrix.Opponent.Name</h1>
-        <a class="pill" href="p/@Token/vs/@OpponentId/pairing">Pairing →</a>
+        <a class="pill" href="@Routes.Pairing(Token, OpponentId)">Pairing →</a>
     </div>
     <RosterWarning Team="_matrix.Own" ShowName="true" />
     <RosterWarning Team="_matrix.Opponent" ShowName="true" />
