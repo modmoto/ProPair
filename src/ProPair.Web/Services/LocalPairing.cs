@@ -24,8 +24,8 @@ public sealed class LocalPairing(ProPairApi api, Preferences store, string token
     private PairingDto _base = default!;       // last known server data (rosters, cells, scale, …)
     private List<PairingMoveDto> _moves = [];
     private PairingState _state = default!;
-    private IPairingAdviceSession? _adviceSession;
-    private string? _adviceSessionKey;
+    private readonly Dictionary<string, (string Key, IPairingAdviceSession Session)> _sessions = [];   // per mode
+    private readonly Dictionary<string, PairingAdviceDto?> _adviceCache = [];                         // per mode + state
     private Timer? _retry;
 
     public PairingDto View { get; private set; } = default!;
@@ -131,23 +131,45 @@ public sealed class LocalPairing(ProPairApi api, Preferences store, string token
 
     // ---------- recommendations (on the device) ----------
 
+    /// <summary>All modes the device can recommend in.</summary>
+    public static readonly string[] Modes = ["optimal", "avoidminus"];
+
+    /// <summary>Already computed recommendations for the current state, if any (instant, no calculation).</summary>
+    public bool TryCached(string mode, out PairingAdviceDto? advice) => _adviceCache.TryGetValue(CacheKey(mode), out advice);
+
     /// <summary>
     /// Recommendations for the current state. Needs the precomputed round values once (loaded from the backend
-    /// and cached); afterwards everything runs offline.
+    /// and cached); afterwards everything runs offline. Results are remembered per mode and state,
+    /// so switching modes or going back to a state is instant.
     /// </summary>
     public async Task<PairingAdviceDto?> AdviseAsync(string mode)
     {
         if (_state.Step == PairingStep.Done) return null;
+        var key = CacheKey(mode);
+        if (_adviceCache.TryGetValue(key, out var cached)) return cached;
+
         var session = await AdviceSessionAsync(mode);
         if (session is null) return null;
         await Task.Yield(); // let the UI render the tap before the calculation
-        return AdviceMapping.ToDto(session.Advise(_state), mode, View.Scale);
+        if (_adviceCache.TryGetValue(key, out cached)) return cached; // computed meanwhile
+        var advice = AdviceMapping.ToDto(session.Advise(_state), mode, View.Scale);
+        _adviceCache[key] = advice;
+        return advice;
     }
+
+    /// <summary>Loads the round values of every mode (one network call each, then cached on the device).</summary>
+    public async Task PreloadAsync()
+    {
+        foreach (var mode in Modes) await AdviceSessionAsync(mode);
+    }
+
+    private string CacheKey(string mode) =>
+        $"{mode}|{CellsHash()}|{string.Join(";", _moves.Select(m => $"{m.Step}:{string.Join(",", m.Own)}:{string.Join(",", m.Opponent)}"))}";
 
     private async Task<IPairingAdviceSession?> AdviceSessionAsync(string mode)
     {
         var key = $"values.{mode}.{CellsHash()}";
-        if (_adviceSession is not null && _adviceSessionKey == key) return _adviceSession;
+        if (_sessions.TryGetValue(mode, out var known) && known.Key == key) return known.Session;
 
         var values = await ReadAsync<RoundValuesDto>(Key(key));
         if (values is null)
@@ -169,9 +191,9 @@ public sealed class LocalPairing(ProPairApi api, Preferences store, string token
             return null; // rosters changed – values don't fit
 
         var table = new RoundValues(values.Keys.Zip(values.Values).ToDictionary(kv => kv.First, kv => kv.Second));
-        _adviceSession = AdviceModes.Create(Enum.Parse<AdviceMode>(mode, ignoreCase: true)).Start(own, opp, Score, table);
-        _adviceSessionKey = key;
-        return _adviceSession;
+        var session = AdviceModes.Create(Enum.Parse<AdviceMode>(mode, ignoreCase: true)).Start(own, opp, Score, table);
+        _sessions[mode] = (key, session);
+        return session;
     }
 
     private double Score(PlayerId own, PlayerId opp) => AdviceMapping.Score(View, own.Value, opp.Value);

@@ -9,11 +9,11 @@ public enum AdviceMode
     /// <summary>Minus matchups weigh more than plus ones (loss aversion) – avoid bad games first.</summary>
     AvoidMinus,
 
-    /// <summary>Assume the opponent sees our move: maximise what we get at least (worst case).</summary>
-    Safe,
+    // Idea, removed for now: "Safe" – assume the opponent sees our move and maximise the worst case
+    // (GameTreeAdvisor with PessimisticSolver). Too pessimistic for hidden simultaneous moves.
 }
 
-/// <summary>Builds the advisor for a mode. All modes share the same game tree; they differ in scoring or step solver.</summary>
+/// <summary>Builds the advisor for a mode. All modes share the same game tree; they differ in how ratings are weighted for the decision.</summary>
 public static class AdviceModes
 {
     /// <summary>
@@ -28,7 +28,6 @@ public static class AdviceModes
     public static IPairingAdvisor Create(AdviceMode mode) => mode switch
     {
         AdviceMode.AvoidMinus => new GameTreeAdvisor(new EquilibriumSolver(), s => s * MinusFactor(s)),
-        AdviceMode.Safe => new GameTreeAdvisor(new PessimisticSolver()),
         _ => new GameTreeAdvisor(new EquilibriumSolver()),
     };
 }

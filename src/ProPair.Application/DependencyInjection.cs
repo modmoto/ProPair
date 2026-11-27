@@ -10,7 +10,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IClock, SystemClock>();
 
-        // The recommendation algorithm per mode (Optimal, AvoidMinus, Safe). Swap the provider – or change
+        // The recommendation algorithm per mode (Optimal, AvoidMinus). Swap the provider – or change
         // AdviceModes.Create – to plug in another IPairingAdvisor or step solver.
         services.AddSingleton<IPairingAdvisorProvider, DefaultPairingAdvisorProvider>();
         services.AddScoped<SearchSourceTournaments>();

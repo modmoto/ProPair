@@ -46,7 +46,7 @@ dotnet test
 - `IPairingAdvisor`: der ganze Algorithmus. Die App kennt nur dieses Interface, pro Modus über `IPairingAdvisorProvider`.
 - `GameTreeAdvisor(IMatrixGameSolver)`: der Spielbaum. Wie ein einzelner Schritt gelöst wird, entscheidet der Solver:
   - `EquilibriumSolver`: Nash, der Standard.
-  - `PessimisticSolver`: Maximin, der Gegner sieht unseren Zug (sichere Untergrenze).
+  - `PessimisticSolver`: Maximin, der Gegner sieht unseren Zug (sichere Untergrenze). Derzeit kein eigener Modus, nur Vergleich/Tests.
 - Registriert in `ProPair.Application/DependencyInjection.cs`.
 
 **Modi** (umschaltbar im Empfehlungs-Panel, pro Gerät gemerkt):
@@ -55,7 +55,6 @@ dotnet test
 |-------|-----------|-----------|
 | Optimal | höchster fairer Erwartungswert, Plus und Minus gleich gewichtet | Nash, lineare Bewertung |
 | Minus vermeiden | schlechte Matchups vermeiden geht vor gute holen | Nash, „-“ zählt 1,5-fach, „0/-“ 1,25-fach (`AdviceModes.MinusFactor`) |
-| Absichern | was wir garantiert mindestens bekommen | Maximin (`PessimisticSolver`) |
 
 Abgestuft und bewusst moderat: Jeder Minuspunkt bringt 0,25 Aufschlag. Ein „-“ (−2) kostet dann so viel, wie „+“ und „0/+“ zusammen bringen, ein halbes Minus bekommt den halben Aufschlag. Die Gewichtung fließt nur in die Entscheidung ein (`GameTreeAdvisor(solver, weight)`). Alles Angezeigte (Gesamtstand, Matchups, Endstände, Wahrscheinlichkeiten) sind echte Punkte.
 
@@ -70,6 +69,7 @@ Im Turnier ist das Netz oft weg. Das Pairing darf deshalb nie am Netz hängen:
 - **Logik nur in der Domain:** Pairing-Regeln (`PairingState`) und Empfehlungs-Algorithmus (`IPairingAdvisor`) stehen einmal im Domain-Projekt. Server und Browser laden dieselbe Assembly, die UI ruft sie nur auf.
 - **Klicks sind lokal:** Jeder Schritt wird sofort auf dem Gerät mit den Domain-Regeln ausgeführt (`LocalPairing`). Kein Klick wartet auf das Netz.
 - **Speichern im Hintergrund:** Die Züge liegen in einer Warteschlange im Browser (localStorage) und gehen als komplette Liste an `PUT …/pairing/moves`, sobald Netz da ist (Retry alle 10 s). Ein Captain trägt ein, deshalb gilt: letzte Liste gewinnt. Der Server spielt sie über die Domain-Regeln nach.
+- **Alles vorgerechnet:** Beim Öffnen werden die Rundenwerte beider Modi geladen. Empfehlungen werden pro Modus und Stand gemerkt; nach dem angezeigten Modus rechnet das Gerät den anderen im Hintergrund. Moduswechsel und Rückgängig sind dadurch sofort da.
 - **Empfehlungen offline:** Der teure Teil (Wert jedes Rundenstarts, bei 8v8 höchstens 5.685 Zahlen) wird beim Öffnen einmal im Backend vorgerechnet (`GET …/pairing/values?mode=`) und im Browser gecacht. Danach rechnet das Gerät pro Schritt nur noch den aktuellen Schritt nach, ohne Netz.
 - **Ohne Netz geöffnet:** Es wird der zuletzt gespeicherte Stand vom Gerät genommen.
 - **Zuschauer** (Lese-Link) holen sich den Stand alle 15 s.

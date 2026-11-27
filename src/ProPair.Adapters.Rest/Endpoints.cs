@@ -82,7 +82,7 @@ internal static class Endpoints
 
         var pairing = api.MapGroup("/p/{token}/matrices/{opponentId:guid}/pairing");
 
-        // ?advice=optimal|avoidminus|safe adds recommendations (only when the UI shows them)
+        // ?advice=optimal|avoidminus adds recommendations (only when the UI shows them)
         pairing.MapGet("", async (string token, Guid opponentId, string? advice, GetPairing uc, CancellationToken ct) =>
             (await uc.ExecuteAsync(token, new ParticipantId(opponentId), Mode(advice), ct)).ToDto());
 
@@ -106,7 +106,7 @@ internal static class Endpoints
         pairing.MapPut("/moves", async (string token, Guid opponentId, SyncMovesRequest req, SyncPairingMoves uc, CancellationToken ct) =>
             (await uc.ExecuteAsync(token, new ParticipantId(opponentId), req.Moves.Select(m => m.ToDomain()).ToList(), ct)).ToDto());
 
-        // precomputed round values so the device can recommend offline (?mode=optimal|avoidminus|safe)
+        // precomputed round values so the device can recommend offline (?mode=optimal|avoidminus)
         pairing.MapGet("/values", async (string token, Guid opponentId, string? mode, GetRoundValues uc, CancellationToken ct) =>
         {
             var adviceMode = Mode(mode ?? "optimal") ?? AdviceMode.Optimal;
@@ -124,13 +124,12 @@ internal static class Endpoints
         AdviceMode? mode, CancellationToken ct) =>
         (await uc.ExecuteAsync(token, new ParticipantId(opponentId), move, mode, ct)).ToDto();
 
-    /// <summary>?advice=optimal|avoidminus|safe (true = optimal); missing = no recommendations.</summary>
+    /// <summary>?advice=optimal|avoidminus (true = optimal); missing = no recommendations.</summary>
     private static AdviceMode? Mode(string? advice) => advice?.ToLowerInvariant() switch
     {
         null or "" or "false" => null,
         "true" or "optimal" => AdviceMode.Optimal,
         "avoidminus" => AdviceMode.AvoidMinus,
-        "safe" => AdviceMode.Safe,
         _ => throw new DomainException($"Unknown advice mode '{advice}'."),
     };
 }

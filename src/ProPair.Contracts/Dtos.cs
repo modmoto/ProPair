@@ -71,7 +71,7 @@ public sealed record PredictedPathDto(MoveOptionDto Option, IReadOnlyList<Predic
 /// <summary>How much a rating level counts in the avoid-minus decision (e.g. "-" 1.5, "0/-" 1.25).</summary>
 public sealed record MinusFactorDto(string LevelKey, double Factor);
 
-/// <param name="Mode">optimal | avoidminus | safe. Weighting only affects the order; all shown values are real points.</param>
+/// <param name="Mode">optimal | avoidminus. Weighting only affects the order; all shown values are real points.</param>
 /// <param name="Expected">Value used for the decision (weighted in avoidminus) – not meant for display.</param>
 public sealed record PairingAdviceDto(string Mode, IReadOnlyList<MinusFactorDto> MinusFactors, double Expected, IReadOnlyList<MoveOptionDto> Own, IReadOnlyList<MoveOptionDto> Opponent,
     IReadOnlyList<PredictedPathDto> TopPicks);

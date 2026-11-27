@@ -106,6 +106,7 @@ Berechnung:
 Darstellung (in der Matrix, mobil):
 - Defender: Badge mit erwartetem Endstand an unseren Namen (★ = bestes), dünner Wahrscheinlichkeitsbalken an Gegner-Namen.
 - Attacker/Wahl: erwarteter Endstand klein in den wählbaren Zellen, beste mit grünem Rahmen. ⚠ bei Schlüsselspielern.
+- Pick antippen wählt ihn auch in der Matrix aus (unsere Seite des Schritts); umgekehrt springt die Vorschau auf den passenden Pick.
 - Option antippen → **Pfad-Vorschau**: wahrscheinliche Matchups gestrichelt in der Matrix (nach Runde nummeriert) + Zeitleiste pro Runde mit Zügen und den daraus entstehenden Matchups samt Bewertung; Runden per Wischen durchgehen; Endstand mit Spanne (Worst/Best).
 - „Was wäre wenn“: Gegner-Namen gedrückt halten = „angenommen, die legen den“ → neu rechnen.
 - **Ausblendbar:** Schalter „Empfehlungen“ (Augen-Icon) neben dem Flip-Button. Standard **aus**, pro Gerät gemerkt – damit man sich nicht unbewusst von Zahlen leiten lässt. Aus = keine Zahlen, keine Rahmen, keine Warnungen.
@@ -238,11 +239,13 @@ Taktisches DDD nach Evans/Vernon:
 | 11 | Pairing | Auswahl per Tap in der Matrix (Namen = Defender, Zellen = Attacker/Wahl). Rest-Matrix, Flip auf Vollmatrix (vergeben = grau). Empfehlungen vorerst aus. |
 | 12 | Notizen/Verlauf | Long-Press/Rechtsklick-Sheet je Zelle, Listen-Notiz per Tap auf Spieler. |
 | 13 | Empfehlungen | Ausblendbar, Standard aus (keine psychologische Beeinflussung). |
-| 15 | Empfehlungs-Modi | Optimal / Minus vermeiden („-“ 1,5×, „0/-“ 1,25×) / Absichern; Gewichtung nur für die Entscheidung, alles Angezeigte echte Punkte. Pro Pick: Gesamtwertung + Diese Runde, je wahrscheinlichster Wert mit Wahrscheinlichkeit. Pfad: Ecke im Feld (schwarz / schwarz-hellgrau geteilt / hellgrau je Runde), gleiche Ecke an „Runde N“. |
+| 15 | Empfehlungs-Modi | Optimal / Minus vermeiden („-“ 1,5×, „0/-“ 1,25×); Absichern entfernt (Idee, s. offene Fragen); Gewichtung nur für die Entscheidung, alles Angezeigte echte Punkte. Pro Pick: Gesamtwertung + Diese Runde, je wahrscheinlichster Wert mit Wahrscheinlichkeit. Pfad: Ecke im Feld (schwarz / schwarz-hellgrau geteilt / hellgrau je Runde), gleiche Ecke an „Runde N“. |
 | 16 | Offline | Local-first Pairing: Domain-Assembly auch im Browser, Züge lokal + Warteschlange, Sync per kompletter Zugliste, Empfehlungen mit vom Backend vorgerechneten Rundenwerten. PWA: App startet nach erstem Besuch auch ohne Netz. |
 | 14 | Listen-Markierungen | 6 Farben + Zeilen-Notiz, Liste oben, Notizen unten. |
 
 ## Offene Fragen
+
+- Idee „Absichern“: Gegner sieht unseren Zug, Worst case maximieren (`PessimisticSolver`). Vorerst raus – bei verdeckten Zügen zu pessimistisch.
 
 - Tisch-/Szenariowahl im Pairing abbilden?
 - Captain-Zugang ohne Login: eigener Admin-Link pro Team, oder Login (z. B. GitHub/Google)?

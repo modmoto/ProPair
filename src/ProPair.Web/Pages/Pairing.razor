@@ -175,7 +175,7 @@ else
                 <div class="picks">
                     @foreach (var (path, i) in a.TopPicks.Select((p, i) => (p, i)))
                     {
-                        <button class="pick @(i == _pick ? "on" : "")" @onclick="() => _pick = i">
+                        <button class="pick @(i == _pick ? "on" : "")" @onclick="() => SelectPickAsync(i)">
                             <span class="rank">@(i + 1)</span>
                             <span class="who">
                                 @foreach (var id in path.Option.Players)
@@ -265,7 +265,7 @@ else
     private const string ModeKey = "adviceMode";
 
     private static readonly (string Key, string Label)[] Modes =
-        [("optimal", "Optimal"), ("avoidminus", "Minus vermeiden"), ("safe", "Absichern")];
+        [("optimal", "Optimal"), ("avoidminus", "Minus vermeiden")];
 
     private PairingDto? _p;
     private LocalPairing? _local;
@@ -313,7 +313,7 @@ else
     {
         _showAdvice = await Prefs.GetAsync(AdviceKey);
         var stored = await Prefs.GetStringAsync(ModeKey);
-        _mode = stored is "avoidminus" or "safe" ? stored : "optimal";
+        _mode = stored is "avoidminus" ? stored : "optimal";
 
         _local = new LocalPairing(Api, Prefs, Token, OpponentId);
         _local.Changed += OnLocalChanged;
@@ -327,6 +327,7 @@ else
         if (!_p.CanEdit) // viewers follow the captain now and then
             _poll = new Timer(_ => _ = InvokeAsync(async () => await _local.RefreshAsync()), null, 15_000, 15_000);
         _ = RecomputeAdviceAsync();
+        _ = _local.PreloadAsync(); // round values for every mode, in the background, so the pairing never needs the network
     }
 
     private void OnLocalChanged() => _ = InvokeAsync(() =>
@@ -373,6 +374,7 @@ else
 
         if (own) _ownDefender = _ownDefender == id ? null : id;
         else _oppDefender = _oppDefender == id ? null : id;
+        SyncPickFromMatrix();
 
         if (_ownDefender is { } d && _oppDefender is { } e)
             await AutoSubmitAsync(new PairingMoveDto("defenders", [d], [e]));
@@ -401,6 +403,8 @@ else
                 break;
         }
 
+        SyncPickFromMatrix();
+
         // complete step → enter it automatically (wrong tap? Undo)
         if (_p.Step == "attackers" && _ownAttackers.Count == 2 && _oppAttackers.Count == 2)
             await AutoSubmitAsync(new PairingMoveDto("attackers", _ownAttackers.ToList(), _oppAttackers.ToList()));
@@ -415,6 +419,48 @@ else
         StateHasChanged();
         await Task.Delay(LeaveMillis);
         await ChangeAsync(() => _local!.ApplyAsync(move));
+    }
+
+    /// <summary>Tapping a recommendation selects it in the matrix as well (our side of the current step).</summary>
+    private async Task SelectPickAsync(int index)
+    {
+        _pick = index;
+        if (!_p!.CanEdit || _busy || Advice?.TopPicks.ElementAtOrDefault(index) is not { } pick) return;
+        var players = pick.Option.Players;
+        switch (_p.Step)
+        {
+            case "defenders":
+                _ownDefender = players[0];
+                if (_oppDefender is { } e)
+                    await AutoSubmitAsync(new PairingMoveDto("defenders", [players[0]], [e]));
+                break;
+            case "attackers":
+                _ownAttackers = players.ToList();
+                if (_oppAttackers.Count == 2)
+                    await AutoSubmitAsync(new PairingMoveDto("attackers", _ownAttackers.ToList(), _oppAttackers.ToList()));
+                break;
+            case "choices":
+                _ownAccepts = players[0];
+                if (_oppAccepts is { } taken)
+                    await AutoSubmitAsync(new PairingMoveDto("choices", [players[0]], [taken]));
+                break;
+        }
+    }
+
+    /// <summary>The other way round: picking in the matrix shows the matching recommendation's path.</summary>
+    private void SyncPickFromMatrix()
+    {
+        if (Advice is not { } a) return;
+        IReadOnlyList<Guid>? own = _p!.Step switch
+        {
+            "defenders" when _ownDefender is { } d => [d],
+            "attackers" when _ownAttackers.Count == 2 => _ownAttackers,
+            "choices" when _ownAccepts is { } q => [q],
+            _ => null,
+        };
+        if (own is null) return;
+        var index = a.TopPicks.ToList().FindIndex(p => p.Option.Players.OrderBy(x => x).SequenceEqual(own.OrderBy(x => x)));
+        if (index >= 0) _pick = index;
     }
 
     private static void Toggle(List<Guid> picks, Guid id)
@@ -440,20 +486,39 @@ else
         await RecomputeAdviceAsync();
     }
 
-    /// <summary>Recommendations are computed on the device (shared domain advisor) – no network after the first load.</summary>
+    /// <summary>
+    /// Recommendations are computed on the device (shared domain advisor) – no network after the first load.
+    /// Cached per mode and state; after the shown mode, the other modes are computed in the background.
+    /// </summary>
     private async Task RecomputeAdviceAsync()
     {
         if (!_showAdvice || _local is null) return;
         var run = ++_adviceRun;
-        _adviceLoading = true;
-        _advice = null;
-        StateHasChanged();
-        var advice = await _local.AdviseAsync(_mode);
-        if (run != _adviceRun) return; // a newer state came in meanwhile
-        _advice = advice;
-        _adviceLoading = false;
         _pick = 0;
+        if (_local.TryCached(_mode, out var cached))
+        {
+            _advice = cached;
+            _adviceLoading = false;
+        }
+        else
+        {
+            _adviceLoading = true;
+            _advice = null;
+            StateHasChanged();
+            var advice = await _local.AdviseAsync(_mode);
+            if (run != _adviceRun) return; // a newer state came in meanwhile
+            _advice = advice;
+            _adviceLoading = false;
+        }
         StateHasChanged();
+
+        // other modes for the same state, while the captain looks at the matrix
+        await Task.Delay(400);
+        foreach (var mode in LocalPairing.Modes.Where(m => m != _mode))
+        {
+            if (run != _adviceRun) return;
+            await _local.AdviseAsync(mode);
+        }
     }
 
     // ---------- recommendations ----------
@@ -464,7 +529,7 @@ else
     /// <summary>How likely a player is used in the current step (sum over options containing him).</summary>
     private string? Tip(Guid id, bool own)
     {
-        if (Advice is not { } a || HasLocalPick) return null;
+        if (Advice is not { } a) return null;
         var p = (own ? a.Own : a.Opponent).Where(o => o.Players.Contains(id)).Sum(o => o.Probability);
         if (p < 0.005) return null;
         return (own && IsBest(id) ? "★ " : "") + Format.Percent(p);
@@ -475,7 +540,7 @@ else
     /// <summary>Attackers/choices: ring the cells of our best option.</summary>
     private string AdviceCellClass(Guid own, Guid opp)
     {
-        if (Advice?.Own.FirstOrDefault() is not { } best || HasLocalPick) return "";
+        if (Advice?.Own.FirstOrDefault() is not { } best) return "";
         return _p!.Step switch
         {
             "attackers" when opp == _p.OpponentDefender && best.Players.Contains(own) => "rec",
@@ -495,7 +560,6 @@ else
     private string ModeHint => _mode switch
     {
         "avoidminus" => "Schlechte Matchups vermeiden: Minus-Matchups zählen in der Entscheidung stärker.",
-        "safe" => "Rechnet damit, dass der Gegner unseren Zug durchschaut, und holt das Beste aus dem schlechtesten Fall.",
         _ => "Bester Durchschnitt: Plus und Minus zählen gleich, der Gegner spielt ebenfalls optimal.",
     };
 

@@ -254,14 +254,14 @@ public class AdviceModeTests
     }
 
     [Fact]
-    public void Safe_mode_uses_the_guaranteed_value()
+    public void Pessimistic_solver_gives_the_guaranteed_value()
     {
         var own = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList();
         var opp = Enumerable.Range(0, 3).Select(_ => PlayerId.New()).ToList();
         double[,] m = { { 2, -1, 0 }, { -2, 1, 1 }, { 0, 0, -1 } };
         double Score(PlayerId o, PlayerId p) => m[own.IndexOf(o), opp.IndexOf(p)];
 
-        Assert.Equal(0, AdviceModes.Create(AdviceMode.Safe).Advise(PairingState.Start(own, opp), Score).Expected, 6);
+        Assert.Equal(0, new GameTreeAdvisor(new PessimisticSolver()).Advise(PairingState.Start(own, opp), Score).Expected, 6);
         Assert.Equal(0.4, AdviceModes.Create(AdviceMode.Optimal).Advise(PairingState.Start(own, opp), Score).Expected, 6);
     }
 }
@@ -361,7 +361,6 @@ public class AdviceSessionTests
     [Theory]
     [InlineData(AdviceMode.Optimal)]
     [InlineData(AdviceMode.AvoidMinus)]
-    [InlineData(AdviceMode.Safe)]
     public void Precomputed_round_values_give_identical_advice(AdviceMode mode)
     {
         var (own, opp, score) = Random(8, 5);
