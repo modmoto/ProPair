@@ -366,3 +366,33 @@ button, input, select { font: inherit; }
 .sheet.confirm p { margin: .4rem 0 1rem; }
 .confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
 .btn.danger-fill { background: #b3261e; border-color: #b3261e; color: #fff; font-weight: 700; }
+
+/* running total next to the title */
+.titlebar h1 { flex: 1; min-width: 0; }
+.total {
+    flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 3.4rem; height: var(--tap); padding: 0 .5rem; border-radius: 10px;
+    background: #e8ebf1; line-height: 1.05;
+}
+.total strong { font-size: 1.15rem; }
+.total small { font-size: .65rem; color: var(--muted); }
+.total.pos { background: #d7f0dc; color: #1d6b2e; }
+.total.neg { background: #f8dcd9; color: #9b231c; }
+
+/* fixed matchups under the matrix */
+.games { margin-top: 1rem; }
+.games h2 { margin: 0 0 .3rem; }
+.gamerow {
+    display: grid; grid-template-columns: 1fr auto 1fr 2.6rem; align-items: center; gap: .4rem;
+    padding: .45rem 0; border-bottom: 1px solid var(--line); font-size: .85rem;
+}
+.gamerow .side { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gamerow .vs { color: var(--muted); font-size: .75rem; }
+.gamerow .rating { display: grid; place-items: center; height: 1.8rem; border-radius: 6px; font-weight: 800; }
+.gamerow.fresh { animation: pop-in .5s ease-out; }
+@keyframes pop-in { from { transform: scale(.9); opacity: 0; background: #dfe7fb; } to { transform: none; opacity: 1; } }
+
+@media (min-width: 640px) {
+    .games { max-width: 720px; }
+}
+@media (prefers-reduced-motion: reduce) { .gamerow.fresh { animation: none; } }

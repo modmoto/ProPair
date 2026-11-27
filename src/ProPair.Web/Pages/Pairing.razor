@@ -20,6 +20,10 @@ else
     <a class="link" href="p/@Token/vs/@OpponentId">← Matrix</a>
     <div class="titlebar">
         <h1>@_p.Own.Name <span class="muted">vs</span> @_p.Opponent.Name</h1>
+        <span class="total @TotalClass" title="Summe der festen Matchups (@_p.Games.Count/@_p.Own.Players.Count)">
+            <strong>@Format.Score(_p.FixedScore)</strong>
+            <small>@_p.Games.Count/@_p.Own.Players.Count</small>
+        </span>
         <button class="flip @(ShowAll ? "on" : "")" @onclick="ToggleView" disabled="@Done"
                 title="@(ShowAll ? "Nur verbleibende Spieler" : "Ursprüngliche Matrix")"
                 aria-label="Ursprüngliche Matrix ein-/ausblenden">
@@ -78,6 +82,25 @@ else
 
     @if (_error is not null) { <p class="error">@_error</p> }
 
+    @if (_p.Games.Count > 0)
+    {
+        <section class="games">
+            <h2>Matchups</h2>
+            @foreach (var g in _p.Games)
+            {
+                var own = Player(g.OwnPlayerId);
+                var opp = Player(g.OpponentPlayerId);
+                var level = LevelAt(g.OwnPlayerId, g.OpponentPlayerId);
+                <div class="gamerow @(_fresh.Contains(g.OwnPlayerId) ? "fresh" : "")">
+                    <span class="side"><span class="army">@own.ArmyShort</span> @own.Name</span>
+                    <span class="vs">vs</span>
+                    <span class="side"><span class="army">@opp.ArmyShort</span> @opp.Name</span>
+                    <span class="rating" style="background:@(level?.Color ?? "#e8ebf1")">@(level?.Label ?? "–")</span>
+                </div>
+            }
+        </section>
+    }
+
     @if (_p.CanEdit)
     {
         <div class="actionbar">
@@ -131,6 +154,7 @@ else
     private bool _busy;
     private string? _error;
     private HashSet<Guid> _leaving = [];
+    private HashSet<Guid> _fresh = [];   // own players of the games added by the last step (highlighted)
 
     // local picks of the current step (not saved until the step is entered)
     private Guid? _ownDefender;
@@ -151,6 +175,10 @@ else
     private bool Remaining(Guid id, bool own) => (own ? _p!.RemainingOwn : _p!.RemainingOpponent).Contains(id);
     private Guid? OwnDef => _p!.OwnDefender ?? _ownDefender;
     private Guid? OppDef => _p!.OpponentDefender ?? _oppDefender;
+
+    private string TotalClass => _p!.FixedScore > 0 ? "pos" : _p.FixedScore < 0 ? "neg" : "";
+
+    private PlayerDto Player(Guid id) => _p!.Own.Players.Concat(_p.Opponent.Players).First(p => p.Id == id);
 
     private string Hint => _p!.Step switch
     {
@@ -260,6 +288,8 @@ else
                 }
                 _leaving = [];
             }
+            _fresh = _p is null ? [] : next.Games.Select(g => g.OwnPlayerId)
+                .Except(_p.Games.Select(g => g.OwnPlayerId)).ToHashSet();
             _p = next;
             ResetPicks();
         }

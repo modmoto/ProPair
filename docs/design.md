@@ -78,6 +78,8 @@ Bedienung – alles in der Matrix, keine Listen (mobil per Daumen):
 
 Ansicht:
 - Standard: nur verbleibende Spieler.
+- Oben neben dem Titel: Gesamtstand der festen Matchups (Summe der Scores, grün/rot) und x/8 gepaart.
+- Unter der Matrix: Liste der festen Matchups mit Bewertung; neue Matchups ploppen kurz auf.
 - Flip-Button oben rechts: ursprüngliche Matrix (Flip-Animation). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
 - Empfehlungen sind vorerst ausgeblendet (Solver läuft weiter im Backend), Details unter der Matrix kommen später.
 - Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
