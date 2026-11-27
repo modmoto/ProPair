@@ -1,14 +1,12 @@
-@* Note text with explicit save; shows who changed it last. Empty text deletes the note. *@
+@* Note text, saved when the field loses focus (change); shows who changed it last. Empty text deletes the note. *@
 
 <div class="note-editor">
     @if (CanEdit)
     {
-        <textarea rows="3" maxlength="2000" placeholder="@Placeholder" @bind="_text" @bind:event="oninput"></textarea>
+        <textarea rows="3" maxlength="2000" placeholder="@Placeholder" disabled="@(!HasAuthor)"
+                  @bind="_text" @bind:after="SaveAsync"></textarea>
         <div class="note-foot">
-            <span class="muted">@Meta</span>
-            <button class="btn" disabled="@(!Dirty || _saving || !HasAuthor)" @onclick="SaveAsync">
-                @(_saving ? "…" : "Speichern")
-            </button>
+            <span class="muted">@(_saving ? "Speichert…" : Meta)</span>
         </div>
         @if (!HasAuthor)
         {
@@ -51,6 +49,7 @@
 
     private async Task SaveAsync()
     {
+        if (!Dirty || !HasAuthor || _saving) return;
         _saving = true;
         try { await OnSave.InvokeAsync(_text); }
         finally { _saving = false; }
