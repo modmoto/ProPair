@@ -37,8 +37,8 @@ else
         </button>
     </div>
 
-    @* re-keyed on flip and on every saved step, so the matrix settles in the same way each time *@
-    <div class="matrix-wrap settle" @key="@($"{ShowAll}-{_p.MoveCount}")">
+    @* rebuilt (settle-in) only on flip; step changes transition cell by cell so you see what drops out *@
+    <div class="matrix-wrap settle" @key="ShowAll">
         <table class="matrix pairing">
             <thead>
             <tr>
@@ -105,42 +105,10 @@ else
     @if (_p.CanEdit)
     {
         <div class="actionbar">
-            <button class="icon" disabled="@(_busy || _p.MoveCount == 0 && !HasLocalPick)" @onclick="UndoAsync"
-                    title="Rückgängig" aria-label="Rückgängig">↶</button>
-            @switch (_p.Step)
-            {
-                case "attackers":
-                    <button class="primary" disabled="@(_busy || _ownAttackers.Count != 2 || _oppAttackers.Count != 2)"
-                            @onclick="SubmitAttackersAsync">Attacker eintragen</button>
-                    break;
-                case "choices":
-                    <button class="primary" disabled="@(_busy || _ownAccepts is null || _oppAccepts is null)"
-                            @onclick="SubmitChoicesAsync">Wahl eintragen</button>
-                    break;
-                case "done":
-                    <span class="primary done">Fertig</span>
-                    break;
-                default:
-                    <span class="primary waiting">Defender antippen</span>
-                    break;
-            }
-            <button class="icon" disabled="@(_busy || _p.MoveCount == 0)" @onclick="() => _confirmRestart = true"
-                    title="Neu starten" aria-label="Neu starten">⟲</button>
+            <button class="btn undo" disabled="@(_busy || _p.MoveCount == 0 && !HasLocalPick)" @onclick="UndoAsync">↶ Rückgängig</button>
         </div>
     }
 
-    @if (_confirmRestart)
-    {
-        <div class="sheet-backdrop" @onclick="() => _confirmRestart = false"></div>
-        <section class="sheet confirm" role="alertdialog" aria-label="Pairing neu starten">
-            <strong>Pairing neu starten?</strong>
-            <p class="muted">Alle eingetragenen Züge (@_p.MoveCount) gehen verloren.</p>
-            <div class="confirm-actions">
-                <button class="btn" @onclick="() => _confirmRestart = false">Abbrechen</button>
-                <button class="btn danger-fill" @onclick="RestartAsync">Neu starten</button>
-            </div>
-        </section>
-    }
 }
 
 @code {
@@ -151,7 +119,6 @@ else
 
     private PairingDto? _p;
     private bool _showAll;
-    private bool _confirmRestart;
     private bool _busy;
     private string? _error;
     private HashSet<Guid> _leaving = [];
@@ -209,10 +176,10 @@ else
         else _oppDefender = _oppDefender == id ? null : id;
 
         if (_ownDefender is { } d && _oppDefender is { } e)
-            await LoadAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(d, e)));
+            await AutoSubmitAsync(() => Api.SetDefendersAsync(Token, OpponentId, new DefendersRequest(d, e)));
     }
 
-    private void TapCell(Guid own, Guid opp)
+    private async Task TapCell(Guid own, Guid opp)
     {
         if (!_p!.CanEdit || _busy) return;
         var d = _p.OwnDefender;
@@ -234,6 +201,21 @@ else
                 _oppAccepts = own;
                 break;
         }
+
+        // complete step → enter it automatically (wrong tap? Undo)
+        if (_p.Step == "attackers" && _ownAttackers.Count == 2 && _oppAttackers.Count == 2)
+            await AutoSubmitAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownAttackers, _oppAttackers)));
+        else if (_p.Step == "choices" && _ownAccepts is { } take && _oppAccepts is { } taken)
+            await AutoSubmitAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(take, taken)));
+    }
+
+    /// <summary>Shows the last tap for a moment, then saves the step.</summary>
+    private async Task AutoSubmitAsync(Func<Task<PairingDto>> call)
+    {
+        _busy = true;
+        StateHasChanged();
+        await Task.Delay(LeaveMillis);
+        await LoadAsync(call);
     }
 
     private static void Toggle(List<Guid> picks, Guid id)
@@ -244,23 +226,12 @@ else
 
     private void ToggleView() => _showAll = !_showAll;
 
-    private Task SubmitAttackersAsync() =>
-        LoadAsync(() => Api.SetAttackersAsync(Token, OpponentId, new AttackersRequest(_ownAttackers, _oppAttackers)));
-
-    private Task SubmitChoicesAsync() =>
-        LoadAsync(() => Api.SetChoicesAsync(Token, OpponentId, new ChoicesRequest(_ownAccepts!.Value, _oppAccepts!.Value)));
-
     private async Task UndoAsync()
     {
         if (HasLocalPick) { ResetPicks(); return; } // first undo clears unsaved taps
         await LoadAsync(() => Api.UndoPairingAsync(Token, OpponentId));
     }
 
-    private Task RestartAsync()
-    {
-        _confirmRestart = false;
-        return LoadAsync(() => Api.RestartPairingAsync(Token, OpponentId));
-    }
 
     private async Task LoadAsync(Func<Task<PairingDto>> call)
     {

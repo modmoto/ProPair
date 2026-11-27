@@ -71,11 +71,13 @@ Ablauf als Regel-Objekt modellieren (austauschbar pro Turnier/System). Tisch-/Sz
 
 ## Pairing-Assistent
 
-Bedienung – alles in der Matrix, keine Listen (mobil per Daumen):
-1. **Defender:** links unseren Namen antippen, oben deren → gespeichert. Defender-Zeile und -Spalte hervorgehoben, Rest blass (Farben bleiben leicht sichtbar). Defender erneut antippen = abwählen.
-2. **Attacker:** Zellen antippen – in unserer Defender-Zeile deren 2 Attacker, in deren Defender-Spalte unsere 2. Kreuzung der Defender ist gesperrt (schraffiert). „Attacker eintragen“.
-3. **Wahl:** in der Zeile antippen, wen wir nehmen; in der Spalte, wen sie nehmen. „Wahl eintragen“.
-→ Gepaarte Spieler blenden aus, die Matrix wird kleiner. Rückgängig (erst lokale Taps, dann letzter Schritt) / Neu starten (mit Sicherheitsabfrage) in der Aktionsleiste unten.
+Bedienung – alles in der Matrix, keine Buttons pro Schritt (mobil per Daumen):
+1. **Defender:** links unseren Namen antippen, oben deren → automatisch eingetragen. Defender-Zeile und -Spalte hervorgehoben, Rest blass (Farben bleiben leicht sichtbar). Defender erneut antippen = abwählen.
+2. **Attacker:** Zellen antippen – in unserer Defender-Zeile deren 2 Attacker, in deren Defender-Spalte unsere 2. Kreuzung der Defender ist gesperrt (schraffiert). Nach dem 4. Tap automatisch eingetragen: die nicht gelegten Felder blenden ab und schrumpfen leicht, übrig bleiben die 4 Attacker.
+3. **Wahl:** in der Zeile antippen, wen wir nehmen; in der Spalte, wen sie nehmen → automatisch eingetragen.
+→ Gepaarte Spieler blenden aus, die Matrix wird kleiner.
+- Einzige Aktion unten: **Rückgängig** (erst ungespeicherte Taps, dann letzter Schritt). Kein Redo, kein Neu starten.
+- Schrittwechsel als fließender Übergang der Zellen (gleiche 220-ms-Bewegung); neu aufgebaut wird die Matrix nur beim Flip.
 
 Ansicht:
 - Standard: nur verbleibende Spieler.

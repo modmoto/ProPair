@@ -57,9 +57,6 @@ public sealed class ProPairApi(HttpClient http)
     public async Task<PairingDto> UndoPairingAsync(string token, Guid opponentId) =>
         await ReadAsync<PairingDto>(await http.PostAsync($"{PairingUrl(token, opponentId)}/undo", null));
 
-    public async Task<PairingDto> RestartPairingAsync(string token, Guid opponentId) =>
-        await ReadAsync<PairingDto>(await http.PostAsync($"{PairingUrl(token, opponentId)}/restart", null));
-
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response)
     {
         await EnsureAsync(response);

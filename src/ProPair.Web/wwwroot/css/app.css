@@ -251,7 +251,10 @@ button, input, select { font: inherit; }
 .matrix.pairing th.att .army { background: #dfe7fb; color: var(--accent); }
 .matrix.pairing th.taken { opacity: .35; }
 
-.matrix.pairing td { transition: filter .2s, opacity .2s; }
+/* step changes: cells glide into their new state with the shared motion; dropped cells fade and shrink a bit */
+.matrix.pairing td { transition: opacity var(--motion), filter var(--motion), transform var(--motion), background-color var(--motion); }
+.matrix.pairing th button { transition: background-color var(--motion), color var(--motion); }
+.matrix.pairing td.dim { transform: scale(.9); }
 .matrix.pairing td.tap { cursor: pointer; }
 /* greyed out but the rating colour stays faintly visible */
 .matrix.pairing td.dim, .matrix.pairing td.taken { opacity: .35; filter: saturate(.55); border-color: transparent; }
@@ -265,23 +268,13 @@ button, input, select { font: inherit; }
 
 /* sticky action bar at the bottom: thumb reach on phones */
 .actionbar {
-    position: sticky; bottom: 0; z-index: 5; display: flex; gap: .5rem; align-items: center;
+    position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: space-between; gap: .5rem; align-items: center;
     margin: 1rem calc(-1 * var(--pad)) 0; padding: .6rem var(--pad);
     padding-bottom: max(.6rem, env(safe-area-inset-bottom));
     background: rgba(246, 247, 249, .95); border-top: 1px solid var(--line); backdrop-filter: blur(6px);
 }
-.actionbar .icon {
-    flex: none; width: 3rem; height: 3rem; border: 1px solid var(--line); border-radius: 10px;
-    background: #fff; font-size: 1.3rem; cursor: pointer;
-}
-.actionbar .icon:disabled { opacity: .35; cursor: default; }
-.primary {
-    flex: 1; display: grid; place-items: center; min-height: 3rem; border: none; border-radius: 10px;
-    background: var(--accent); color: #fff; font-weight: 700; cursor: pointer;
-}
-.primary:disabled { background: #b9c6e8; cursor: default; }
-.primary.waiting { background: transparent; color: var(--muted); font-weight: 500; border: 1px dashed var(--line); }
-.primary.done { background: #2e9e44; }
+.actionbar .undo { flex: 1; min-height: 3rem; font-weight: 600; }
+.actionbar .undo:disabled { opacity: .4; cursor: default; }
 
 @media (min-width: 640px) {
     .actionbar { max-width: 720px; margin-left: 0; border: 1px solid var(--line); border-radius: 12px; }
@@ -334,10 +327,6 @@ button, input, select { font: inherit; }
 }
 
 
-/* confirmation dialog (reuses the sheet) */
-.sheet.confirm p { margin: .4rem 0 1rem; }
-.confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-.btn.danger-fill { background: #b3261e; border-color: #b3261e; color: #fff; font-weight: 700; }
 
 /* running total next to the title */
 .titlebar h1 { flex: 1; min-width: 0; }
