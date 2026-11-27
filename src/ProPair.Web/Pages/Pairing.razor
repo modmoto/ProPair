@@ -39,7 +39,8 @@ else
 
     <p class="stephint">@Hint</p>
 
-    <div class="matrix-wrap flip-in" @key="ShowAll">
+    @* re-keyed on flip and on every saved step, so the matrix settles in the same way each time *@
+    <div class="matrix-wrap settle" @key="@($"{ShowAll}-{_p.MoveCount}")">
         <table class="matrix pairing">
             <thead>
             <tr>
@@ -91,7 +92,7 @@ else
                 var own = Player(g.OwnPlayerId);
                 var opp = Player(g.OpponentPlayerId);
                 var level = LevelAt(g.OwnPlayerId, g.OpponentPlayerId);
-                <div class="gamerow @(_fresh.Contains(g.OwnPlayerId) ? "fresh" : "")">
+                <div class="gamerow @(_fresh.Contains(g.OwnPlayerId) ? "settle" : "")">
                     <span class="side"><span class="army">@own.ArmyShort</span> @own.Name</span>
                     <span class="vs">vs</span>
                     <span class="side"><span class="army">@opp.ArmyShort</span> @opp.Name</span>
@@ -146,7 +147,7 @@ else
     [Parameter] public string Token { get; set; } = "";
     [Parameter] public Guid OpponentId { get; set; }
 
-    private const int HopMillis = 750;
+    private const int LeaveMillis = 220; // = --motion in app.css
 
     private PairingDto? _p;
     private bool _showAll;
@@ -278,13 +279,13 @@ else
             var next = await call();
             if (_p is not null)
             {
-                // let paired players hop out before the matrix shrinks
+                // let paired players fade out before the matrix shrinks
                 _leaving = _p.RemainingOwn.Concat(_p.RemainingOpponent)
                     .Except(next.RemainingOwn.Concat(next.RemainingOpponent)).ToHashSet();
                 if (_leaving.Count > 0 && !ShowAll)
                 {
                     StateHasChanged();
-                    await Task.Delay(HopMillis);
+                    await Task.Delay(LeaveMillis);
                 }
                 _leaving = [];
             }

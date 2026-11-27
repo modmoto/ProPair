@@ -28,6 +28,7 @@ Pairing-Tool für Tabletop-Teamturniere. Start: The 9th Age (T9A).
 - 8×8-Matrix passt ohne Scrollen auf ein 360px-Handy; eigene Spieler als fixierte erste Spalte, Gegner als fixierte Kopfzeile.
 - Touch-Ziele ≥ 44px, Eingaben ≥ 16px (kein iOS-Zoom), native Dropdowns.
 - Keine Hover-only-Funktionen: Liste per Tap auf den Spieler, Verlauf per Long-Press.
+- **Eine** dezente Bewegung überall (220 ms, Einblenden mit 4 px Versatz, Ausblenden umgekehrt): Matrix-Aufbau, Flip, jeder Pairing-Schritt, neue Matchups, Sheets. `prefers-reduced-motion` schaltet sie ab.
 
 ## Bewertungsskala
 
@@ -74,13 +75,13 @@ Bedienung – alles in der Matrix, keine Listen (mobil per Daumen):
 1. **Defender:** links unseren Namen antippen, oben deren → gespeichert. Defender-Zeile und -Spalte hervorgehoben, Rest blass (Farben bleiben leicht sichtbar). Defender erneut antippen = abwählen.
 2. **Attacker:** Zellen antippen – in unserer Defender-Zeile deren 2 Attacker, in deren Defender-Spalte unsere 2. Kreuzung der Defender ist gesperrt (schraffiert). „Attacker eintragen“.
 3. **Wahl:** in der Zeile antippen, wen wir nehmen; in der Spalte, wen sie nehmen. „Wahl eintragen“.
-→ Gepaarte Spieler hüpfen raus, die Matrix wird kleiner. Rückgängig (erst lokale Taps, dann letzter Schritt) / Neu starten (mit Sicherheitsabfrage) in der Aktionsleiste unten.
+→ Gepaarte Spieler blenden aus, die Matrix wird kleiner. Rückgängig (erst lokale Taps, dann letzter Schritt) / Neu starten (mit Sicherheitsabfrage) in der Aktionsleiste unten.
 
 Ansicht:
 - Standard: nur verbleibende Spieler.
 - Oben neben dem Titel: Gesamtstand der festen Matchups (Summe der Scores, grün/rot) und x/8 gepaart.
-- Unter der Matrix: Liste der festen Matchups mit Bewertung; neue Matchups ploppen kurz auf.
-- Flip-Button oben rechts: ursprüngliche Matrix (Flip-Animation). Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
+- Unter der Matrix: Liste der festen Matchups mit Bewertung; neue Matchups blenden ein.
+- Flip-Button oben rechts: ursprüngliche Matrix. Vergebene Spieler hellgrau, Matchups umrandet. Nach dem Pairing automatisch.
 - Empfehlungen sind vorerst ausgeblendet (Solver läuft weiter im Backend), Details unter der Matrix kommen später.
 - Demo-Turniere: Button „Demo-Werte füllen“ auf der Matrix-Seite (nur für Fake-Turniere).
 

@@ -35,7 +35,7 @@ else
         </form>
     }
 
-    <div class="matrix-wrap" @ref="_grid">
+    <div class="matrix-wrap settle" @ref="_grid">
         <table class="matrix">
             <thead>
             <tr>
@@ -100,7 +100,7 @@ else
 
     @if (_shown is not null)
     {
-        <section class="listpanel">
+        <section class="listpanel settle">
             <header>
                 <strong>@_shown.Name · @_shown.ArmyName</strong>
                 <button class="btn" @onclick="() => _shown = null">Schließen</button>
